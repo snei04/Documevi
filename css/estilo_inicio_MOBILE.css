@@ -21,21 +21,22 @@ html{
   font-weight: bold;
   font-size: xx-large;
   position: relative;
-  left: 100px;
-  top: -10px;
+  left: 94px;
+ 
 }
 .image_docu{
-  width: 150px;
+  width: 110px;
   position: relative;
-  left: 150px;
+  left: 130px;
+  top: 10px;
 }
 
 .card {
   
   display: flex;
   justify-content: center;
-  min-height: 1080px;
-  width: 535px;
+  min-height: 650px;
+  width: 420px;
   flex-direction: column;
   gap: 35px;
   background-color: var(--blue-light);
@@ -46,8 +47,8 @@ html{
 
 .inputBox {
   position: relative;
-  width: 200px;
-  left: 250px;
+  width: 125px;
+  left: 95px;
   margin-bottom: 20px;
 }
 
@@ -68,7 +69,7 @@ html{
 .inputBox span {
   margin-top: 5px;
   position: absolute;
-  left: -30px;
+  left: -20px;
   transform: translateY(-4px);
   margin-left: 10px;
   padding: 10px;
@@ -112,7 +113,7 @@ html{
   letter-spacing: 2px;
   margin-bottom: 1em;
   color: var(--white);
-  left: 320px;
+  left: 110px;
 }
 
 .enter:hover {

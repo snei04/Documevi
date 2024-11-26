@@ -1,0 +1,149 @@
+@import url(https://fonts.googleapis.com/css?family=Lato:300,400);
+@import url(http://weloveiconfonts.com/api/?family=entypo);
+
+:root{
+  --blue-light:#0080C9;
+  --blue-dark: #003D7B;
+  --white: white;
+  --black: black;
+}
+[class*=entypo-]:before {
+  font-family: "entypo", sans-serif;
+  margin: 0 8px 0 0;
+  width: 24px;
+  text-align: center;
+  display: inline-block;
+  border: none;
+}
+
+.Dropdown-nav li .NavLink, .Dropdown-profile {
+  background: var(--blue-light);
+  display: block;
+  height: 24px;
+  padding: 8px;
+}
+
+body {
+  background: var(--white);
+  font-family: "Lato";
+  font-weight: 400;
+}
+
+a {
+  text-decoration: none;
+  color: var(--white);
+}
+
+.Dropdown {
+  
+  cursor: pointer;
+  overflow: hidden;
+  width: 200px;
+  border-top-left-radius: 4px;
+  border-top-right-radius: 4px;
+  border-bottom-left-radius: 4px;
+  border-bottom-right-radius: 4px;
+}
+.Dropdown-profile {
+  position: relative;
+}
+.Dropdown-profile .Photo {
+  background: transparent;
+  display: inline-block;
+  vertical-align: middle;
+  border-top-left-radius: 2px;
+  border-top-right-radius: 2px;
+  border-bottom-left-radius: 2px;
+  border-bottom-right-radius: 2px;
+  height: 24px;
+  width: 24px;
+}
+.Dropdown-profile .Name {
+  display: inline-block;
+  line-height: 24px;
+  padding: 0 0 0 5px;
+  vertical-align: middle;
+  width: 120px;
+  color: var(--white);
+}
+.Dropdown-nav {
+  height: 0;
+  overflow: hidden;
+  -webkit-transition: height 0.2s cubic-bezier(0.19, 1, 0.22, 1);
+  -moz-transition: height 0.2s cubic-bezier(0.19, 1, 0.22, 1);
+  transition: height 0.2s cubic-bezier(0.19, 1, 0.22, 1);
+}
+.Dropdown-nav ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.Dropdown-nav li {
+  position: relative;
+}
+.Dropdown-nav li a {
+  color: var(--white);
+  -webkit-transition: color 0.3s ease;
+  -moz-transition: color 0.3s ease;
+  transition: color 0.3s ease;
+}
+.Dropdown-nav li a:hover {
+  color: var(--blue-dark);
+}
+.Dropdown-nav li .OptionLink {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  height: 22px;
+  font-size: 18px;
+  margin: auto;
+  z-index: 5;
+}
+.Dropdown-nav li .NavLink {
+  line-height: 24px;
+}
+.Dropdown.is-expanded nav {
+  height: 202px;
+}
+
+.Dropdown-group {
+  border-top: 1px solid #ddd;
+}
+
+.Dropdown.is-expanded .MenuIcon-line:nth-child(1) {
+  top: 50%;
+}
+.Dropdown.is-expanded .MenuIcon-line:nth-child(3) {
+  top: 50%;
+}
+
+.MenuIcon {
+  bottom: 0;
+  top: 0;
+  margin: auto;
+  position: absolute;
+  right: 14px;
+  height: 10px;
+  width: 12px;
+}
+.MenuIcon-line {
+  background: var(--white);
+  display: inline-block;
+  height: 2px;
+  margin: auto;
+  position: absolute;
+  width: 100%;
+  -webkit-transition: all 0.2s ease-in-out;
+  -moz-transition: all 0.2s ease-in-out;
+  transition: all 0.2s ease-in-out;
+}
+.MenuIcon-line:nth-child(1) {
+  top: 0;
+}
+.MenuIcon-line:nth-child(2) {
+  top: 50%;
+}
+.MenuIcon-line:nth-child(3) {
+  top: 100%;
+}

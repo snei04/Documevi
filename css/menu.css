@@ -29,13 +29,14 @@ body {
   font-weight: 400;
 }
 
-a {
+.Dropdown-nav a {
   text-decoration: none;
-  color: var(--white);
+  
 }
 
 .Dropdown {
-  
+  position: relative;
+  left: 1000px;
   cursor: pointer;
   overflow: hidden;
   width: 200px;
@@ -67,8 +68,11 @@ a {
   color: var(--white);
 }
 .Dropdown-nav {
-  height: 0;
-  overflow: hidden;
+  height: 0px;
+  overflow:hidden;
+  padding-inline-start: 0px;
+  margin-block-start: 0px;
+  margin-inline-end: 0px;
   -webkit-transition: height 0.2s cubic-bezier(0.19, 1, 0.22, 1);
   -moz-transition: height 0.2s cubic-bezier(0.19, 1, 0.22, 1);
   transition: height 0.2s cubic-bezier(0.19, 1, 0.22, 1);
@@ -83,6 +87,7 @@ a {
 }
 .Dropdown-nav li a {
   color: var(--white);
+  
   -webkit-transition: color 0.3s ease;
   -moz-transition: color 0.3s ease;
   transition: color 0.3s ease;
@@ -103,7 +108,7 @@ a {
 .Dropdown-nav li .NavLink {
   line-height: 24px;
 }
-.Dropdown.is-expanded nav {
+.Dropdown.is-expanded menu {
   height: 202px;
 }
 

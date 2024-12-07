@@ -3,7 +3,7 @@
   "version": 1,
   "newProjectRoot": "projects",
   "projects": {
-    "my-app": {
+    "documevi-angular": {
       "projectType": "application",
       "schematics": {},
       "root": "",
@@ -13,7 +13,7 @@
         "build": {
           "builder": "@angular-devkit/build-angular:application",
           "options": {
-            "outputPath": "dist/my-app",
+            "outputPath": "dist/documevi-angular",
             "index": "src/index.html",
             "browser": "src/main.ts",
             "polyfills": [
@@ -31,9 +31,9 @@
             ],
             "scripts": [],
             "server": "src/main.server.ts",
-            "prerender": true,
+            "outputMode": "server",
             "ssr": {
-              "entry": "server.ts"
+              "entry": "src/server.ts"
             }
           },
           "configurations": {
@@ -46,8 +46,8 @@
                 },
                 {
                   "type": "anyComponentStyle",
-                  "maximumWarning": "2kB",
-                  "maximumError": "4kB"
+                  "maximumWarning": "4kB",
+                  "maximumError": "8kB"
                 }
               ],
               "outputHashing": "all"
@@ -64,10 +64,10 @@
           "builder": "@angular-devkit/build-angular:dev-server",
           "configurations": {
             "production": {
-              "buildTarget": "my-app:build:production"
+              "buildTarget": "documevi-angular:build:production"
             },
             "development": {
-              "buildTarget": "my-app:build:development"
+              "buildTarget": "documevi-angular:build:development"
             }
           },
           "defaultConfiguration": "development"
@@ -99,6 +99,6 @@
     }
   },
   "cli": {
-    "analytics": "1f08fcba-c090-4c8b-8908-2b88af18e759"
+    "analytics": "d3dada0d-5653-4aba-97a5-8be470e49694"
   }
 }

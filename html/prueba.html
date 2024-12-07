@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<style>
+    nav ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+nav li {
+  display: inline-block;
+  position: relative;
+}
+
+nav a {
+  display: block;
+  padding: 10px 20px;
+  text-decoration: none;
+  color: #333;
+}
+
+nav .submenu {
+  display: none;
+  position: absolute;
+  background-color: #f9f9f9;
+  box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+  z-index: 1;
+}
+
+nav li .submenu:hover {
+  display: block;
+}
+</style>
+<body>
+    <nav>
+        <ul>
+          <li><a href="#">Inicio</a></li>
+          <li><a href="#">Productos</a>
+            <ul class="submenu">
+              <li><a href="#">Categoría 1</a></li>
+              <li><a href="#">Categoría 2</a></li>
+              <li><a href="#">Categoría 3</a></li>
+            </ul>
+          </li>
+          <li><a href="#">Contacto</a></li>
+        </ul>
+      </nav>
+</body>
+</html>

@@ -13,6 +13,15 @@ menuBtn.addEventListener('click', () => {
     link.classList.toggle('fade-in');
 })
 
+var a = document.querySelector(".despliegue")
+var modulo = document.querySelector('.despliegue .modulo');
+var subMenu = document.querySelector('.despliegue .modulo .submenu');
+menuBtn.addEventListener('click', () => {
+  a.classList.toggle('nav-open');
+  modulo.classList.toggle('line-cross');
+  subMenu.classList.toggle('line-fade-out');
+})
+
 
 // Seleccionamos todos los elementos con la clase 'Dropdown'
 const dropdowns = document.querySelectorAll('.Dropdown');

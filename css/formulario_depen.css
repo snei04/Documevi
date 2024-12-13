@@ -1,0 +1,210 @@
+* {
+    box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family: "Lato";
+
+}
+
+:root {
+    --blue-light:#0080C9;
+    --blue-dark: #003D7B;
+    --white: white;
+    --black: black;
+}
+html{
+        font-size: 62.5%;   
+}
+
+.form {
+    background-color: #15172b;
+    border-radius: 20px;
+    box-sizing: border-box;
+    height: 400px;
+    padding: 20px;
+    width: 320px;
+  }
+  
+ 
+  
+  .subtitle {
+    margin-top: 10px;
+    color: #eee;
+    font-family: sans-serif;
+    font-size: 16px;
+    font-weight: 600;
+  }
+  
+  .subtitle_1 {
+    color: #eee;
+    font-family: sans-serif;
+    font-size: 10px;
+    font-weight: 600;
+  }
+
+  .input-container {
+    height: 40px;
+    position: relative;
+    width: 100%;
+  }
+  
+  .ic1 {
+    margin-top: 20px;
+  }
+  
+  .ic2 {
+    margin-top: 30px;
+  }
+  
+  .input {
+    background-color: #303245;
+    border-radius: 12px;
+    border: 0;
+    box-sizing: border-box;
+    color: #eee;
+    font-size: 18px;
+    height: 40px;
+    outline: 0;
+    padding: 4px 10px 0;
+    width: 100%;
+  }
+  
+  .cut {
+    background-color: #15172b;
+    border-radius: 10px;
+    height: 10px;
+    left: 20px;
+    position: absolute;
+    top: -20px;
+    transform: translateY(0);
+    transition: transform 200ms;
+    width: 76px;
+  }
+  
+  .cut-short {
+    width: 30px;
+  }
+  
+  .input:focus ~ .cut,
+  .input:not(:placeholder-shown) ~ .cut {
+    transform: translateY(8px);
+  }
+  
+  .placeholder {
+    color: #65657b;
+    font-family: sans-serif;
+    left: 20px;
+    line-height: 14px;
+    pointer-events: none;
+    position: absolute;
+    transform-origin: 0 50%;
+    transition: transform 200ms, color 200ms;
+    top: 20px;
+    font-size: 15px;
+  }
+  
+  .input:focus ~ .placeholder,
+  .input:not(:placeholder-shown) ~ .placeholder {
+    transform: translateY(-30px) translateX(10px) scale(0.75);
+  }
+  
+  .input:not(:placeholder-shown) ~ .placeholder {
+    color: #808097;
+  }
+  
+  .input:focus ~ .placeholder {
+    color: #dc2f55;
+    width: 50px;
+  }
+  
+  .submit {
+    background-color: #08d;
+    border-radius: 12px;
+    border: 0;
+    box-sizing: border-box;
+    color: #eee;
+    cursor: pointer;
+    font-size: 18px;
+    height: 50px;
+    margin-top: 38px;
+    text-align: center;
+    width: 100%;
+  }
+  
+  .submit:active {
+    background-color: #06b;
+  }
+  .checkbox-wrapper-51
+  {
+    margin-top: 10px;
+  }
+  
+.checkbox-wrapper-51 input[type="checkbox"] {
+    visibility: hidden;
+    display: none;
+  }
+  
+  .checkbox-wrapper-51 .toggle {
+    position: relative;
+    display: block;
+    width: 42px;
+    height: 24px;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    transform: translate3d(0, 0, 0);
+  }
+  
+  .checkbox-wrapper-51 .toggle:before {
+    content: "";
+    position: relative;
+    top: 1px;
+    left: 1px;
+    width: 40px;
+    height: 22px;
+    display: block;
+    background: #c8ccd4;
+    border-radius: 12px;
+    transition: background 0.2s ease;
+  }
+  
+  .checkbox-wrapper-51 .toggle span {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 24px;
+    height: 24px;
+    display: block;
+    background: #fff;
+    border-radius: 50%;
+    box-shadow: 0 2px 6px rgba(154,153,153,0.75);
+    transition: all 0.2s ease;
+  }
+  
+  .checkbox-wrapper-51 .toggle span svg {
+    margin: 7px;
+    fill: none;
+  }
+  
+  .checkbox-wrapper-51 .toggle span svg path {
+    stroke: #c8ccd4;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-dasharray: 24;
+    stroke-dashoffset: 0;
+    transition: all 0.5s linear;
+  }
+  
+  .checkbox-wrapper-51 input[type="checkbox"]:checked + .toggle:before {
+    background: #1175c7;
+  }
+  
+  .checkbox-wrapper-51 input[type="checkbox"]:checked + .toggle span {
+    transform: translateX(18px);
+  }
+  
+  .checkbox-wrapper-51 input[type="checkbox"]:checked + .toggle span path {
+    stroke: #000000;
+    stroke-dasharray: 25;
+    stroke-dashoffset: 25;
+  }

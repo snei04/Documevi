@@ -6,49 +6,41 @@
     <title>Document</title>
 </head>
 <style>
-    nav ul {
-  list-style: none;
-  padding: 0;
-  margin: 0;
+.nav-links ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
 }
 
-nav li {
-  display: inline-block;
-  position: relative;
+.nav-links li {
+    display: inline-block;
+    position: relative;
 }
 
-nav a {
-  display: block;
-  padding: 10px 20px;
-  text-decoration: none;
-  color: #333;
+.nav-links .submenu {
+    display: none;
+    position: absolute;
+    background-color: #f9f9f9;
+    box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+    z-index: 1;
 }
 
-nav .submenu {
-  display: none;
-  position: absolute;
-  background-color: #f9f9f9;
-  box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
-  z-index: 1;
-}
-
-nav li .submenu:hover {
-  display: block;
+.nav-links li:hover .submenu {
+    display: block;
 }
 </style>
 <body>
-    <nav>
-        <ul>
-          <li><a href="#">Inicio</a></li>
-          <li><a href="#">Productos</a>
+  <div class="nav-links">
+    <ul>
+        <li>
+            <a class="link" href="#">Captura de documentos</a>
             <ul class="submenu">
-              <li><a href="#">Categoría 1</a></li>
-              <li><a href="#">Categoría 2</a></li>
-              <li><a href="#">Categoría 3</a></li>
+                <li><a href="#">Prueba1</a></li>
+                <li><a href="#">Prueba2</a></li>
             </ul>
-          </li>
-          <li><a href="#">Contacto</a></li>
+        </li>
+        <li><a class="link" href="#">Gestion de documentos</a></li>
         </ul>
-      </nav>
+</div>
 </body>
 </html>

@@ -1,46 +1,136 @@
+
+</html>
+
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>Menú con Submenús Desplegables</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+        .menu {
+            background-color: #333;
+            color: white;
+            padding: 0;
+            margin: 0;
+        }
+        .menu-item {
+            list-style: none;
+            position: relative;
+        }
+        .menu a {
+            color: white;
+            padding: 14px 20px;
+            text-decoration: none;
+            display: block;  
+        }
+        .menu a:hover {
+            background-color: #575757;
+        }
+        .submenu {
+            display: none;
+            background-color: #444;
+            list-style: none;
+            margin: 0;
+            padding: 0;
+            position: relative;
+        }
+        .submenu a {
+            padding-left: 40px;
+        }
+        .content {
+            padding: 20px;
+        }
+        .menu .active > .submenu {
+            display: block;
+        }
+    </style>
 </head>
-<style>
-.nav-links ul {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-}
-
-.nav-links li {
-    display: inline-block;
-    position: relative;
-}
-
-.nav-links .submenu {
-    display: none;
-    position: absolute;
-    background-color: #f9f9f9;
-    box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
-    z-index: 1;
-}
-
-.nav-links li:hover .submenu {
-    display: block;
-}
-</style>
 <body>
-  <div class="nav-links">
-    <ul>
-        <li>
-            <a class="link" href="#">Captura de documentos</a>
-            <ul class="submenu">
-                <li><a href="#">Prueba1</a></li>
-                <li><a href="#">Prueba2</a></li>
+    <ul class="menu">
+        <li class="menu-item">
+            <a href="#" onclick="toggleMenu(event, 'home')">Inicio</a>
+        </li>
+        <li class="menu-item">
+            <a href="#" onclick="toggleMenu(event, 'about')">Acerca de</a>
+            <ul id="about" class="submenu">
+                <li><a href="#" onclick="showContent('history')">Historia</a></li>
+                <li><a href="#" onclick="showContent('team')">Equipo</a></li>
             </ul>
         </li>
-        <li><a class="link" href="#">Gestion de documentos</a></li>
-        </ul>
-</div>
+        <li class="menu-item">
+            <a href="#" onclick="toggleMenu(event, 'services')">Servicios</a>
+            <ul id="services" class="submenu">
+                <li><a href="#" onclick="showContent('web')">Desarrollo Web</a></li>
+                <li><a href="#" onclick="showContent('marketing')">Marketing Digital</a></li>
+            </ul>
+        </li>
+        <li class="menu-item">
+            <a href="#" onclick="showContent('contact')">Contacto</a>
+        </li>
+    </ul>
+    <div id="content" class="content">
+        <h1>Bienvenido</h1>
+        <p>Selecciona una opción del menú para ver más contenido.</p>
+    </div>
+
+    <script>
+        function toggleMenu(event, menuId) {
+            event.preventDefault();
+            const menu = document.getElementById(menuId);
+
+            // Cerrar otros submenús
+            document.querySelectorAll('.submenu').forEach(submenu => {
+                if (submenu !== menu) submenu.parentElement.classList.remove('active');
+            });
+
+            // Alternar el menú actual
+            menu.parentElement.classList.toggle('active');
+        }
+
+        function showContent(section) {
+            const contentDiv = document.getElementById('content');
+            let contentHtml = '';
+
+            switch (section) {
+                case 'history':
+                    contentHtml = `
+                        <h1>Historia</h1>
+                        <p>Nuestra historia comenzó hace muchos años...</p>`;
+                    break;
+                case 'team':
+                    contentHtml = `
+                        <h1>Equipo</h1>
+                        <p>Conoce a nuestro equipo de expertos.</p>`;
+                    break;
+                case 'web':
+                    contentHtml = `
+                        <h1>Desarrollo Web</h1>
+                        <p>Ofrecemos soluciones modernas para tu sitio web.</p>`;
+                    break;
+                case 'marketing':
+                    contentHtml = `
+                        <h1>Marketing Digital</h1>
+                        <p>Ayudamos a tu empresa a crecer con estrategias digitales.</p>`;
+                    break;
+                case 'contact':
+                    contentHtml = `
+                        <h1>Contacto</h1>
+                        <p>Contáctanos en <a href="mailto:info@ejemplo.com">info@ejemplo.com</a>.</p>`;
+                    break;
+                default:
+                    contentHtml = `
+                        <h1>Error</h1>
+                        <p>La sección seleccionada no está disponible.</p>`;
+            }
+
+            contentDiv.innerHTML = contentHtml;
+        }
+    </script>
 </body>
 </html>

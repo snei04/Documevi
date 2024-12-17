@@ -13,14 +13,7 @@ menuBtn.addEventListener('click', () => {
     link.classList.toggle('fade-in');
 })
 
-var a = document.querySelector(".despliegue")
-var modulo = document.querySelector('.despliegue .modulo');
-var subMenu = document.querySelector('.despliegue .modulo .submenu');
-menuBtn.addEventListener('click', () => {
-  a.classList.toggle('nav-open');
-  modulo.classList.toggle('line-cross');
-  subMenu.classList.toggle('line-fade-out');
-})
+
 
 
 // Seleccionamos todos los elementos con la clase 'Dropdown'
@@ -33,3 +26,19 @@ dropdowns.forEach(function(dropdown) {
     this.classList.toggle('is-expanded');
   });
 });
+
+
+
+// Función para mostrar/ocultar el submenú al hacer clic
+function toggleMenu(event, submenuId) {
+    event.preventDefault(); // Evita que el enlace redireccione
+    const submenu = document.getElementById(submenuId);
+    
+    // Verifica si el submenú está visible y lo alterna
+    if (submenu.style.display === "block") {
+      submenu.style.display = "none";
+    } else {
+      submenu.style.display = "block";
+    }
+  }
+  

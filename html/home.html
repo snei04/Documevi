@@ -11,6 +11,7 @@
   <div class="encabezado">
 
   </div>
+  <h1 class="titulo">MENÚ</h1>
     <nav> 
         <div class="menu-btn">
           <div class="line line--1"></div>
@@ -18,28 +19,81 @@
           <div class="line line--3"></div>
         </div>
         
-        <div class="nav-links">
-          <ul class="despliegue">
-            <li>
-                <a class="modulo" href="#">Captura de documentos</a>
-                <ul class="submenu">
-                    <li><a class="link" href="#">Prueba1</a></li>
-                    <li><a class="link" href="#">Prueba2</a></li>
-                </ul>
-            </li>
-            <li><a class="modulo" href="#">Gestion de documentos</a></li>
-            <li><a class="modulo" href="" >Prestamo de documentos</a></li>
-            <li><a class="modulo" href="" >Flujo de trabajo</a></li>
-            <li><a class="modulo" href="" >Informes</a></li>
-            <li><a class="modulo" href="" >WEBSERVICE</a></li>
-            <li><a class="modulo" href="" >Administrador del sistema</a></li>
-            </ul>
-          
-        
-        </div>
+        <!-- Menú Vertical -->
+    <div class="nav-links">
+      
+      <ul class="menu">
+        <!-- Item 1: Captura de documentos -->
+        <li class="menu-item">
+          <a href="#" class="modulo" onclick="toggleMenu(event, 'submenu-captura')">Captura de documentos</a>
+          <ul id="submenu-captura" class="submenu">
+            <li><a href="#">Crear documento fisico a digital</a></li>
+            <li><a href="#">Crear documento nativo electonico</a></li>
+          </ul>
+        </li>
+  
+        <!-- Item 2: Gestion de documentos -->
+        <li class="menu-item">
+          <a href="#" class="modulo">Gestión de documentos</a>
+          <ul id="submenu-captura" class="submenu">
+            <li><a href="#">Dependencias</a></li>
+            <li><a href="#">Carga de TRD</a></li>
+            <li><a href="#">Versionamiento de TRD</a></li>
+            <li><a href="#">Parametros TRD</a></li>
+            <li><a href="#">Expediente</a></li>
+          </ul>
+        </li>
+  
+        <!-- Item 3: Prestamo de documentos -->
+        <li class="menu-item">
+          <a href="#" class="modulo">Préstamo de documentos</a>
+          <ul id="submenu-captura" class="submenu">
+            <li><a href="#">Solicitar préstamo </a></li>
+            <li><a href="#">Aprobar préstamo</a></li>
+            <li><a href="#">Administración de prestamos</a></li>
+          </ul>
+        </li>
+  
+        <!-- Item 4: flujo de trabajo -->
+        <li class="menu-item">
+          <a href="#" class="modulo">Flujo de trabajo</a>
+          <ul id="submenu-captura" class="submenu">
+            <li><a href="#">Estado de documento</a></li>
+            
+          </ul>
+        </li>
+  
+        <!-- Item 5: informes-->
+        <li class="menu-item">
+          <a href="#" class="modulo">Informes</a>
+          <ul id="submenu-captura" class="submenu">
+            <li><a href="#">Crear documento fisico a digital</a></li>
+            <li><a href="#">Crear documento nativo electonico</a></li>
+          </ul>
+        </li>
+  
+        <!-- Item 6: webservice -->
+        <li class="menu-item">
+          <a href="#" class="modulo">WEBSERVICE</a>
+          <ul id="submenu-captura" class="submenu">
+            <li><a href="#">Crear documento fisico a digital</a></li>
+            <li><a href="#">Crear documento nativo electonico</a></li>
+          </ul>
+        </li>
+  
+        <!-- Item 7 Administrador del sistema-->
+        <li class="menu-item">
+          <a href="#" class="modulo">Administrador del sistema</a>
+          <ul id="submenu-captura" class="submenu">
+            <li><a href="#">Crear documento fisico a digital</a></li>
+            <li><a href="#">Crear documento nativo electonico</a></li>
+          </ul>
+        </li>
+      </ul>
+    </div>
+
       </nav>
-     
-      <h1 class="menu">MENU</h1>
+      
       
       <div class="Dropdown">
         <div class="Dropdown-profile">
@@ -55,12 +109,12 @@
           <ul class="Dropdown-group">
             
             
-            <li><a href="#" class="entypo-docs NavLink">Información</a>
-              <a href="#" class="entypo-plus OptionLink"></a>
+            <li>
+              <a href="#" class="entypo-docs NavLink">Información</a>
             </li>
             <li>
               <a href="#" class="entypo-users NavLink">Cuenta</a>
-              <a href="#" class="entypo-plus OptionLink"></a>
+
             </li>
           </ul>
           <ul class="Dropdown-group">
@@ -77,10 +131,7 @@
           <li></li>
         </ul>
       </div>
-      
       <script src="../js/home.js"></script>
-
-
 </body>
 </html>
 

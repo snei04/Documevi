@@ -36,7 +36,6 @@ body {
     background-repeat: no-repeat;
     background-size:auto;
     font-family: "Lato";
-   
   
     
 }
@@ -117,17 +116,15 @@ nav .menu-btn .line.line--3.line-cross {
     color: var(--white);
     top: 25px;
     left: 90px;
+    width: 100px;
 }
 nav .nav-links {
     position: absolute;
     left: 0;
-    top: 0;
+    top: 80px;
     width: 300px;
     height: 50%;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
+    
     transform: translateX(-100px);
     opacity: 0;
     transition: all 900ms cubic-bezier(.9, 0, .33, 1);
@@ -136,6 +133,7 @@ nav .nav-links {
 nav .nav-links.fade-in {
     opacity: 1;
     transform: translateX(0px);
+    
 }
 nav .nav-links .modulo{
   margin:5px 0;
@@ -184,7 +182,6 @@ nav .nav-links .link:hover {
 .menu-item a {
   display: block;
   text-decoration: none;
-  color: var(--white);
   padding: 12px 15px;
   transition: background 0.3s ease;
  
@@ -200,13 +197,16 @@ nav .nav-links .link:hover {
   
   list-style-type: none;
   display: none; /* Ocultos por defecto */
+  margin-left: 30px;
 
 }
 
 .submenu li a {
-  padding: 8px 30px;
+ 
   color: var(--white);
   font-size: 1rem;
+  font-weight: 700;
+  text-transform: uppercase;
 }
 
 .submenu li a:hover {
@@ -317,7 +317,7 @@ nav .nav-links .link:hover {
     z-index: 5;
   }
   .Dropdown-nav li .NavLink {
-    line-height: 24px;
+    line-height: 34px;
   }
   .Dropdown.is-expanded menu {
     height: 202px;

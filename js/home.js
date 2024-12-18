@@ -29,8 +29,9 @@ dropdowns.forEach(function(dropdown) {
 
 
 
-// Función para mostrar/ocultar el submenú al hacer clic
-function toggleMenu(event, submenuId) {
+
+  
+  function toggleMenu(event, submenuId) {
     event.preventDefault(); // Evita que el enlace redireccione
     const submenu = document.getElementById(submenuId);
     
@@ -41,4 +42,3 @@ function toggleMenu(event, submenuId) {
       submenu.style.display = "block";
     }
   }
-  

@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>Documevi</title>
     <link rel="stylesheet" href="../css/home.css">
-    
+    <link rel="shortcut icon" href="../IMAGE/LOGO_DOCU.png" type="image/x-icon">
 </head>
 <body>
   <div class="encabezado">
@@ -34,8 +34,8 @@
   
         <!-- Item 2: Gestion de documentos -->
         <li class="menu-item">
-          <a href="#" class="modulo">Gestión de documentos</a>
-          <ul id="submenu-captura" class="submenu">
+          <a href="#" class="modulo" onclick="toggleMenu(event, 'submenu-gestion')">Gestión de documentos</a>
+          <ul id="submenu-gestion" class="submenu">
             <li><a href="#">Dependencias</a></li>
             <li><a href="#">Carga de TRD</a></li>
             <li><a href="#">Versionamiento de TRD</a></li>
@@ -46,8 +46,8 @@
   
         <!-- Item 3: Prestamo de documentos -->
         <li class="menu-item">
-          <a href="#" class="modulo">Préstamo de documentos</a>
-          <ul id="submenu-captura" class="submenu">
+          <a href="#" class="modulo" onclick="toggleMenu(event, 'submenu-prestamo')">Préstamo de documentos</a>
+          <ul id="submenu-prestamo" class="submenu">
             <li><a href="#">Solicitar préstamo </a></li>
             <li><a href="#">Aprobar préstamo</a></li>
             <li><a href="#">Administración de prestamos</a></li>
@@ -56,8 +56,8 @@
   
         <!-- Item 4: flujo de trabajo -->
         <li class="menu-item">
-          <a href="#" class="modulo">Flujo de trabajo</a>
-          <ul id="submenu-captura" class="submenu">
+          <a href="#" class="modulo" onclick="toggleMenu(event, 'submenu-flujo')">Flujo de trabajo</a>
+          <ul id="submenu-flujo" class="submenu">
             <li><a href="#">Estado de documento</a></li>
             
           </ul>
@@ -65,8 +65,8 @@
   
         <!-- Item 5: informes-->
         <li class="menu-item">
-          <a href="#" class="modulo">Informes</a>
-          <ul id="submenu-captura" class="submenu">
+          <a href="#" class="modulo" onclick="toggleMenu(event, 'submenu-informes')">Informes</a>
+          <ul id="submenu-informes" class="submenu">
             <li><a href="#">Crear documento fisico a digital</a></li>
             <li><a href="#">Crear documento nativo electonico</a></li>
           </ul>
@@ -74,8 +74,8 @@
   
         <!-- Item 6: webservice -->
         <li class="menu-item">
-          <a href="#" class="modulo">WEBSERVICE</a>
-          <ul id="submenu-captura" class="submenu">
+          <a href="#" class="modulo" onclick="toggleMenu(event, 'submenu-services')">WEBSERVICE</a>
+          <ul id="submenu-services" class="submenu">
             <li><a href="#">Crear documento fisico a digital</a></li>
             <li><a href="#">Crear documento nativo electonico</a></li>
           </ul>
@@ -83,8 +83,8 @@
   
         <!-- Item 7 Administrador del sistema-->
         <li class="menu-item">
-          <a href="#" class="modulo">Administrador del sistema</a>
-          <ul id="submenu-captura" class="submenu">
+          <a href="#" class="modulo" onclick="toggleMenu(event, 'submenu-administrador')">Administrador del sistema</a>
+          <ul id="submenu-administrador" class="submenu">
             <li><a href="#">Crear documento fisico a digital</a></li>
             <li><a href="#">Crear documento nativo electonico</a></li>
           </ul>

@@ -11,7 +11,7 @@
   <div class="encabezado">
 
   </div>
-  <h1 class="titulo">MENÚ</h1>
+  <a class="title" href="./home.html"><h1 class="titulo">MENÚ</h1></a>
     <nav> 
         <div class="menu-btn">
           <div class="line line--1"></div>
@@ -27,16 +27,21 @@
         <li class="menu-item">
           <a href="#" class="modulo" onclick="toggleMenu(event, 'submenu-captura')">Captura de documentos</a>
           <ul id="submenu-captura" class="submenu">
-            <li><a href="#">Crear documento fisico a digital</a></li>
-            <li><a href="#">Crear documento nativo electonico</a></li>
+            <li>
+              <a href="#" onclick="showContent('digital')">Crear documento fisico a digital
+
+            </a></li>
+            <li><a href="#" onclick="showContent('electronico')">Crear documento nativo electonico</a></li>
           </ul>
+          
         </li>
   
         <!-- Item 2: Gestion de documentos -->
         <li class="menu-item">
           <a href="#" class="modulo" onclick="toggleMenu(event, 'submenu-gestion')">Gestión de documentos</a>
           <ul id="submenu-gestion" class="submenu">
-            <li><a href="#">Dependencias</a></li>
+            <li><a href="#" onclick="showContent('dependencia')">Dependencias</a></li>
+            <li><a href="#">Series</a></li>
             <li><a href="#">Carga de TRD</a></li>
             <li><a href="#">Versionamiento de TRD</a></li>
             <li><a href="#">Parametros TRD</a></li>
@@ -67,8 +72,16 @@
         <li class="menu-item">
           <a href="#" class="modulo" onclick="toggleMenu(event, 'submenu-informes')">Informes</a>
           <ul id="submenu-informes" class="submenu">
-            <li><a href="#">Crear documento fisico a digital</a></li>
-            <li><a href="#">Crear documento nativo electonico</a></li>
+            <li><a href="#">Informe de creacion de documentos</a></li>
+            <li><a href="#">Informe de modificación de documentos</a></li>
+            <li><a href="#">Informe de aprobaciónes</a></li>
+            <li><a href="#">Informe de denegados</a></li>
+            <li><a href="#">Informe de eliminación de documento</a></li>
+            <li><a href="#">Informe de descargas de documentos</a></li>
+            <li><a href="#">Informe de retención de documentos</a></li>
+            <li><a href="#">Informe de auditoria de documento</a></li>
+            <li><a href="#">Informe de crecimiento en almacenamiento</a></li>
+            <li><a href="#">Informe de usuarios activos e inactivos</a></li>
           </ul>
         </li>
   
@@ -76,8 +89,7 @@
         <li class="menu-item">
           <a href="#" class="modulo" onclick="toggleMenu(event, 'submenu-services')">WEBSERVICE</a>
           <ul id="submenu-services" class="submenu">
-            <li><a href="#">Crear documento fisico a digital</a></li>
-            <li><a href="#">Crear documento nativo electonico</a></li>
+            <li><a href="#">Activación webservice</a></li>
           </ul>
         </li>
   
@@ -85,11 +97,13 @@
         <li class="menu-item">
           <a href="#" class="modulo" onclick="toggleMenu(event, 'submenu-administrador')">Administrador del sistema</a>
           <ul id="submenu-administrador" class="submenu">
-            <li><a href="#">Crear documento fisico a digital</a></li>
-            <li><a href="#">Crear documento nativo electonico</a></li>
+            <li><a href="#">Usuaurios en el sistema</a></li>
+            <li><a href="#">Gestión de usuarios</a></li>
+            <li><a href="#">Perfiles</a></li>
           </ul>
         </li>
       </ul>
+      
     </div>
 
       </nav>
@@ -124,13 +138,11 @@
           </ul>
         </menu>
       </div>
-      
-      <div class="usuario">
-        <ul>
-          <li></li>
-          <li></li>
-        </ul>
-      </div>
+      <div id="content" class="content">
+        <h1>Bienvenido</h1>
+        <p>Selecciona una opción del menú para ver más contenido.</p>
+    </div>
+     
       <script src="../js/home.js"></script>
 </body>
 </html>

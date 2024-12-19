@@ -17,6 +17,9 @@ html{
 }
 
 .form {
+  position: absolute;
+  top: 25%;
+  left: 10%;
     background-color: #15172b;
     border-radius: 20px;
     box-sizing: border-box;
@@ -113,7 +116,7 @@ html{
   }
   
   .input:focus ~ .placeholder {
-    color: #dc2f55;
+    color: var(--white);
     width: 50px;
   }
   

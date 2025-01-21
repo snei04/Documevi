@@ -121,3 +121,11 @@ html{
   border: 2px solid var(--black);
 }
 
+#togglePassword {
+  position: relative;
+  top: 55px;
+  left: 555px;
+  cursor: pointer;
+  color:var(--white);
+ 
+}

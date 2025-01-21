@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Formulario Gestión de Usuarios</title>
+    <title>Gestión de Usuarios</title>
     <link rel="stylesheet" href="../css/gestion_usuario.css">
 </head>
 <body>
@@ -19,15 +19,16 @@
             <label for="email">Correo Electrónico:</label>
             <input type="email" id="email" name="email" required>
 
-            <label for="role">Rol:</label>
+            <label for="role">Perfil:</label>
             <select id="role" name="role" required>
-                <option value="admin">Administrador</option>
-                <option value="editor">Editor</option>
-                <option value="viewer">Visualizador</option>
-                <option value=""></option>
+                <option value="admin">Administrador sistema</option>
+                <option value="editor">Administrador usuarios</option>
+                <option value="viewer">Auxiliar de gestión documental</option>
+                <option value="">Usuario Final</option>
+                <option value="">Auditor</option>
             </select>
 
-            <label for="status">Estado:</label>
+            <label class="title_status" for="status">Estado:</label>
             <div class="status">
                 <label><input type="radio" name="status" value="active" checked> Activo</label>
                 <label><input type="radio" name="status" value="inactive"> Inactivo</label>

@@ -5,7 +5,8 @@ var lineOne = document.querySelector('nav .menu-btn .line--1');
 var lineTwo = document.querySelector('nav .menu-btn .line--2');
 var lineThree = document.querySelector('nav .menu-btn .line--3');
 var link = document.querySelector('nav .nav-links');
-var content = document.querySelector('.content')
+var content = document.querySelector('.content');
+var contentDiv = document.querySelector('.container_users');
 
 menuBtn.addEventListener('click', () => {
     nav.classList.toggle('nav-open');
@@ -14,7 +15,7 @@ menuBtn.addEventListener('click', () => {
     lineThree.classList.toggle('line-cross');
     link.classList.toggle('fade-in');
     content.classList.toggle('content-open');
-    
+    contentDiv.classList.toggle('container_users-open'); 
 })
 
 

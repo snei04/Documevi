@@ -22,3 +22,26 @@ document.getElementById("userForm").addEventListener("submit", function(event) {
     // Limpiar el formulario
     document.getElementById("userForm").reset();
 });
+
+
+document.getElementById("userForm").addEventListener("submit", function(event) {
+    const phone = document.getElementById("phone").value;
+
+    if (!/^\d{10}$/.test(phone)) {
+        alert("El campo de teléfono debe contener exactamente 10 dígitos.");
+        event.preventDefault(); // Evitar el envío del formulario
+    }
+});
+
+document.getElementById("phone").addEventListener("input", function (event) {
+    const input = event.target;
+    const value = input.value;
+
+    // Eliminar cualquier carácter no numérico
+    input.value = value.replace(/\D/g, "");
+
+    // Limitar a 10 dígitos
+    if (input.value.length > 10) {
+        input.value = input.value.slice(0, 10);
+    }
+});

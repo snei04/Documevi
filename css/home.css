@@ -410,6 +410,7 @@ transition: all 800ms cubic-bezier(.8, 0, .33, 1);
   top: 250px;
   transition: all 800ms cubic-bezier(.8, 0, .33, 1);
   font-weight: 900;
+  cursor: pointer;
   }
 .container_users-open{
   margin-left: 80px;
@@ -418,6 +419,13 @@ transition: all 800ms cubic-bezier(.8, 0, .33, 1);
       width: 10%;
       border-collapse: collapse;
      
+  }
+  .grup_img{
+    position: absolute;
+    top: -50px;
+    
+    width: 20%;
+      
   }
   .thead-dark {
       width: 100px;
@@ -435,3 +443,5 @@ transition: all 800ms cubic-bezier(.8, 0, .33, 1);
       color: black;
       font-size: x-large;
   }
+
+ 

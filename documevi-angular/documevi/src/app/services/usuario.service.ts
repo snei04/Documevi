@@ -1,14 +1,21 @@
-import { Injectable } from '@angular/core';
-import axios from 'axios';
+import { Injectable, inject } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Observable } from 'rxjs';
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root' // Esto registra el servicio en el nivel raíz
 })
 export class UsuarioService {
-  private API_URL = 'http://localhost:3306/api/usuarios';
+  private apiUrl = 'http://localhost:3306/usuarios';
 
-  async obtenerUsuarios() {
-    const respuesta = await axios.get(this.API_URL);
-    return respuesta.data;
+  private http=inject(HttpClient);
+  constructor() { }
+
+  getUsuarios(): Observable<any> {
+    return this.http.get(this.apiUrl);
+  }
+
+  addUsuario(usuario: any): Observable<any> {
+    return this.http.post(this.apiUrl, usuario);
   }
 }

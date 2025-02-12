@@ -1,0 +1,124 @@
+*{
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+html{
+  font-size: 62.5%;
+}
+
+:root{
+  --blue-light:#0080C9;
+  --blue-dark: #003D7B;
+  --white: white;
+  --black: black;
+}
+
+.login {
+  color: var(--white);
+  text-transform: uppercase;
+  display: block;
+  font-weight: bold;
+  font-size: xx-large;
+  position: relative;
+  left: 94px;
+ 
+}
+.image_docu{
+  width: 110px;
+  position: relative;
+  left: 130px;
+  top: 10px;
+}
+
+.card {
+  
+  display: flex;
+  justify-content: center;
+  min-height: 650px;
+  width: 420px;
+  flex-direction: column;
+  gap: 35px;
+  background-color: var(--blue-light);
+  border-radius: 8px;
+  
+}
+
+
+.inputBox {
+  position: relative;
+  width: 125px;
+  left: 95px;
+  margin-bottom: 20px;
+}
+
+.inputBox input {
+  
+  width: 150%;
+  padding: 10px;
+  outline: none;
+  border: none;
+  color: #000;
+  font-size: 1rem;
+  background: transparent;
+  border-bottom: 2px solid var(--white);
+  transition: 0.1s;
+  
+}
+
+.inputBox span {
+  margin-top: 5px;
+  position: absolute;
+  left: -20px;
+  transform: translateY(-4px);
+  margin-left: 10px;
+  padding: 10px;
+  pointer-events: none;
+  font-size: 17px;
+  color: var(--white);
+  text-transform: uppercase;
+  transition: 0.5s;  
+  border-radius: 8px;
+  
+}
+
+.inputBox input:valid~span,
+.inputBox input:focus~span {
+  transform: translateX(113px) translateY(-15px);
+  font-size: 0.8em;
+  padding: 5px 10px;
+  background: #000;
+  letter-spacing: 0.2em;
+  color: #fff;
+  border: 2px;
+}
+
+.inputBox input:valid,
+.inputBox input:focus {
+  border: 2px solid #000;
+  border-radius: 8px;
+}
+
+.enter {
+  position: relative;
+  height: 45px;
+  width: 150px;
+  border-radius: 5px;
+  border: 2px solid var(--white);
+  cursor: pointer;
+  background-color: transparent;
+  transition: 0.5s;
+  text-transform: uppercase;
+  font-size: 15px;
+  letter-spacing: 2px;
+  margin-bottom: 1em;
+  color: var(--white);
+  left: 110px;
+}
+
+.enter:hover {
+  background-color: rgb(0, 0, 0);
+  color: white;
+  border: 2px solid var(--black);
+}
+

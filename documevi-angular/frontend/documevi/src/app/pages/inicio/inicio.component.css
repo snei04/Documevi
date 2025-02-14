@@ -28,7 +28,7 @@
 }
 
 .inputBox input {
-  width: 100%;
+  width: 87%;
   padding: 10px;
   outline: none;
   border: none;
@@ -92,10 +92,11 @@
   border: 2px solid black;
 }
 
-#togglePassword {
-  position: relative;
-  top: 55px;
-  left: 132px;
+button {
+  background: none;
+  border: none;
   cursor: pointer;
-  color: white;
+  font-size: 18px;
+  margin-left: 5px;
+  left: 10px;
 }

@@ -1,8 +1,8 @@
-<img class="logo" src="/src/app/assets/images/IMAGE_IMEVI.png" alt="LOGO IMEVI">
+<img class="logo" [src]="img().logoImevi" alt="LOGO IMEVI">
 <div class="container">
   
   <div class="card">
-      <img class="image_docu" src="/src/app/assets/images/LOGO_DOCU.png" alt="Logo docu">
+      <img class="image_docu" [src]="img().logoDocumevi" alt="Logo docu">
       <a class="login">DOCUMEVI</a>
       <div class="inputBox">
           <input type="text" required="required">
@@ -11,8 +11,13 @@
 
       <span id="togglePassword" class="fa fa-eye"></span>
       <div class="inputBox">
-          <input type="password" id="passwordInput" required="required">
           
+          <input [type]="passwordVisible ? 'text' : 'password'" [(ngModel)]="password" placeholder="Contraseña">
+          <button type="button" (click)="togglePasswordVisibility()">
+            <span *ngIf="passwordVisible">🙈</span>
+            <span *ngIf="!passwordVisible">👁️</span>
+          </button>
+
           <span>CONTRASEÑA</span>
           
       </div>

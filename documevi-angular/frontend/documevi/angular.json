@@ -23,11 +23,15 @@
             "assets": [
               {
                 "glob": "**/*",
-                "input": "public"
+                "input": "src/assets/images",
+                "output": "assets/images"
               }
+
             ],
             "styles": [
-              "src/styles.css"
+              "src/styles.css",
+              "src/app/pages/inicio/inicio.component.css",
+              "src/app/pages/dashboard/dashboard.component.css"
             ],
             "scripts": [],
             "server": "src/main.server.ts",

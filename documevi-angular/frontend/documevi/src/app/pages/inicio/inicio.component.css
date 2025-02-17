@@ -37,6 +37,10 @@
   background: transparent;
   border-bottom: 2px solid white;
   transition: 0.1s;
+  
+}
+input::placeholder{
+color: white;
 }
 
 .inputBox span {
@@ -54,8 +58,9 @@
   border-radius: 8px;
 }
 
-.inputBox input:valid ~ span,
-.inputBox input:focus ~ span {
+
+.inputBox input:focus ~ span 
+{
   transform: translateX(113px) translateY(-15px);
   font-size: 0.8em;
   padding: 5px 10px;
@@ -65,7 +70,7 @@
   border: 2px;
 }
 
-.inputBox input:valid,
+
 .inputBox input:focus {
   border: 2px solid #000;
   border-radius: 8px;
@@ -92,11 +97,25 @@
   border: 2px solid black;
 }
 
-button {
-  background: none;
-  border: none;
-  cursor: pointer;
-  font-size: 18px;
-  margin-left: 5px;
-  left: 10px;
+.inputBox button{
+  position: relative;
+
 }
+
+.eye{
+position: relative;
+left: 246px;
+bottom: 13px;
+width: 10px;
+height: 10px;
+background-color: transparent;
+border-radius: transparent;
+}
+.eye span{
+position: relative;
+left: -28px;
+bottom: 7px;
+
+
+}
+

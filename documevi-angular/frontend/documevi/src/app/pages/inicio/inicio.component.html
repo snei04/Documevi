@@ -5,21 +5,18 @@
       <img class="image_docu" [src]="img().logoDocumevi" alt="Logo docu">
       <a class="login">DOCUMEVI</a>
       <div class="inputBox">
-          <input type="text" required="required">
-          <span class="user">DOCUMENTO</span>
+          <input type="number" placeholder="Documento">
+          
       </div>
 
-      <span id="togglePassword" class="fa fa-eye"></span>
+    
       <div class="inputBox">
           
-          <input [type]="passwordVisible ? 'text' : 'password'" [(ngModel)]="password" placeholder="Contraseña">
-          <button type="button" (click)="togglePasswordVisibility()">
+        <input [type]="passwordVisible ? 'text' : 'password'" [(ngModel)]="password" placeholder="Contraseña">
+        <button class="eye" type="button" (click)="togglePasswordVisibility()">
             <span *ngIf="passwordVisible">🙈</span>
             <span *ngIf="!passwordVisible">👁️</span>
           </button>
-
-          <span>CONTRASEÑA</span>
-          
       </div>
 
       <button class="enter">INGRESAR</button>

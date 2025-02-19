@@ -110,12 +110,18 @@ width: 10px;
 height: 10px;
 background-color: transparent;
 border-radius: transparent;
+cursor: pointer;
 }
 .eye span{
 position: relative;
 left: -28px;
 bottom: 7px;
+}
 
-
+a{
+  text-decoration: none;
+  color:white;
+  display: flex;
+  justify-items: flex-start;
 }
 

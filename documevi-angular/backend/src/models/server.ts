@@ -32,8 +32,8 @@ class Server {
     }
     conectarDB(){
         connection.connect((err)=> {
-            
-
+            if(err) throw err;
+            console.log('Conetado a la base de datos')
         })
     }
 }

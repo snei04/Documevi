@@ -1,0 +1,100 @@
+
+
+
+
+html{
+    font-size: 62.5%;   
+}
+
+
+body {
+font-family: Arial, sans-serif;
+background-color: #f4f4f4;
+margin: 0;
+padding: 0;
+display: flex;
+justify-content: center;
+align-items: center;
+height: 100vh;
+}
+
+.form-container {
+background-color: white;
+border-radius: 8px;
+padding: 20px;
+box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+width: 60%;
+box-sizing: border-box;
+display: flex;
+flex-direction: column;
+justify-content: center;
+align-items: center;
+}
+
+.userForm{
+width: 200px;
+}
+
+h2 {
+font-size: large;
+margin-bottom: 30px;
+color: #0080C9;
+
+}
+
+label {
+font-size: 1.5rem;
+margin-bottom: 5px;
+display: block;
+color: #003D7B;
+
+}
+
+input, select, button {
+color: #003D7B;
+width: 100%;
+padding: 8px;
+margin-bottom: 10px;
+border-radius: 4px;
+border: 1.5px solid #0080C9;
+}
+
+button {
+background-color: #0080C9;
+color: white;
+border: none;
+cursor: pointer;
+}
+
+button:hover {
+background-color: #003D7B;
+}
+
+/* Estilos para la tabla */
+table {
+width: 100%;
+border-collapse: collapse;
+margin-top: 20px;
+}
+
+
+table th, table td {
+padding: 10px;
+text-align: left;
+border-bottom: 1px solid #ddd;
+}
+.title_status{
+font-size: 1.5rem;
+font-weight: bolder;
+}
+
+.status {
+display: flex;
+justify-content: space-around;
+}
+
+.success{
+color: #003D7B;
+font-size: 1.5rem;
+margin-top: 10px;
+}

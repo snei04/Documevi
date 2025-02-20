@@ -121,7 +121,6 @@ bottom: 7px;
 a{
   text-decoration: none;
   color:white;
-  display: flex;
-  justify-items: flex-start;
+
 }
 

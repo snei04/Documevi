@@ -19,7 +19,7 @@ export class InicioComponent {
 
 img = signal({
   logoImevi: 'https://imevi.com.co/wp-content/uploads/2024/05/logo-imevi-svg-250v2.svg',
-  logoDocumevi: 'https://1drv.ms/i/s!Ar-JMLTJ-Z32h9gleIgGckzmmx8Jew?e=YCqoFX'
+  logoDocumevi: '../../../assets/images/LOGO_DOCU.png'
 });
 }
 

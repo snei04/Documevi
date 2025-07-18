@@ -1,0 +1,27 @@
+/* src/App.css */
+
+body {
+  margin: 0;
+  font-family: sans-serif;
+  background-color: #FFFFFF; /* Fondo blanco general */
+}
+
+.App {
+  text-align: center;
+  position: relative;
+  min-height: 100vh;
+}
+
+.top-left-logo {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  width: 150px; /* Ajusta el tamaño según sea necesario */
+}
+
+.content-center {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+}

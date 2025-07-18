@@ -1,0 +1,7 @@
+# Ignorar dependencias de Node
+node_modules/
+
+# Opcional pero recomendado: ignorar otras cosas
+.env
+dist/
+*.log

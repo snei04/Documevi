@@ -1,17 +1,67 @@
-// src/App.js
+// Archivo: frontend/src/App.js
+
 import React from 'react';
+// 1. Importamos las herramientas de React Router
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import DashboardLayout from './components/DashboardLayout';
+import DashboardHome from './components/DashboardHome';
+
+// 2. Importamos los componentes que actuarán como "páginas"
 import Login from './components/Login';
-import logoImevi from './assets/logo-imevi.png'; // Importamos el logo de la esquina
+import logoImevi from './assets/logo-imevi.png';
+import GestionDependencias from './components/GestionDependencias';
+import GestionOficinas from './components/GestionOficinas';
+import GestionSeries from './components/GestionSeries';
+import GestionSubseries from './components/GestionSubseries';
+import CapturaDocumento from './components/CapturaDocumento';
+// 3. Importamos el CSS
 import './App.css';
+
+// 4. Creamos un componente especial para proteger nuestras rutas
+const ProtectedRoute = ({ children }) => {
+  const token = localStorage.getItem('token');
+  // Si no hay token, redirige al login. Si lo hay, muestra la página solicitada.
+  return token ? children : <Navigate to="/login" />;
+};
 
 function App() {
   return (
-    <div className="App">
-      <img src={logoImevi} alt="Logo IMEVI" className="top-left-logo" />
-      <div className="content-center">
-        <Login />
+    // 5. Envolvemos todo en el Router
+    <Router>
+      <div className="App">
+        {/* 6. Routes define el área donde cambiarán las páginas */}
+        <Routes>
+          {/* Cuando la URL sea /login, se mostrará el componente Login */}
+          <Route path="/login" element={
+            <>
+                <img src={logoImevi} alt="Logo IMEVI" className="top-left-logo" />
+                <div className="content-center">
+                  <Login />
+                </div>
+              </>
+          } />
+
+          {/* Cuando la URL sea /dashboard... */}
+          <Route 
+          path="/dashboard" 
+          element={
+            <ProtectedRoute>
+              <DashboardLayout />
+            </ProtectedRoute>
+          }
+        >
+          {/* Rutas anidadas que se mostrarán dentro de DashboardLayout */}
+          <Route index element={<DashboardHome />} /> 
+          <Route path="captura" element={<CapturaDocumento />} />
+          <Route path="dependencias" element={<GestionDependencias />} />
+          <Route path="oficinas" element={<GestionOficinas />} />
+          <Route path="series" element={<GestionSeries />} />
+          <Route path="subseries" element={<GestionSubseries />} />
+        </Route>
+          <Route path="/" element={<Navigate to="/dashboard" />} />
+        </Routes>
       </div>
-    </div>
+    </Router>
   );
 }
 

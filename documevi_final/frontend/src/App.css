@@ -7,16 +7,17 @@ body {
 }
 
 .App {
-  text-align: center;
-  position: relative;
+  /* Ocupa toda la pantalla para poder centrar contenido verticalmente */
   min-height: 100vh;
+  position: relative;
 }
 
 .top-left-logo {
   position: absolute;
   top: 20px;
   left: 20px;
-  width: 150px; /* Ajusta el tamaño según sea necesario */
+  width: 150px;
+  z-index: 10; /* Asegura que esté por encima de otros elementos */
 }
 
 .content-center {

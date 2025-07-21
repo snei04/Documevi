@@ -1,59 +1,64 @@
-// src/components/Login.js
 import React, { useState } from 'react';
-import axios from 'axios'; // Asegúrate de tener axios instalado (npm install axios)
-import './Login.css';
+import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
+import './Login.css'; // Asegúrate que aquí están los estilos del spinner que te di antes
 import logoCircular from '../assets/logo-circular.png';
 
 const Login = () => {
   const [formData, setFormData] = useState({
-    // Cambiamos 'usuario' por 'email' para que coincida con el backend
     documento: '',
     password: ''
   });
-
+  // 1. Añadimos el nuevo estado para la carga
+  const [isLoading, setIsLoading] = useState(false);
+  const navigate = useNavigate();
   const { documento, password } = formData;
 
   const onChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
 
-  const onSubmit = async (e) => {
+ const onSubmit = async (e) => {
     e.preventDefault();
+    setIsLoading(true);
+
     try {
-      // 1. Creamos el objeto con los datos que espera el backend
-      const userToLogin = {
-        documento,
-        password
-      };
+      const apiCall = axios.post('http://localhost:4000/api/auth/login', { documento, password });
+      const timer = new Promise(resolve => setTimeout(resolve, 5000));
 
-      // 2. Hacemos la petición POST a la ruta de login de nuestra API
-      const res = await axios.post('http://localhost:4000/api/auth/login', userToLogin);
+      const [apiResponse] = await Promise.all([apiCall, timer]);
 
-      // 3. Si todo sale bien, el backend nos devuelve un token
-      console.log('Login exitoso. Token recibido:', res.data.token);
-      
-      // 4. Guardamos el token en el almacenamiento local del navegador
-      // Esto nos permitirá usarlo en otras partes de la aplicación
-      localStorage.setItem('token', res.data.token);
-
-      alert('¡Inicio de sesión exitoso!');
-      // Aquí, en un futuro, redirigiríamos al usuario al dashboard principal
+      localStorage.setItem('token', apiResponse.data.token);
+      navigate('/dashboard');
 
     } catch (err) {
-      // Si el backend devuelve un error (ej. credenciales inválidas), lo mostramos
-      console.error(err.response.data);
-      alert(err.response.data.msg || 'Error al iniciar sesión');
+      // 👇 MODIFICACIÓN AQUÍ 👇
+      // Esto intenta obtener el mensaje del backend. Si falla, muestra el error de red.
+      const errorMsg = err.response?.data?.msg || err.message || 'Ocurrió un error desconocido.';
+      
+      console.error(err); // Imprimimos el error completo para depurar
+      alert(errorMsg);
+    
+    } finally {
+      setIsLoading(false);
     }
   };
 
   return (
     <div className="login-container">
+      {/* 5. Mostramos el overlay si isLoading es true */}
+      {isLoading && (
+        <div className="loading-overlay">
+          <div className="spinner"></div>
+        </div>
+      )}
+
       <img src={logoCircular} alt="Logo Documevi" className="login-logo" />
       <h2 className="login-title">DOCUMEVI</h2>
 
       <form onSubmit={onSubmit} className="login-form">
         <div className="form-group">
-          {/* Cambiamos el 'for' y 'name' a 'email' */}
-          <label htmlFor="documento" className="form-label">Usuario</label>
-         <input
+          {/* 6. (Opcional) Corregimos la etiqueta para mayor claridad */}
+          <label htmlFor="documento" className="form-label">Documento de usuario</label>
+          <input
             type="text"
             id="documento"
             name="documento"

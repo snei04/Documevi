@@ -2,7 +2,6 @@
 const pool = require('../config/db');
 
 exports.search = async (req, res) => {
-  // Obtenemos el término de búsqueda de la URL (ej: /api/search?q=contrato)
   const { q } = req.query;
 
   if (!q) {
@@ -10,12 +9,18 @@ exports.search = async (req, res) => {
   }
 
   try {
-    const searchTerm = `%${q}%`; // Preparamos el término para usar LIKE
+    const searchTerm = `%${q}%`;
 
-    // Ejecutamos ambas búsquedas en paralelo para mayor eficiencia
     const [documentosResults, expedientesResults] = await Promise.all([
-      pool.query("SELECT id, radicado, asunto FROM documentos WHERE asunto LIKE ?", [searchTerm]),
-      pool.query("SELECT id, nombre_expediente, estado FROM expedientes WHERE nombre_expediente LIKE ?", [searchTerm])
+      // 3. Modificamos la consulta para buscar en el asunto O en el contenido extraído
+      pool.query(
+          "SELECT id, radicado, asunto FROM documentos WHERE asunto LIKE ? OR contenido_extraido LIKE ?", 
+          [searchTerm, searchTerm]
+      ),
+      pool.query(
+          "SELECT id, nombre_expediente, estado FROM expedientes WHERE nombre_expediente LIKE ?", 
+          [searchTerm]
+      )
     ]);
 
     res.json({

@@ -5,6 +5,7 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import DashboardLayout from './components/DashboardLayout';
 import DashboardHome from './components/DashboardHome';
+import Search from './components/Search';
 
 // 2. Importamos los componentes que actuarán como "páginas"
 import Login from './components/Login';
@@ -16,6 +17,9 @@ import GestionSubseries from './components/GestionSubseries';
 import GestionExpedientes from './components/GestionExpedientes';
 import CapturaDocumento from './components/CapturaDocumento';
 import ExpedienteDetalle from './components/ExpedienteDetalle';
+import WorkflowDetalle from './components/WorkflowDetalle';
+import GestionWorkflows from './components/GestionWorkflows';
+import GestionPrestamos from './components/GestionPrestamos';
 // 3. Importamos el CSS
 import './App.css';
 
@@ -54,13 +58,17 @@ function App() {
         >
           {/* Rutas anidadas que se mostrarán dentro de DashboardLayout */}
           <Route index element={<DashboardHome />} /> 
+          <Route path="search" element={<Search />} />
           <Route path="captura" element={<CapturaDocumento />} />
           <Route path="dependencias" element={<GestionDependencias />} />
           <Route path="oficinas" element={<GestionOficinas />} />
           <Route path="series" element={<GestionSeries />} />
           <Route path="subseries" element={<GestionSubseries />} />
           <Route path="expedientes" element={<GestionExpedientes />} />
+          <Route path="workflows" element={<GestionWorkflows />} />
           <Route path="expedientes/:id" element={<ExpedienteDetalle />} />
+          <Route path="workflows/:id" element={<WorkflowDetalle />} />
+          <Route path="prestamos" element={<GestionPrestamos />} />
         </Route>
           <Route path="/" element={<Navigate to="/dashboard" />} />
         </Routes>

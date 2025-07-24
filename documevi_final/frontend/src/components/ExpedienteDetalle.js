@@ -9,6 +9,10 @@ const ExpedienteDetalle = () => {
   const [selectedDocumento, setSelectedDocumento] = useState('');
   const [error, setError] = useState('');
 
+  const [showPrestamoForm, setShowPrestamoForm] = useState(false);
+  const [fechaDevolucion, setFechaDevolucion] = useState('');
+  const [observaciones, setObservaciones] = useState('');
+
   const fetchExpediente = useCallback(async () => {
     try {
       const res = await api.get(`/expedientes/${id}`);
@@ -49,6 +53,41 @@ const ExpedienteDetalle = () => {
     }
   };
 
+  // 👇 ESTA ES LA FUNCIÓN QUE FALTA EN TU CÓDIGO
+  const handleCloseExpediente = async () => {
+    if (window.confirm('¿Estás seguro de que deseas cerrar este expediente? Esta acción no se puede deshacer.')) {
+      try {
+        await api.put(`/expedientes/${id}/cerrar`);
+        alert('Expediente cerrado con éxito.');
+        fetchExpediente(); // Recargar los datos para ver el nuevo estado
+      } catch (err) {
+        alert(err.response?.data?.msg || 'Error al cerrar el expediente.');
+      }
+    }
+  };
+
+  const handleRequestPrestamo = async (e) => {
+    e.preventDefault();
+    if (!fechaDevolucion) {
+      alert('Por favor, seleccione una fecha de devolución prevista.');
+      return;
+    }
+    try {
+      await api.post('/prestamos', {
+        id_expediente: id,
+        fecha_devolucion_prevista: fechaDevolucion,
+        observaciones: observaciones
+      });
+      alert('Solicitud de préstamo enviada con éxito.');
+      setShowPrestamoForm(false); // Ocultar el formulario
+      setFechaDevolucion('');
+      setObservaciones('');
+    } catch (err) {
+      alert(err.response?.data?.msg || 'Error al solicitar el préstamo.');
+    }
+  };
+
+
   if (!expediente) return <div>Cargando...</div>;
 
   return (
@@ -56,19 +95,62 @@ const ExpedienteDetalle = () => {
       <h1>Expediente: {expediente.nombre_expediente}</h1>
       <p><strong>Estado:</strong> {expediente.estado}</p>
 
+      {/* Este botón usa la función que acabamos de añadir */}
+      {expediente.estado === 'En trámite' && (
+        <button 
+          onClick={handleCloseExpediente} 
+          style={{ backgroundColor: 'darkred', color: 'white', border: 'none', padding: '10px', borderRadius: '5px', cursor: 'pointer', marginBottom: '20px' }}
+        >
+          Cerrar Expediente
+        </button>
+      )}
+
+      <button 
+        onClick={() => setShowPrestamoForm(!showPrestamoForm)}
+        style={{ backgroundColor: 'darkblue', color: 'white', border: 'none', padding: '10px', borderRadius: '5px', cursor: 'pointer', marginBottom: '20px', marginLeft: '10px' }}
+      >
+        Solicitar Préstamo
+      </button>
+
+      {showPrestamoForm && (
+        <div style={{ background: '#f0f0f0', padding: '15px', borderRadius: '8px', marginBottom: '20px' }}>
+          <h4>Nueva Solicitud de Préstamo</h4>
+          <form onSubmit={handleRequestPrestamo}>
+            <label htmlFor="fechaDevolucion">Fecha de Devolución Prevista: </label>
+            <input 
+              type="date" 
+              id="fechaDevolucion"
+              value={fechaDevolucion}
+              onChange={(e) => setFechaDevolucion(e.target.value)}
+              required 
+            />
+            <input 
+              type="text"
+              placeholder="Observaciones (opcional)"
+              value={observaciones}
+              onChange={(e) => setObservaciones(e.target.value)}
+              style={{ marginLeft: '10px' }}
+            />
+            <button type="submit" style={{ marginLeft: '10px' }}>Confirmar Solicitud</button>
+          </form>
+        </div>
+      )}
+
       {/* Formulario para añadir documentos */}
-      <div style={{ background: '#fff', padding: '20px', borderRadius: '8px', margin: '20px 0' }}>
-        <h3>Añadir Documento al Expediente (Índice)</h3>
-        <form onSubmit={handleAddDocumento}>
-          <select value={selectedDocumento} onChange={(e) => setSelectedDocumento(e.target.value)}>
-            <option value="">-- Seleccione un documento para añadir --</option>
-            {documentosDisponibles.map(doc => (
-              <option key={doc.id} value={doc.id}>{doc.radicado} - {doc.asunto}</option>
-            ))}
-          </select>
-          <button type="submit" style={{ marginLeft: '10px' }}>Añadir</button>
-        </form>
-      </div>
+      {expediente.estado === 'En trámite' && (
+        <div style={{ background: '#fff', padding: '20px', borderRadius: '8px', margin: '20px 0' }}>
+          <h3>Añadir Documento al Expediente (Índice)</h3>
+          <form onSubmit={handleAddDocumento}>
+            <select value={selectedDocumento} onChange={(e) => setSelectedDocumento(e.target.value)}>
+              <option value="">-- Seleccione un documento para añadir --</option>
+              {documentosDisponibles.map(doc => (
+                <option key={doc.id} value={doc.id}>{doc.radicado} - {doc.asunto}</option>
+              ))}
+            </select>
+            <button type="submit" style={{ marginLeft: '10px' }}>Añadir</button>
+          </form>
+        </div>
+      )}
 
       {/* Índice Electrónico */}
       <h3>Índice Electrónico (Documentos en el Expediente)</h3>

@@ -118,3 +118,39 @@ exports.addDocumentoToExpediente = async (req, res) => {
     res.status(500).json({ msg: 'Error en el servidor', error: error.message });
   }
 };
+
+// Cerrar un expediente
+exports.closeExpediente = async (req, res) => {
+  const { id } = req.params;
+  const id_usuario_accion = req.user.id; // Usuario que realiza la acción
+
+  try {
+    // Primero, verificamos que el expediente exista y esté en el estado correcto
+    const [expedientes] = await pool.query("SELECT estado FROM expedientes WHERE id = ?", [id]);
+
+    if (expedientes.length === 0) {
+      return res.status(404).json({ msg: 'Expediente no encontrado.' });
+    }
+    if (expedientes[0].estado !== 'En trámite') {
+      return res.status(400).json({ msg: 'Solo se pueden cerrar expedientes que están "En trámite".' });
+    }
+
+    // Actualizamos el estado y la fecha de cierre
+    await pool.query(
+      "UPDATE expedientes SET estado = 'Cerrado en Gestión', fecha_cierre = NOW() WHERE id = ?",
+      [id]
+    );
+
+    // Registramos la acción en la auditoría, como lo requieren tus documentos
+    await pool.query(
+      'INSERT INTO auditoria (usuario_id, accion, detalles) VALUES (?, ?, ?)',
+      [id_usuario_accion, 'CIERRE_EXPEDIENTE', `El usuario cerró el expediente con ID ${id}`]
+    );
+
+    res.json({ msg: 'Expediente cerrado con éxito.' });
+
+  } catch (error) {
+    console.error("Error al cerrar el expediente:", error);
+    res.status(500).json({ msg: 'Error en el servidor', error: error.message });
+  }
+};

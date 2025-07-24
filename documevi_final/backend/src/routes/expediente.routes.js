@@ -3,7 +3,8 @@ const {
   getAllExpedientes, 
   createExpediente,
   getExpedienteById,          
-  addDocumentoToExpediente     
+  addDocumentoToExpediente,
+  closeExpediente     
 } = require('../controllers/expediente.controller');
 const authMiddleware = require('../middleware/auth.middleware');
 
@@ -23,5 +24,8 @@ router.route('/:id')
 // Ruta para añadir documentos a un expediente
 router.route('/:id_expediente/documentos')
   .post(addDocumentoToExpediente);
+
+router.route('/:id/cerrar')
+  .put(closeExpediente);
 
 module.exports = router;

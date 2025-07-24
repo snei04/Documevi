@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import api from '../api/axios';
 
 const CapturaDocumento = () => {
+  // ✅ CORRECTO: Todos los hooks y estados van aquí, en el nivel superior del componente.
   const [formData, setFormData] = useState({
     asunto: '',
     id_oficina_productora: '',
@@ -16,13 +17,13 @@ const CapturaDocumento = () => {
   const [oficinas, setOficinas] = useState([]);
   const [series, setSeries] = useState([]);
   const [subseries, setSubseries] = useState([]);
-
   const [filteredOficinas, setFilteredOficinas] = useState([]);
   const [filteredSeries, setFilteredSeries] = useState([]);
   const [filteredSubseries, setFilteredSubseries] = useState([]);
-  
+  const [archivo, setArchivo] = useState(null);
   const [error, setError] = useState('');
 
+  // ✅ CORRECTO: useEffect también va en el nivel superior.
   useEffect(() => {
     const fetchInitialData = async () => {
       try {
@@ -43,6 +44,7 @@ const CapturaDocumento = () => {
     fetchInitialData();
   }, []);
   
+  // ✅ CORRECTO: Todas las funciones 'handle' van aquí.
   const handleDependenciaChange = (e) => {
     const depId = e.target.value;
     setFormData({ ...formData, id_dependencia: depId, id_oficina_productora: '', id_serie: '', id_subserie: '' });
@@ -68,19 +70,35 @@ const CapturaDocumento = () => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
+  const handleFileChange = (e) => {
+    setArchivo(e.target.files[0]);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    if (!archivo) {
+      setError('Debe seleccionar un archivo para subir.');
+      return;
+    }
+
+    const formDataConArchivo = new FormData();
+    // Añadimos todos los campos del estado 'formData' al objeto FormData
+    for (const key in formData) {
+      formDataConArchivo.append(key, formData[key]);
+    }
+    formDataConArchivo.append('archivo', archivo);
+
     try {
-      const res = await api.post('/documentos', formData);
+      const res = await api.post('/documentos', formDataConArchivo, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
       alert(`Documento radicado con éxito. Número de Radicado: ${res.data.radicado}`);
-      // Aquí podrías limpiar el formulario o redirigir
     } catch (err) {
       setError(err.response?.data?.msg || 'Error al radicar el documento.');
     }
   };
 
-  // 👇 ESTA ES LA PARTE QUE ESTABA INCOMPLETA. AHORA USAMOS TODAS LAS VARIABLES Y FUNCIONES.
   return (
     <div style={{ padding: '20px' }}>
       <h1>Captura y Radicación de Documentos</h1>
@@ -111,6 +129,9 @@ const CapturaDocumento = () => {
         <input type="text" name="remitente_nombre" placeholder="Nombre del Remitente" value={formData.remitente_nombre} onChange={handleChange} required />
         <input type="text" name="remitente_identificacion" placeholder="Identificación" value={formData.remitente_identificacion} onChange={handleChange} style={{marginLeft: '10px'}} />
         <input type="text" name="remitente_direccion" placeholder="Dirección" value={formData.remitente_direccion} onChange={handleChange} style={{marginLeft: '10px'}} />
+
+        <h3 style={{marginTop: '20px'}}>Adjuntar Archivo</h3>
+        <input type="file" onChange={handleFileChange} required />
 
         <br/><br/>
         <button type="submit">Radicar Documento</button>

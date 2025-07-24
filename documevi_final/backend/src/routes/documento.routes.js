@@ -1,14 +1,16 @@
-// Archivo: backend/src/routes/documento.routes.js
 const { Router } = require('express');
-const { createDocumento } = require('../controllers/documento.controller');
+// 👇 1. Asegúrate de importar ambas funciones del controlador
+const { createDocumento, getAllDocumentos } = require('../controllers/documento.controller');
 const authMiddleware = require('../middleware/auth.middleware');
+const upload = require('../config/upload');
 
 const router = Router();
 
-// Proteger todas las rutas de documentos
 router.use(authMiddleware);
 
-// POST /api/documentos - Radicar un nuevo documento
-router.post('/', createDocumento);
+// 2. Ahora que las funciones están importadas, esto funcionará
+router.route('/')
+  .get(getAllDocumentos)
+  .post(upload.single('archivo'), createDocumento);
 
 module.exports = router;

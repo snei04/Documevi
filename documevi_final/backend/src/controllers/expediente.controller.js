@@ -1,10 +1,8 @@
-// Archivo: backend/src/controllers/expediente.controller.js
 const pool = require('../config/db');
 
 // Obtener todos los expedientes
 exports.getAllExpedientes = async (req, res) => {
   try {
-    // Unimos con otras tablas para obtener más contexto
     const [rows] = await pool.query(`
       SELECT 
         e.*, 
@@ -32,8 +30,6 @@ exports.createExpediente = async (req, res) => {
     descriptor_1,
     descriptor_2
   } = req.body;
-
-  // El usuario responsable es el que está logueado
   const id_usuario_responsable = req.user.id;
 
   if (!nombre_expediente || !id_serie || !id_subserie) {
@@ -53,6 +49,72 @@ exports.createExpediente = async (req, res) => {
     });
   } catch (error) {
     console.error("Error al crear expediente:", error);
+    res.status(500).json({ msg: 'Error en el servidor', error: error.message });
+  }
+};
+
+exports.getExpedienteById = async (req, res) => {
+  try {
+    const { id } = req.params;
+    // Buscamos los datos del expediente
+    const [expedienteRows] = await pool.query('SELECT * FROM expedientes WHERE id = ?', [id]);
+    if (expedienteRows.length === 0) {
+      return res.status(404).json({ msg: 'Expediente no encontrado.' });
+    }
+
+    // Buscamos los documentos asociados en el índice electrónico
+    const [documentosRows] = await pool.query(`
+      SELECT d.*, ed.orden_foliado, ed.fecha_incorporacion
+      FROM expediente_documentos ed
+      JOIN documentos d ON ed.id_documento = d.id
+      WHERE ed.id_expediente = ?
+      ORDER BY ed.orden_foliado ASC
+    `, [id]);
+
+    res.json({
+      ...expedienteRows[0],
+      documentos: documentosRows
+    });
+
+  } catch (error) {
+    res.status(500).json({ msg: 'Error en el servidor', error: error.message });
+  }
+};
+
+// Añadir un documento a un expediente (Índice Electrónico)
+exports.addDocumentoToExpediente = async (req, res) => {
+  const { id_expediente } = req.params;
+  const { id_documento } = req.body;
+
+  if (!id_documento) {
+    return res.status(400).json({ msg: 'El ID del documento es obligatorio.' });
+  }
+
+  try {
+    // Calculamos el siguiente número de foliado
+    const [folioRows] = await pool.query(
+      'SELECT MAX(orden_foliado) as max_folio FROM expediente_documentos WHERE id_expediente = ?',
+      [id_expediente]
+    );
+    const nuevoFolio = (folioRows[0].max_folio || 0) + 1;
+
+    // Insertamos el registro en la tabla pivote (el índice)
+    const [result] = await pool.query(
+      'INSERT INTO expediente_documentos (id_expediente, id_documento, orden_foliado) VALUES (?, ?, ?)',
+      [id_expediente, id_documento, nuevoFolio]
+    );
+
+    res.status(201).json({ 
+      id: result.insertId,
+      id_expediente,
+      id_documento,
+      orden_foliado: nuevoFolio
+    });
+
+  } catch (error) {
+    if (error.code === 'ER_DUP_ENTRY') {
+      return res.status(400).json({ msg: 'Este documento ya existe en el expediente.' });
+    }
     res.status(500).json({ msg: 'Error en el servidor', error: error.message });
   }
 };

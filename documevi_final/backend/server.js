@@ -15,6 +15,7 @@ const serieRoutes = require('./src/routes/serie.routes.js');
 const subserieRoutes = require('./src/routes/subserie.routes.js');
 const documentoRoutes = require('./src/routes/documento.routes.js');
 const expedienteRoutes = require('./src/routes/expediente.routes.js');
+const searchRoutes = require('./src/routes/search.routes.js');
 // Inicialización de Express
 const app = express();
 
@@ -36,6 +37,7 @@ app.use('/api/series', serieRoutes);
 app.use('/api/subseries', subserieRoutes);
 app.use('/api/documentos', documentoRoutes);
 app.use('/api/expedientes', expedienteRoutes);
+app.use('/api/search', searchRoutes);
 // --- Iniciar el Servidor ---
 const PORT = process.env.PORT || 4000;
 app.listen(PORT, () => {

@@ -12,6 +12,7 @@ const Sidebar = ({ isOpen }) => {
       <ul>
         <li><Link to="/dashboard">Inicio</Link></li>
         <li><Link to="/dashboard/captura">Captura de documentos</Link></li>
+        <li><Link to="/dashboard/expedientes">Gestión de expedientes</Link></li>
         <li><Link to="/dashboard/dependencias">Gestión de Dependencias</Link></li>
         <li><Link to="/dashboard/oficinas">Gestión de Oficinas</Link></li>
         <li><Link to="/dashboard/series">Gestión de Series (TRD)</Link></li>

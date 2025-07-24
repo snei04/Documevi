@@ -13,7 +13,9 @@ import GestionDependencias from './components/GestionDependencias';
 import GestionOficinas from './components/GestionOficinas';
 import GestionSeries from './components/GestionSeries';
 import GestionSubseries from './components/GestionSubseries';
+import GestionExpedientes from './components/GestionExpedientes';
 import CapturaDocumento from './components/CapturaDocumento';
+import ExpedienteDetalle from './components/ExpedienteDetalle';
 // 3. Importamos el CSS
 import './App.css';
 
@@ -57,6 +59,8 @@ function App() {
           <Route path="oficinas" element={<GestionOficinas />} />
           <Route path="series" element={<GestionSeries />} />
           <Route path="subseries" element={<GestionSubseries />} />
+          <Route path="expedientes" element={<GestionExpedientes />} />
+          <Route path="expedientes/:id" element={<ExpedienteDetalle />} />
         </Route>
           <Route path="/" element={<Navigate to="/dashboard" />} />
         </Routes>

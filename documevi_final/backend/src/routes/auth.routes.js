@@ -1,17 +1,15 @@
-// Archivo: backend/src/routes/auth.routes.js
-
 const { Router } = require('express');
 const { check } = require('express-validator');
-const { registerUser, loginUser } = require('../controllers/auth.controller');
+// 👇 1. AÑADE 'getAuthenticatedUser' A LA IMPORTACIÓN
+const { registerUser, loginUser, getAuthenticatedUser } = require('../controllers/auth.controller');
+const authMiddleware = require('../middleware/auth.middleware');
 
 const router = Router();
 
 // Ruta para registrar un nuevo usuario
-// POST /api/auth/register
 router.post(
   '/register',
   [
-    // Validadores de ingreso
     check('nombre_completo', 'El nombre es obligatorio').not().isEmpty(),
     check('email', 'El email no es válido').isEmail(),
     check('documento', 'El documento es obligatorio').not().isEmpty(),
@@ -22,7 +20,6 @@ router.post(
 );
 
 // Ruta para iniciar sesión
-// POST /api/auth/login
 router.post(
   '/login',
   [
@@ -31,5 +28,8 @@ router.post(
   ],
   loginUser
 );
+
+// GET /api/auth/me - Devuelve el usuario actual
+router.get('/me', authMiddleware, getAuthenticatedUser); // <-- 2. AHORA ESTA LÍNEA FUNCIONARÁ
 
 module.exports = router;

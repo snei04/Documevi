@@ -111,3 +111,16 @@
   color: #0077B6;
   margin: 10px 0 0 0;
 }
+
+/* El submenú por defecto está oculto */
+.submenu {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease-out;
+}
+
+/* Cuando el submenú tiene la clase 'open', se expande */
+.submenu.open {
+  max-height: 500px; /* Se hace visible */
+  transition: max-height 0.5s ease-in;
+}

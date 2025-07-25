@@ -6,16 +6,15 @@ import Sidebar from './Sidebar';
 import './Dashboard.css';
 
 const DashboardLayout = () => {
-  const [isSidebarOpen, setSidebarOpen] = useState(true);
+  // 👇 AQUÍ ESTÁ EL CAMBIO. Inicia en 'false' para que el menú esté oculto.
+  const [isSidebarOpen, setSidebarOpen] = useState(false);
   
-  // 1. El estado de las dependencias ahora vive en el componente padre.
   const [dependencias, setDependencias] = useState([]);
 
   const toggleSidebar = () => {
     setSidebarOpen(!isSidebarOpen);
   };
 
-  // 2. Función para obtener/refrescar la lista de dependencias.
   const fetchDependencias = async () => {
     try {
       const res = await api.get('/dependencias');
@@ -25,7 +24,6 @@ const DashboardLayout = () => {
     }
   };
 
-  // 3. Obtenemos la lista cuando el layout se carga por primera vez.
   useEffect(() => {
     fetchDependencias();
   }, []);
@@ -36,7 +34,6 @@ const DashboardLayout = () => {
       <div className="dashboard-body">
         <Sidebar isOpen={isSidebarOpen} />
         <main className="main-content">
-          {/* 4. Pasamos la lista y la función de refresco a los componentes hijos */}
           <Outlet context={{ dependencias, refreshDependencias: fetchDependencias }} />
         </main>
       </div>

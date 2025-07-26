@@ -13,6 +13,10 @@ const ExpedienteDetalle = () => {
   const [fechaDevolucion, setFechaDevolucion] = useState('');
   const [observaciones, setObservaciones] = useState('');
 
+  const [workflows, setWorkflows] = useState([]);
+  const [selectedWorkflow, setSelectedWorkflow] = useState('');
+  const [targetDocumentoId, setTargetDocumentoId] = useState(null);
+
   const fetchExpediente = useCallback(async () => {
     try {
       const res = await api.get(`/expedientes/${id}`);
@@ -34,7 +38,18 @@ const ExpedienteDetalle = () => {
         console.error("Error cargando la lista de documentos", err);
       }
     };
+
+    const fetchAllWorkflows = async () => {
+      try {
+        const res = await api.get('/workflows');
+        setWorkflows(res.data);
+      } catch (err) {
+        console.error("Error cargando la lista de workflows", err);
+      }
+    };
+
     fetchAllDocumentos();
+    fetchAllWorkflows();
   }, [id, fetchExpediente]);
 
   const handleAddDocumento = async (e) => {
@@ -84,6 +99,22 @@ const ExpedienteDetalle = () => {
       setObservaciones('');
     } catch (err) {
       alert(err.response?.data?.msg || 'Error al solicitar el préstamo.');
+    }
+  };
+
+  const handleStartWorkflow = async (e) => {
+    e.preventDefault();
+    if (!selectedWorkflow) {
+      alert('Por favor, seleccione un flujo de trabajo.');
+      return;
+    }
+    try {
+      await api.post(`/documentos/${targetDocumentoId}/start-workflow`, { id_workflow: selectedWorkflow });
+      alert('Workflow iniciado con éxito para el documento.');
+      setTargetDocumentoId(null);
+      setSelectedWorkflow('');
+    } catch (err) {
+      alert(err.response?.data?.msg || 'Error al iniciar el workflow.');
     }
   };
 
@@ -161,6 +192,7 @@ const ExpedienteDetalle = () => {
             <th>Radicado</th>
             <th>Asunto</th>
             <th>Fecha de Incorporación</th>
+            <th>Acciones</th>
           </tr>
         </thead>
         <tbody>
@@ -170,6 +202,27 @@ const ExpedienteDetalle = () => {
               <td>{doc.radicado}</td>
               <td>{doc.asunto}</td>
               <td>{new Date(doc.fecha_incorporacion).toLocaleString()}</td>
+              <td style={{ padding: '8px' }}>
+              {targetDocumentoId === doc.id ? (
+                                    // Si este es el documento seleccionado, muestra el formulario
+                                    <form onSubmit={handleStartWorkflow}>
+                                        <select value={selectedWorkflow} onChange={(e) => setSelectedWorkflow(e.target.value)} required>
+                                            <option value="">-- Seleccionar Workflow --</option>
+                                            {workflows.map(wf => (
+                                                <option key={wf.id} value={wf.id}>{wf.nombre}</option>
+                                            ))}
+                                        </select>
+                                        <button type="submit" style={{ marginLeft: '5px' }}>Confirmar</button>
+                                        <button type="button" onClick={() => setTargetDocumentoId(null)} style={{ marginLeft: '5px' }}>Cancelar</button>
+                                    </form>
+                                ) : (
+                                    // Si no, muestra el botón para iniciar
+                                    <button onClick={() => setTargetDocumentoId(doc.id)}>
+                                        Iniciar Workflow
+                                    </button>
+                                )}
+                                </td>
+                                
             </tr>
           ))}
         </tbody>

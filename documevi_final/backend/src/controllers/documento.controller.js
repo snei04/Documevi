@@ -72,3 +72,84 @@ exports.createDocumento = async (req, res) => {
         res.status(500).json({ msg: 'Error en el servidor', error: error.message });
     }
 };
+
+exports.startWorkflow = async (req, res) => {
+    const { id: id_documento } = req.params;
+    const { id_workflow } = req.body;
+
+    if (!id_workflow) {
+        return res.status(400).json({ msg: 'El ID del workflow es obligatorio.' });
+    }
+
+    try {
+        // 1. Buscar el primer paso (orden=1) del workflow seleccionado
+        const [pasos] = await pool.query(
+            'SELECT id FROM workflow_pasos WHERE id_workflow = ? ORDER BY orden ASC LIMIT 1',
+            [id_workflow]
+        );
+
+        if (pasos.length === 0) {
+            return res.status(404).json({ msg: 'El workflow no tiene pasos definidos.' });
+        }
+        const id_primer_paso = pasos[0].id;
+
+        // 2. Crear el registro en la tabla de seguimiento
+        await pool.query(
+            'INSERT INTO documento_workflows (id_documento, id_workflow, id_paso_actual, id_usuario_actual) VALUES (?, ?, ?, ?)',
+            [id_documento, id_workflow, id_primer_paso, req.user.id]
+        );
+
+        res.status(201).json({ msg: 'Workflow iniciado con éxito.' });
+    } catch (error) {
+        if (error.code === 'ER_DUP_ENTRY') {
+            return res.status(400).json({ msg: 'Este documento ya tiene un workflow activo.' });
+        }
+        res.status(500).json({ msg: 'Error en el servidor', error: error.message });
+    }
+};
+
+exports.advanceWorkflow = async (req, res) => {
+    const { id: id_documento } = req.params;
+
+    try {
+        // 1. Obtener el estado actual del workflow del documento
+        const [currentStatus] = await pool.query(
+            `SELECT dw.id as tracking_id, dw.id_workflow, wp.orden as orden_actual
+             FROM documento_workflows dw
+             JOIN workflow_pasos wp ON dw.id_paso_actual = wp.id
+             WHERE dw.id_documento = ?`,
+            [id_documento]
+        );
+
+        if (currentStatus.length === 0) {
+            return res.status(404).json({ msg: 'El documento no está en ningún workflow.' });
+        }
+
+        const { tracking_id, id_workflow, orden_actual } = currentStatus[0];
+
+        // 2. Buscar el siguiente paso en la secuencia
+        const [nextStep] = await pool.query(
+            'SELECT id FROM workflow_pasos WHERE id_workflow = ? AND orden > ? ORDER BY orden ASC LIMIT 1',
+            [id_workflow, orden_actual]
+        );
+
+        if (nextStep.length > 0) {
+            // 3. Si hay un siguiente paso, actualizamos el registro
+            const id_siguiente_paso = nextStep[0].id;
+            await pool.query(
+                'UPDATE documento_workflows SET id_paso_actual = ?, id_usuario_actual = ? WHERE id = ?',
+                [id_siguiente_paso, req.user.id, tracking_id]
+            );
+            res.json({ msg: 'Documento avanzado al siguiente paso.' });
+        } else {
+            // 4. Si no hay más pasos, completamos el workflow
+            await pool.query(
+                "UPDATE documento_workflows SET estado = 'Completado', fecha_fin = NOW(), id_usuario_actual = ? WHERE id = ?",
+                [req.user.id, tracking_id]
+            );
+            res.json({ msg: 'Workflow completado con éxito.' });
+        }
+    } catch (error) {
+        res.status(500).json({ msg: 'Error en el servidor', error: error.message });
+    }
+};

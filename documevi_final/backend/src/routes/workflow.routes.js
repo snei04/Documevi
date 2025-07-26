@@ -1,12 +1,15 @@
 // Archivo: backend/src/routes/workflow.routes.js
 const { Router } = require('express');
-const { getAllWorkflows, createWorkflow, getWorkflowPasos, createWorkflowPaso, getWorkflowById } = require('../controllers/workflow.controller');
+const { getAllWorkflows, createWorkflow, getWorkflowPasos, createWorkflowPaso, getWorkflowById, getMyTasks  } = require('../controllers/workflow.controller');
 const authMiddleware = require('../middleware/auth.middleware');
 
 const router = Router();
 
 // Proteger todas las rutas
 router.use(authMiddleware);
+
+// Ruta para obtener las tareas del usuario logueado
+router.get('/tareas', getMyTasks);
 
 // Rutas para la colección de workflows
 router.route('/')

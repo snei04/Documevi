@@ -20,6 +20,9 @@ import ExpedienteDetalle from './components/ExpedienteDetalle';
 import WorkflowDetalle from './components/WorkflowDetalle';
 import GestionWorkflows from './components/GestionWorkflows';
 import GestionPrestamos from './components/GestionPrestamos';
+import MisTareas from './components/MisTareas';
+import GestionUsuarios from './components/GestionUsuarios';
+import ReporteFUID from './components/ReporteFUID';
 // 3. Importamos el CSS
 import './App.css';
 
@@ -58,6 +61,7 @@ function App() {
         >
           {/* Rutas anidadas que se mostrarán dentro de DashboardLayout */}
           <Route index element={<DashboardHome />} /> 
+          <Route path="mis-tareas" element={<MisTareas />} />
           <Route path="search" element={<Search />} />
           <Route path="captura" element={<CapturaDocumento />} />
           <Route path="dependencias" element={<GestionDependencias />} />
@@ -69,6 +73,8 @@ function App() {
           <Route path="expedientes/:id" element={<ExpedienteDetalle />} />
           <Route path="workflows/:id" element={<WorkflowDetalle />} />
           <Route path="prestamos" element={<GestionPrestamos />} />
+          <Route path="usuarios" element={<GestionUsuarios />} />
+          <Route path="reportes-fuid" element={<ReporteFUID />} />
         </Route>
           <Route path="/" element={<Navigate to="/dashboard" />} />
         </Routes>

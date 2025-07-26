@@ -18,6 +18,7 @@ const Sidebar = ({ isOpen }) => {
       <ul>
         {/* --- Menús Principales --- */}
         <li className="sidebar-item"><Link to="/dashboard">Inicio</Link></li>
+        <li className="sidebar-item"><Link to="/dashboard/mis-tareas">Mis Tareas</Link></li>
 
         {/* --- Menú Desplegable: Gestión Documental --- */}
         <li className="sidebar-item">
@@ -53,6 +54,7 @@ const Sidebar = ({ isOpen }) => {
           </div>
           <ul className={openMenu === 'admin' ? 'submenu open' : 'submenu'}>
             <li><Link to="/dashboard/usuarios">Gestión de Usuarios</Link></li>
+            <li><Link to="/dashboard/reportes-fuid">Reporte FUID</Link></li>
             <li><Link to="/dashboard/estadisticas">Estadísticas</Link></li>
           </ul>
         </li>

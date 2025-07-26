@@ -19,6 +19,9 @@ const searchRoutes = require('./src/routes/search.routes.js');
 const workflowRoutes = require('./src/routes/workflow.routes.js');
 const rolRoutes = require('./src/routes/rol.routes.js');
 const prestamoRoutes = require('./src/routes/prestamo.routes.js');
+const usuarioRoutes = require('./src/routes/usuario.routes.js');
+const statsRoutes = require('./src/routes/stats.routes.js');
+const reporteRoutes = require('./src/routes/reporte.routes.js');
 // Inicialización de Express
 const app = express();
 
@@ -44,6 +47,9 @@ app.use('/api/search', searchRoutes);
 app.use('/api/workflows', workflowRoutes);
 app.use('/api/roles', rolRoutes);
 app.use('/api/prestamos', prestamoRoutes);
+app.use('/api/usuarios', usuarioRoutes);
+app.use('/api/stats', statsRoutes);
+app.use('/api/reportes', reporteRoutes);
 // --- Iniciar el Servidor ---
 const PORT = process.env.PORT || 4000;
 app.listen(PORT, () => {

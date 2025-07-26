@@ -2,6 +2,7 @@ const { validationResult } = require('express-validator');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const pool = require('../config/db');
+const { sendEmail } = require('../services/email.service');
 
 /**
  * Registra un nuevo usuario en la base de datos.
@@ -26,9 +27,14 @@ exports.registerUser = async (req, res) => {
     const [result] = await pool.query(
       'INSERT INTO usuarios (nombre_completo, email, documento, password, rol_id) VALUES (?, ?, ?, ?, ?)',
       [nombre_completo, email, documento, hashedPassword, rol_id]
+      
     );
     const userId = result.insertId;
-    
+    const subject = '¡Bienvenido a Documevi!';
+    const text = `Hola ${nombre_completo}, tu cuenta ha sido creada exitosamente.`;
+    const html = `<b>Hola ${nombre_completo},</b><p>Tu cuenta en el Sistema de Gestión Documental IMEVI ha sido creada exitosamente.</p>`;
+    await sendEmail(email, subject, text, html);
+
     const payload = {
       user: {
         id: userId,
@@ -121,4 +127,6 @@ exports.getAuthenticatedUser = async (req, res) => {
     console.error(error.message);
     res.status(500).send('Error en el servidor');
   }
+
 };
+

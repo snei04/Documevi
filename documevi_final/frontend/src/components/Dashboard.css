@@ -8,7 +8,7 @@
 
 /* Barra superior */
 .header {
-  background-color: #0077B6;
+  background-color: #0080C9;
   color: white;
   display: flex;
   align-items: center;
@@ -43,7 +43,7 @@
 
 /* Barra lateral */
 .sidebar {
-  background-color: #0077B6;
+  background-color: #0080C9;
   color: white;
   width: 250px;
   padding: 20px;
@@ -55,7 +55,7 @@
   margin: 0;
 }
 .sidebar ul li {
-  padding: 15px 10px;
+  padding: 10px 10px;
   cursor: pointer;
   border-radius: 5px;
 }
@@ -83,7 +83,7 @@
   color: white;
   text-decoration: none;
   display: block;
-  padding: 15px 10px;
+  padding: 10px 10px;
 }
 /* Estilos para el dashboard de estadísticas */
 .stats-container {
@@ -108,7 +108,7 @@
 .stat-number {
   font-size: 2.5em;
   font-weight: bold;
-  color: #0077B6;
+  color: #0080C9;
   margin: 10px 0 0 0;
 }
 
@@ -123,4 +123,15 @@
 .submenu.open {
   max-height: 500px; /* Se hace visible */
   transition: max-height 0.5s ease-in;
+
+  
+}
+.stat-card-link {
+  text-decoration: none;
+  color: inherit;
+  display: flex;
+}
+.stat-card-link:hover {
+  text-decoration: none;
+  color: inherit;
 }

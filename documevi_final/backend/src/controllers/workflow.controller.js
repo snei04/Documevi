@@ -90,3 +90,29 @@ exports.getWorkflowById = async (req, res) => {
     res.status(500).json({ msg: 'Error en el servidor', error: error.message });
   }
 };
+
+exports.getMyTasks = async (req, res) => {
+  const userRoleId = req.user.rol; // Obtenemos el ROL del usuario desde el token
+
+  try {
+    const [tasks] = await pool.query(`
+      SELECT 
+        dw.id as id_seguimiento,
+        d.id as id_documento,
+        d.radicado,
+        d.asunto,
+        w.nombre as nombre_workflow,
+        wp.nombre_paso as paso_actual
+      FROM documento_workflows dw
+      JOIN documentos d ON dw.id_documento = d.id
+      JOIN workflows w ON dw.id_workflow = w.id
+      JOIN workflow_pasos wp ON dw.id_paso_actual = wp.id
+      WHERE wp.id_rol_responsable = ? AND dw.estado = 'En Progreso'
+    `, [userRoleId]);
+
+    res.json(tasks);
+  } catch (error) {
+    console.error("Error al obtener tareas:", error);
+    res.status(500).json({ msg: 'Error en el servidor', error: error.message });
+  }
+};

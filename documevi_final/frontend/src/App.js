@@ -23,6 +23,7 @@ import GestionPrestamos from './components/GestionPrestamos';
 import MisTareas from './components/MisTareas';
 import GestionUsuarios from './components/GestionUsuarios';
 import ReporteFUID from './components/ReporteFUID';
+import SetPassword from './components/SetPassword';
 // 3. Importamos el CSS
 import './App.css';
 
@@ -49,8 +50,7 @@ function App() {
                 </div>
               </>
           } />
-
-          {/* Cuando la URL sea /dashboard... */}
+          <Route path="/set-password/:token" element={<SetPassword />} />
           <Route 
           path="/dashboard" 
           element={
@@ -75,6 +75,7 @@ function App() {
           <Route path="prestamos" element={<GestionPrestamos />} />
           <Route path="usuarios" element={<GestionUsuarios />} />
           <Route path="reportes-fuid" element={<ReporteFUID />} />
+          
         </Route>
           <Route path="/" element={<Navigate to="/dashboard" />} />
         </Routes>

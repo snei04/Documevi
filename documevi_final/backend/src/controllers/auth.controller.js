@@ -4,6 +4,7 @@ const jwt = require('jsonwebtoken');
 const pool = require('../config/db');
 const { sendEmail } = require('../services/email.service');
 
+
 /**
  * Registra un nuevo usuario en la base de datos.
  */
@@ -128,5 +129,38 @@ exports.getAuthenticatedUser = async (req, res) => {
     res.status(500).send('Error en el servidor');
   }
 
+};
+
+exports.setPassword = async (req, res) => {
+  const { token, password } = req.body;
+
+  try {
+    // 1. Buscar al usuario con el token que no haya expirado
+    const [users] = await pool.query(
+      'SELECT * FROM usuarios WHERE password_reset_token = ? AND password_reset_expires > NOW()',
+      [token]
+    );
+
+    if (users.length === 0) {
+      return res.status(400).json({ msg: 'El token es inválido o ha expirado.' });
+    }
+
+    const user = users[0];
+
+    // 2. Hashear y guardar la nueva contraseña
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
+
+    // 3. Actualizar el usuario: establecer contraseña, activarlo y limpiar el token
+    await pool.query(
+      'UPDATE usuarios SET password = ?, activo = true, password_reset_token = NULL, password_reset_expires = NULL WHERE id = ?',
+      [hashedPassword, user.id]
+    );
+
+    res.json({ msg: 'Contraseña establecida con éxito. Ahora puedes iniciar sesión.' });
+
+  } catch (error) {
+    res.status(500).json({ msg: 'Error en el servidor' });
+  }
 };
 

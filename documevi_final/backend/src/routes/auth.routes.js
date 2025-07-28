@@ -1,7 +1,6 @@
 const { Router } = require('express');
 const { check } = require('express-validator');
-// 👇 1. AÑADE 'getAuthenticatedUser' A LA IMPORTACIÓN
-const { registerUser, loginUser, getAuthenticatedUser } = require('../controllers/auth.controller');
+const { setPassword, registerUser, loginUser, getAuthenticatedUser } = require('../controllers/auth.controller');
 const authMiddleware = require('../middleware/auth.middleware');
 
 const router = Router();
@@ -28,6 +27,7 @@ router.post(
   ],
   loginUser
 );
+router.post('/set-password', setPassword); // Nueva ruta
 
 // GET /api/auth/me - Devuelve el usuario actual
 router.get('/me', authMiddleware, getAuthenticatedUser); // <-- 2. AHORA ESTA LÍNEA FUNCIONARÁ

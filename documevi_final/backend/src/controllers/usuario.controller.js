@@ -1,5 +1,7 @@
 // Archivo: backend/src/controllers/usuario.controller.js
 const pool = require('../config/db');
+const crypto = require('crypto'); // Módulo nativo de Node.js para generar tokens
+const { sendEmail } = require('../services/email.service');
 
 // Obtener todos los usuarios
 exports.getAllUsers = async (req, res) => {
@@ -13,6 +15,42 @@ exports.getAllUsers = async (req, res) => {
     res.json(rows);
   } catch (error) {
     res.status(500).json({ msg: 'Error en el servidor', error: error.message });
+  }
+};
+
+// Invitar a un nuevo usuario
+exports.inviteUser = async (req, res) => {
+  const { nombre_completo, email, documento, rol_id } = req.body;
+
+  try {
+    // 1. Verificar que el usuario no exista
+    const [existingUser] = await pool.query('SELECT * FROM usuarios WHERE email = ? OR documento = ?', [email, documento]);
+    if (existingUser.length > 0) {
+      return res.status(400).json({ msg: 'El correo o documento ya está registrado.' });
+    }
+
+    // 2. Generar un token único y seguro
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    const passwordResetExpires = new Date(Date.now() + 3600000); // Token válido por 1 hora
+
+    // 3. Crear el usuario sin contraseña y con el token
+    const [result] = await pool.query(
+      'INSERT INTO usuarios (nombre_completo, email, documento, rol_id, activo, password_reset_token, password_reset_expires) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      [nombre_completo, email, documento, rol_id, false, resetToken, passwordResetExpires] // El usuario empieza como inactivo
+    );
+
+    // 4. Enviar el correo de invitación
+    const inviteURL = `http://localhost:3000/set-password/${resetToken}`;
+    const subject = 'Invitación para unirte a Documevi';
+    const text = `Hola ${nombre_completo},\n\nHas sido invitado a unirte a Documevi. Por favor, haz clic en el siguiente enlace o pégalo en tu navegador para crear tu contraseña:\n\n${inviteURL}\n\nSi no esperabas esta invitación, por favor ignora este correo.\n`;
+    
+    await sendEmail(email, subject, text);
+
+    res.status(201).json({ msg: 'Invitación enviada con éxito.' });
+
+  } catch (error) {
+    console.error("Error al invitar usuario:", error);
+    res.status(500).json({ msg: 'Error en el servidor' });
   }
 };
 

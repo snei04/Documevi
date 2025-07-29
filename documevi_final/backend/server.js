@@ -1,6 +1,7 @@
 // Archivo: backend/server.js
 
 const express = require('express');
+const path = require('path');
 const dotenv = require('dotenv');
 const cors = require('cors');
 
@@ -22,6 +23,8 @@ const prestamoRoutes = require('./src/routes/prestamo.routes.js');
 const usuarioRoutes = require('./src/routes/usuario.routes.js');
 const statsRoutes = require('./src/routes/stats.routes.js');
 const reporteRoutes = require('./src/routes/reporte.routes.js');
+const auditoriaRoutes = require('./src/routes/auditoria.routes.js');
+
 // Inicialización de Express
 const app = express();
 
@@ -34,6 +37,8 @@ app.use(express.json());
 app.get('/api', (req, res) => {
   res.json({ message: '¡API del Sistema de Gestión Documental IMEVI funcionando!' });
 });
+// Ruta para servir archivos estáticos (como imágenes, documentos, etc.)
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Conexión de las rutas a sus prefijos en la API
 app.use('/api/auth', authRoutes); 
@@ -50,6 +55,7 @@ app.use('/api/prestamos', prestamoRoutes);
 app.use('/api/usuarios', usuarioRoutes);
 app.use('/api/stats', statsRoutes);
 app.use('/api/reportes', reporteRoutes);
+app.use('/api/auditoria', auditoriaRoutes);
 // --- Iniciar el Servidor ---
 const PORT = process.env.PORT || 4000;
 app.listen(PORT, () => {

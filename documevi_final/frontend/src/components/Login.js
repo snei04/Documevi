@@ -3,6 +3,7 @@ import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import './Login.css'; // Asegúrate que aquí están los estilos del spinner que te di antes
 import logoCircular from '../assets/logo-circular.png';
+import { toast } from 'react-toastify';
 
 const Login = () => {
   const [formData, setFormData] = useState({
@@ -27,7 +28,9 @@ const Login = () => {
       const [apiResponse] = await Promise.all([apiCall, timer]);
 
       localStorage.setItem('token', apiResponse.data.token);
+       toast.success('¡Inicio de sesión exitoso!');
       navigate('/dashboard');
+
 
     } catch (err) {
       // 👇 MODIFICACIÓN AQUÍ 👇
@@ -35,7 +38,7 @@ const Login = () => {
       const errorMsg = err.response?.data?.msg || err.message || 'Ocurrió un error desconocido.';
       
       console.error(err); // Imprimimos el error completo para depurar
-      alert(errorMsg);
+      toast.error(errorMsg);
     
     } finally {
       setIsLoading(false);

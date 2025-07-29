@@ -26,6 +26,8 @@ import ReporteFUID from './components/ReporteFUID';
 import SetPassword from './components/SetPassword';
 import GestionAuditoria from './components/GestionAuditoria';
 import Estadisticas from './components/Estadisticas';
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 // 3. Importamos el CSS
 import './App.css';
 
@@ -40,6 +42,17 @@ function App() {
   return (
     // 5. Envolvemos todo en el Router
     <Router>
+      <ToastContainer
+        position="top-right"
+        autoClose={5000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+      />
       <div className="App">
         {/* 6. Routes define el área donde cambiarán las páginas */}
         <Routes>

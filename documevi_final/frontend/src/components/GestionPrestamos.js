@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import api from '../api/axios';
+import { toast } from 'react-toastify';
 
 const GestionPrestamos = () => {
   const [prestamos, setPrestamos] = useState([]);
@@ -21,10 +22,10 @@ const GestionPrestamos = () => {
   const handleUpdateStatus = async (id, estado) => {
     try {
       await api.put(`/prestamos/${id}/status`, { estado });
-      alert(`Préstamo actualizado a: ${estado}`);
+      toast.success(`Préstamo actualizado a: ${estado}`);
       fetchPrestamos(); // Recargar la lista
     } catch (err) {
-      alert(err.response?.data?.msg || 'Error al actualizar el estado.');
+      toast.error(err.response?.data?.msg || 'Error al actualizar el estado.');
     }
   };
 

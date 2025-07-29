@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import api from '../api/axios';
+import { toast } from 'react-toastify';
 
 const GestionUsuarios = () => {
   const [users, setUsers] = useState([]);
@@ -40,10 +41,10 @@ const GestionUsuarios = () => {
   const handleUpdate = async (userId, dataToUpdate) => {
     try {
       await api.put(`/usuarios/${userId}`, dataToUpdate);
-      alert('Usuario actualizado con éxito.');
+      toast.success('Usuario actualizado con éxito.');
       fetchUsers();
     } catch (err) {
-      alert(err.response?.data?.msg || 'Error al actualizar el usuario.');
+      toast.error(err.response?.data?.msg || 'Error al actualizar el usuario.');
     }
   };
 
@@ -54,17 +55,17 @@ const GestionUsuarios = () => {
   const handleInviteUser = async (e) => {
     e.preventDefault();
     if (!newUser.rol_id) {
-      alert("Por favor, seleccione un rol para el nuevo usuario.");
+      toast.success("Por favor, seleccione un rol para el nuevo usuario.");
       return;
     }
     try {
       await api.post('/usuarios/invite', newUser);
-      alert('Invitación enviada con éxito.');
+      toast.success('Invitación enviada con éxito.');
       setShowCreateForm(false);
       setNewUser({ nombre_completo: '', email: '', documento: '', rol_id: '' });
       fetchUsers();
     } catch (err) {
-      alert(err.response?.data?.msg || 'Error al enviar la invitación.');
+      toast.error(err.response?.data?.msg || 'Error al enviar la invitación.');
     }
   };
 

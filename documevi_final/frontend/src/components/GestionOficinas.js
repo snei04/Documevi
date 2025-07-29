@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import api from '../api/axios';
+import { toast } from 'react-toastify';
 
 const GestionOficinas = () => {
   const { dependencias } = useOutletContext();
@@ -39,7 +40,7 @@ const GestionOficinas = () => {
     }
     try {
       await api.post('/oficinas', formData);
-      alert('Oficina creada con éxito!');
+      toast.success('Oficina creada con éxito!');
       const resOficinas = await api.get('/oficinas');
       setOficinas(resOficinas.data);
       setFormData({ id_dependencia: '', codigo_oficina: '', nombre_oficina: '' });

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../api/axios';
+import { toast } from 'react-toastify';
 
 const GestionExpedientes = () => {
   const [expedientes, setExpedientes] = useState([]);
@@ -49,7 +50,7 @@ const GestionExpedientes = () => {
     setError('');
     try {
       await api.post('/expedientes', formData);
-      alert('Expediente creado con éxito!');
+      toast.success('Expediente creado con éxito!');
       const resExp = await api.get('/expedientes');
       setExpedientes(resExp.data);
       // Reset form

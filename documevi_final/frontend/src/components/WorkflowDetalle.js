@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import api from '../api/axios';
+import { toast } from 'react-toastify';
 
 const WorkflowDetalle = () => {
   const { id } = useParams(); // ID del workflow desde la URL
@@ -42,7 +43,7 @@ const WorkflowDetalle = () => {
     e.preventDefault();
     try {
       await api.post(`/workflows/${id}/pasos`, formData);
-      alert('Paso creado con éxito');
+      toast.success('Paso creado con éxito');
       setFormData({ nombre_paso: '', orden: '', id_rol_responsable: '' });
       fetchPasos(); // Recargar la lista de pasos
     } catch (err) {

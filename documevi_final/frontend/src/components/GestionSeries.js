@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import api from '../api/axios';
+import { toast } from 'react-toastify';
 
 const GestionSeries = () => {
   const [series, setSeries] = useState([]);
@@ -40,7 +41,7 @@ const GestionSeries = () => {
     }
     try {
       await api.post('/series', formData);
-      alert('Serie creada con éxito!');
+      toast.success('Serie creada con éxito!');
       const resSeries = await api.get('/series');
       setSeries(resSeries.data);
       setFormData({ id_oficina_productora: '', codigo_serie: '', nombre_serie: '' });

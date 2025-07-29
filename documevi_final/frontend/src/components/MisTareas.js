@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import api from '../api/axios';
 import { Link } from 'react-router-dom';
+import { toast } from 'react-toastify';
 
 const MisTareas = () => {
   const [tareas, setTareas] = useState([]);
@@ -23,10 +24,10 @@ const MisTareas = () => {
     if (window.confirm('¿Estás seguro de que deseas aprobar y avanzar este documento al siguiente paso?')) {
       try {
         const res = await api.post(`/documentos/${idDocumento}/advance-workflow`);
-        alert(res.data.msg);
+        toast.success(res.data.msg);
         fetchTareas(); // Recargar la lista de tareas
       } catch (err) {
-        alert(err.response?.data?.msg || 'Error al avanzar el workflow.');
+        toast.error(err.response?.data?.msg || 'Error al avanzar el workflow.');
       }
     }
   };

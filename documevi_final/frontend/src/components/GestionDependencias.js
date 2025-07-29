@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useOutletContext } from 'react-router-dom'; // Hook para recibir el contexto
 import api from '../api/axios';
+import { toast } from 'react-toastify';
 
 const GestionDependencias = () => {
   // 1. Recibimos los datos y la función del padre (DashboardLayout)
@@ -18,7 +19,7 @@ const GestionDependencias = () => {
         codigo_dependencia: codigo,
         nombre_dependencia: nombre
       });
-      alert('¡Dependencia creada con éxito!');
+      toast.success('¡Dependencia creada con éxito!');
       setCodigo('');
       setNombre('');
       

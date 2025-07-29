@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import api from '../api/axios';
 import Modal from 'react-modal';
+import { toast } from 'react-toastify';
 
 const ExpedienteDetalle = () => {
   const { id } = useParams(); // Obtiene el ID del expediente desde la URL
@@ -58,16 +59,16 @@ const ExpedienteDetalle = () => {
   const handleAddDocumento = async (e) => {
     e.preventDefault();
     if (!selectedDocumento) {
-      alert('Por favor, seleccione un documento.');
+      toast.success('Por favor, seleccione un documento.');
       return;
     }
     try {
       await api.post(`/expedientes/${id}/documentos`, { id_documento: selectedDocumento });
-      alert('Documento añadido al expediente con éxito.');
+      toast.success('Documento añadido al expediente con éxito.');
       setSelectedDocumento('');
       fetchExpediente(); // Recargar los datos del expediente para ver el cambio
     } catch (err) {
-      alert(err.response?.data?.msg || 'Error al añadir el documento.');
+      toast.error(err.response?.data?.msg || 'Error al añadir el documento.');
     }
   };
 
@@ -76,10 +77,10 @@ const ExpedienteDetalle = () => {
     if (window.confirm('¿Estás seguro de que deseas cerrar este expediente? Esta acción no se puede deshacer.')) {
       try {
         await api.put(`/expedientes/${id}/cerrar`);
-        alert('Expediente cerrado con éxito.');
+        toast.success('Expediente cerrado con éxito.');
         fetchExpediente(); // Recargar los datos para ver el nuevo estado
       } catch (err) {
-        alert(err.response?.data?.msg || 'Error al cerrar el expediente.');
+        toast.error(err.response?.data?.msg || 'Error al cerrar el expediente.');
       }
     }
   };
@@ -87,7 +88,7 @@ const ExpedienteDetalle = () => {
   const handleRequestPrestamo = async (e) => {
     e.preventDefault();
     if (!fechaDevolucion) {
-      alert('Por favor, seleccione una fecha de devolución prevista.');
+      toast.success('Por favor, seleccione una fecha de devolución prevista.');
       return;
     }
     try {
@@ -96,28 +97,28 @@ const ExpedienteDetalle = () => {
         fecha_devolucion_prevista: fechaDevolucion,
         observaciones: observaciones
       });
-      alert('Solicitud de préstamo enviada con éxito.');
+      toast.success('Solicitud de préstamo enviada con éxito.');
       setShowPrestamoForm(false); // Ocultar el formulario
       setFechaDevolucion('');
       setObservaciones('');
     } catch (err) {
-      alert(err.response?.data?.msg || 'Error al solicitar el préstamo.');
+      toast.error(err.response?.data?.msg || 'Error al solicitar el préstamo.');
     }
   };
 
   const handleStartWorkflow = async (e) => {
     e.preventDefault();
     if (!selectedWorkflow) {
-      alert('Por favor, seleccione un flujo de trabajo.');
+      toast.success('Por favor, seleccione un flujo de trabajo.');
       return;
     }
     try {
       await api.post(`/documentos/${targetDocumentoId}/start-workflow`, { id_workflow: selectedWorkflow });
-      alert('Workflow iniciado con éxito para el documento.');
+      toast.success('Workflow iniciado con éxito para el documento.');
       setTargetDocumentoId(null);
       setSelectedWorkflow('');
     } catch (err) {
-      alert(err.response?.data?.msg || 'Error al iniciar el workflow.');
+      toast.error(err.response?.data?.msg || 'Error al iniciar el workflow.');
     }
   };
 

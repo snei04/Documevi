@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import api from '../api/axios';
 import { Link } from 'react-router-dom';
+import { toast } from 'react-toastify';
 
 const GestionWorkflows = () => {
   const [workflows, setWorkflows] = useState([]);
@@ -31,7 +32,7 @@ const GestionWorkflows = () => {
     setError('');
     try {
       await api.post('/workflows', formData);
-      alert('Workflow creado con éxito!');
+      toast.success('Workflow creado con éxito!');
       const res = await api.get('/workflows');
       setWorkflows(res.data);
       setFormData({ nombre: '', descripcion: '' });

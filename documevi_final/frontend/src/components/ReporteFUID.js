@@ -3,6 +3,7 @@ import api from '../api/axios';
 import jsPDF from 'jspdf'; 
 import autoTable from 'jspdf-autotable'; 
 import * as XLSX from 'xlsx';
+import { toast } from 'react-toastify';
 
 const ReporteFUID = () => {
   const [oficinas, setOficinas] = useState([]);
@@ -46,7 +47,7 @@ const ReporteFUID = () => {
 
   const handleExportPDF = () => {
     if (reportData.length === 0) {
-      alert("No hay datos para exportar. Por favor, genere un reporte primero.");
+      toast.success("No hay datos para exportar. Por favor, genere un reporte primero.");
       return;
     }
 
@@ -90,7 +91,7 @@ const ReporteFUID = () => {
 
   const handleExportExcel = () => {
     if (reportData.length === 0) {
-      alert("No hay datos para exportar. Por favor, genere un reporte primero.");
+      toast.success("No hay datos para exportar. Por favor, genere un reporte primero.");
       return;
     }
 

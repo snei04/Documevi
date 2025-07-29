@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import api from '../api/axios';
 import * as XLSX from 'xlsx';
+import { toast } from 'react-toastify';
 
 const GestionAuditoria = () => {
   const [auditLog, setAuditLog] = useState([]);
@@ -37,7 +38,7 @@ const GestionAuditoria = () => {
 
   const handleExportExcel = () => {
     if (auditLog.length === 0) {
-      alert("No hay datos para exportar.");
+      toast.success("No hay datos para exportar.");
       return;
     }
     const dataForExcel = auditLog.map(log => ({

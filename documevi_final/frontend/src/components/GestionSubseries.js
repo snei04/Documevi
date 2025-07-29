@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import api from '../api/axios';
+import { toast } from 'react-toastify';
 
 const GestionSubseries = () => {
   const [subseries, setSubseries] = useState([]);
@@ -39,7 +40,7 @@ const GestionSubseries = () => {
     setError('');
     try {
       await api.post('/subseries', formData);
-      alert('Subserie creada con éxito!');
+      toast.success('Subserie creada con éxito!');
       const resSubseries = await api.get('/subseries');
       setSubseries(resSubseries.data);
       // Reset form

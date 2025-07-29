@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import api from '../api/axios';
+import Modal from 'react-modal';
 
 const ExpedienteDetalle = () => {
   const { id } = useParams(); // Obtiene el ID del expediente desde la URL
@@ -16,6 +17,8 @@ const ExpedienteDetalle = () => {
   const [workflows, setWorkflows] = useState([]);
   const [selectedWorkflow, setSelectedWorkflow] = useState('');
   const [targetDocumentoId, setTargetDocumentoId] = useState(null);
+  const [modalIsOpen, setModalIsOpen] = useState(false);
+  const [viewingFileUrl, setViewingFileUrl] = useState('');
 
   const fetchExpediente = useCallback(async () => {
     try {
@@ -118,6 +121,16 @@ const ExpedienteDetalle = () => {
     }
   };
 
+  const openModal = (fileUrl) => {
+    setViewingFileUrl(fileUrl);
+    setModalIsOpen(true);
+  };
+
+  const closeModal = () => {
+    setModalIsOpen(false);
+    setViewingFileUrl('');
+  };
+
 
   if (!expediente) return <div>Cargando...</div>;
 
@@ -196,38 +209,74 @@ const ExpedienteDetalle = () => {
           </tr>
         </thead>
         <tbody>
-          {expediente.documentos.map(doc => (
-            <tr key={doc.id}>
-              <td>{doc.orden_foliado}</td>
-              <td>{doc.radicado}</td>
-              <td>{doc.asunto}</td>
-              <td>{new Date(doc.fecha_incorporacion).toLocaleString()}</td>
-              <td style={{ padding: '8px' }}>
-              {targetDocumentoId === doc.id ? (
-                                    // Si este es el documento seleccionado, muestra el formulario
-                                    <form onSubmit={handleStartWorkflow}>
-                                        <select value={selectedWorkflow} onChange={(e) => setSelectedWorkflow(e.target.value)} required>
-                                            <option value="">-- Seleccionar Workflow --</option>
-                                            {workflows.map(wf => (
-                                                <option key={wf.id} value={wf.id}>{wf.nombre}</option>
-                                            ))}
-                                        </select>
-                                        <button type="submit" style={{ marginLeft: '5px' }}>Confirmar</button>
-                                        <button type="button" onClick={() => setTargetDocumentoId(null)} style={{ marginLeft: '5px' }}>Cancelar</button>
-                                    </form>
-                                ) : (
-                                    // Si no, muestra el botón para iniciar
-                                    <button onClick={() => setTargetDocumentoId(doc.id)}>
-                                        Iniciar Workflow
-                                    </button>
-                                )}
-                                </td>
-                                
-            </tr>
-          ))}
-        </tbody>
+  {expediente.documentos.map(doc => (
+    <tr key={doc.id}>
+      <td>{doc.orden_foliado}</td>
+      
+      {/* --- 👇 INICIO: CAMBIO PARA EL VISOR DE ARCHIVOS --- */}
+      <td>
+        {doc.path_archivo ? (<button 
+                    onClick={() => openModal(`http://localhost:4000/${doc.path_archivo}`)}
+                    style={{ background: 'none', border: 'none', color: 'blue', textDecoration: 'underline', cursor: 'pointer' }}
+                  >
+                    {doc.radicado}
+                  </button>
+                ) : (
+                  doc.radicado
+                )}
+      </td>
+      {/* --- 👆 FIN: CAMBIO PARA EL VISOR DE ARCHIVOS --- */}
+      
+      <td>{doc.asunto}</td>
+      <td>{new Date(doc.fecha_incorporacion).toLocaleString()}</td>
+      <td style={{ padding: '8px' }}>
+        {targetDocumentoId === doc.id ? (
+          <form onSubmit={handleStartWorkflow}>
+            <select value={selectedWorkflow} onChange={(e) => setSelectedWorkflow(e.target.value)} required>
+              <option value="">-- Seleccionar Workflow --</option>
+              {workflows.map(wf => (
+                <option key={wf.id} value={wf.id}>{wf.nombre}</option>
+              ))}
+            </select>
+            <button type="submit" style={{ marginLeft: '5px' }}>Confirmar</button>
+            <button type="button" onClick={() => setTargetDocumentoId(null)} style={{ marginLeft: '5px' }}>Cancelar</button>
+          </form>
+        ) : (
+          <button onClick={() => setTargetDocumentoId(doc.id)}>
+            Iniciar Workflow
+          </button>
+        )}
+      </td>
+    </tr>
+  ))}
+</tbody>
       </table>
       {error && <p style={{ color: 'red' }}>{error}</p>}
+      <Modal
+        isOpen={modalIsOpen}
+        onRequestClose={closeModal}
+        contentLabel="Visor de Documento"
+        style={{
+          content: {
+            top: '50%', left: '50%', right: 'auto', bottom: 'auto',
+            marginRight: '-50%', transform: 'translate(-50%, -50%)',
+            width: '80%', height: '90%'
+          },
+          overlay: {
+            backgroundColor: 'rgba(0, 0, 0, 0.75)'
+          }
+        }}
+      >
+        <button onClick={closeModal} style={{ float: 'right' }}>Cerrar</button>
+        <h2>Visor de Documento</h2>
+        <iframe 
+          src={viewingFileUrl} 
+          title="Visor de PDF" 
+          width="100%" 
+          height="90%" 
+          style={{ border: 'none', marginTop: '10px' }}
+        ></iframe>
+      </Modal>
     </div>
   );
 };

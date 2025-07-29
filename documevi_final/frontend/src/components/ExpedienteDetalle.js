@@ -213,7 +213,6 @@ const ExpedienteDetalle = () => {
     <tr key={doc.id}>
       <td>{doc.orden_foliado}</td>
       
-      {/* --- 👇 INICIO: CAMBIO PARA EL VISOR DE ARCHIVOS --- */}
       <td>
         {doc.path_archivo ? (<button 
                     onClick={() => openModal(`http://localhost:4000/${doc.path_archivo}`)}
@@ -225,7 +224,6 @@ const ExpedienteDetalle = () => {
                   doc.radicado
                 )}
       </td>
-      {/* --- 👆 FIN: CAMBIO PARA EL VISOR DE ARCHIVOS --- */}
       
       <td>{doc.asunto}</td>
       <td>{new Date(doc.fecha_incorporacion).toLocaleString()}</td>

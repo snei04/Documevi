@@ -29,3 +29,19 @@ exports.getDashboardStats = async (req, res) => {
     res.status(500).json({ msg: 'Error en el servidor', error: error.message });
   }
 };
+
+exports.getDocsPorOficina = async (req, res) => {
+  try {
+    const [rows] = await pool.query(`
+      SELECT o.nombre_oficina, COUNT(d.id) as total_documentos
+      FROM documentos d
+      JOIN oficinas_productoras o ON d.id_oficina_productora = o.id
+      GROUP BY o.id
+      ORDER BY total_documentos DESC
+    `);
+    res.json(rows);
+  } catch (error) {
+    console.error("Error al obtener documentos por oficina:", error);
+    res.status(500).json({ msg: 'Error en el servidor', error: error.message });
+  }
+};

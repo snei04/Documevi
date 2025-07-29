@@ -25,6 +25,7 @@ import GestionUsuarios from './components/GestionUsuarios';
 import ReporteFUID from './components/ReporteFUID';
 import SetPassword from './components/SetPassword';
 import GestionAuditoria from './components/GestionAuditoria';
+import Estadisticas from './components/Estadisticas';
 // 3. Importamos el CSS
 import './App.css';
 
@@ -77,7 +78,7 @@ function App() {
           <Route path="usuarios" element={<GestionUsuarios />} />
           <Route path="reportes-fuid" element={<ReporteFUID />} />
           <Route path="auditoria" element={<GestionAuditoria />} />
-          
+          <Route path="estadisticas" element={<Estadisticas />} />     
         </Route>
           <Route path="/" element={<Navigate to="/dashboard" />} />
         </Routes>

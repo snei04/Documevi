@@ -153,3 +153,39 @@ exports.advanceWorkflow = async (req, res) => {
         res.status(500).json({ msg: 'Error en el servidor', error: error.message });
     }
 };
+
+exports.firmarDocumento = async (req, res) => {
+  const { id: id_documento } = req.params;
+  const { firma_imagen } = req.body; // Recibimos la firma como un string base64
+
+  if (!firma_imagen) {
+    return res.status(400).json({ msg: 'No se ha proporcionado una firma.' });
+  }
+
+  try {
+    // 1. Buscamos el archivo físico del documento
+    const [docs] = await pool.query('SELECT path_archivo FROM documentos WHERE id = ?', [id_documento]);
+    if (docs.length === 0 || !docs[0].path_archivo || !fs.existsSync(docs[0].path_archivo)) {
+      return res.status(404).json({ msg: 'El archivo físico del documento no se encuentra.' });
+    }
+    const filePath = docs[0].path_archivo;
+
+    // 2. Calculamos el hash (huella digital) del archivo
+    const fileBuffer = fs.readFileSync(filePath);
+    const hashSum = crypto.createHash('sha256');
+    hashSum.update(fileBuffer);
+    const firma_hash = hashSum.digest('hex');
+
+    // 3. Guardamos la firma, el hash y la fecha en la base de datos
+    await pool.query(
+      'UPDATE documentos SET firma_imagen = ?, firma_hash = ?, fecha_firma = NOW() WHERE id = ?',
+      [firma_imagen, firma_hash, id_documento]
+    );
+    
+    res.json({ msg: 'Documento firmado con éxito.' });
+
+  } catch (error) {
+    console.error("Error al firmar el documento:", error);
+    res.status(500).json({ msg: 'Error en el servidor', error: error.message });
+  }
+};

@@ -29,6 +29,8 @@ import Estadisticas from './components/Estadisticas';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import GestionRoles from './components/GestionRoles';
+import OneDriveViewer from './components/OneDriveViewer';
+import GestionTransferencias from './components/GestionTransferencias';
 // 3. Importamos el CSS
 import './App.css';
 
@@ -92,8 +94,10 @@ function App() {
           <Route path="usuarios" element={<GestionUsuarios />} />
           <Route path="reportes-fuid" element={<ReporteFUID />} />
           <Route path="auditoria" element={<GestionAuditoria />} />
+          <Route path="transferencias" element={<GestionTransferencias />} />
           <Route path="roles" element={<GestionRoles />} />
-          <Route path="estadisticas" element={<Estadisticas />} />     
+          <Route path="estadisticas" element={<Estadisticas />} />  
+          <Route path="visor-onedrive" element={<OneDriveViewer />} />    
         </Route>
           <Route path="/" element={<Navigate to="/dashboard" />} />
         </Routes>

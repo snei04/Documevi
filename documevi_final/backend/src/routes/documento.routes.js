@@ -2,8 +2,9 @@ const { Router } = require('express');
 const { 
     createDocumento,
     getAllDocumentos,
-    startWorkflow,   // <-- Importación nueva
-    advanceWorkflow  // <-- Importación nueva
+    startWorkflow,   
+    advanceWorkflow,
+    firmarDocumento 
 } = require('../controllers/documento.controller');
 const authMiddleware = require('../middleware/auth.middleware');
 const upload = require('../config/upload');
@@ -19,5 +20,7 @@ router.route('/')
 // --- Rutas nuevas para la ejecución del workflow ---
 router.post('/:id/start-workflow', startWorkflow);
 router.post('/:id/advance-workflow', advanceWorkflow);
+router.post('/:id/firmar', firmarDocumento);
+
 
 module.exports = router;

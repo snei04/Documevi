@@ -24,6 +24,7 @@ const usuarioRoutes = require('./src/routes/usuario.routes.js');
 const statsRoutes = require('./src/routes/stats.routes.js');
 const reporteRoutes = require('./src/routes/reporte.routes.js');
 const auditoriaRoutes = require('./src/routes/auditoria.routes.js');
+const transferenciaRoutes = require('./src/routes/transferencia.routes.js');
 
 // Inicialización de Express
 const app = express();
@@ -56,6 +57,7 @@ app.use('/api/usuarios', usuarioRoutes);
 app.use('/api/stats', statsRoutes);
 app.use('/api/reportes', reporteRoutes);
 app.use('/api/auditoria', auditoriaRoutes);
+app.use('/api/transferencias', transferenciaRoutes);
 // --- Iniciar el Servidor ---
 const PORT = process.env.PORT || 4000;
 app.listen(PORT, () => {

@@ -1,5 +1,6 @@
 // Archivo: backend/src/controllers/prestamo.controller.js
 const pool = require('../config/db');
+const { sendEmail } = require('../services/email.service');
 
 // Crear una nueva solicitud de préstamo
 exports.createPrestamo = async (req, res) => {
@@ -15,6 +16,25 @@ exports.createPrestamo = async (req, res) => {
       'INSERT INTO prestamos (id_expediente, id_usuario_solicitante, fecha_devolucion_prevista, observaciones) VALUES (?, ?, ?, ?)',
       [id_expediente, id_usuario_solicitante, fecha_devolucion_prevista, observaciones]
     );
+
+     const [admins] = await pool.query("SELECT email FROM usuarios WHERE rol_id = 1 AND activo = true");
+    const [solicitantes] = await pool.query("SELECT nombre_completo FROM usuarios WHERE id = ?", [id_usuario_solicitante]);
+    const solicitante = solicitantes[0];
+    const [expedientes] = await pool.query("SELECT nombre_expediente FROM expedientes WHERE id = ?", [id_expediente]);
+    const expediente = expedientes[0];
+    // 3. Si hay administradores, les enviamos el correo
+    if (admins.length > 0 && solicitante && expediente) {
+      const subject = `Nueva Solicitud de Préstamo - ${expediente.nombre_expediente}`;
+      const text = `El usuario ${solicitante.nombre_completo} ha solicitado un préstamo del expediente "${expediente.nombre_expediente}".\nPor favor, ingrese a la plataforma para aprobar o rechazar la solicitud.`;
+      const html = `<p>El usuario <b>${solicitante.nombre_completo}</b> ha solicitado un préstamo del expediente <b>"${expediente.nombre_expediente}"</b>.</p><p>Por favor, ingrese a la plataforma para aprobar o rechazar la solicitud.</p>`;
+      
+      for (const admin of admins) {
+        await sendEmail(admin.email, subject, text, html);
+      }
+    }
+      
+      
+    
     res.status(201).json({
       id: result.insertId,
       ...req.body

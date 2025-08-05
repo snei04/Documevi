@@ -28,6 +28,7 @@ import GestionAuditoria from './components/GestionAuditoria';
 import Estadisticas from './components/Estadisticas';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import GestionRoles from './components/GestionRoles';
 // 3. Importamos el CSS
 import './App.css';
 
@@ -91,6 +92,7 @@ function App() {
           <Route path="usuarios" element={<GestionUsuarios />} />
           <Route path="reportes-fuid" element={<ReporteFUID />} />
           <Route path="auditoria" element={<GestionAuditoria />} />
+          <Route path="roles" element={<GestionRoles />} />
           <Route path="estadisticas" element={<Estadisticas />} />     
         </Route>
           <Route path="/" element={<Navigate to="/dashboard" />} />

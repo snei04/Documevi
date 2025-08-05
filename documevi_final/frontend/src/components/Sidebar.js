@@ -53,6 +53,7 @@ const Sidebar = ({ isOpen }) => {
             Administración
           </div>
           <ul className={openMenu === 'admin' ? 'submenu open' : 'submenu'}>
+            <li><Link to="/dashboard/roles">Gestión de Roles</Link></li>
             <li><Link to="/dashboard/usuarios">Gestión de Usuarios</Link></li>
             <li><Link to="/dashboard/auditoria">Auditoría</Link></li>
             <li><Link to="/dashboard/reportes-fuid">Reporte FUID</Link></li>

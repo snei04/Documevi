@@ -114,7 +114,7 @@ const GestionUsuarios = () => {
               <td>{user.documento}</td>
               <td>
                 <select 
-                  defaultValue={roles.find(r => r.nombre === user.rol)?.id}
+                  value={roles.find(r => r.nombre === user.rol)?.id}
                   onChange={(e) => handleUpdate(user.id, { rol_id: e.target.value })}
                 >
                   {roles.map(rol => (

@@ -62,9 +62,10 @@ exports.getExpedienteById = async (req, res) => {
       return res.status(404).json({ msg: 'Expediente no encontrado.' });
     }
 
-    // Buscamos los documentos asociados en el índice electrónico
+    // 👇 AQUÍ ESTÁ EL CAMBIO: Añadimos 'd.firma_hash' y 'd.fecha_firma' a la consulta
     const [documentosRows] = await pool.query(`
-      SELECT d.*, ed.orden_foliado, ed.fecha_incorporacion
+      SELECT d.id, d.radicado, d.asunto, d.path_archivo, d.firma_hash, d.fecha_firma, 
+             ed.orden_foliado, ed.fecha_incorporacion
       FROM expediente_documentos ed
       JOIN documentos d ON ed.id_documento = d.id
       WHERE ed.id_expediente = ?

@@ -1,5 +1,6 @@
 const pool = require('../config/db');
 const fs = require('fs');
+const crypto = require('crypto');
 const pdfParse = require('pdf-parse');
 const Tesseract = require('tesseract.js');
 
@@ -44,22 +45,28 @@ exports.createDocumento = async (req, res) => {
     const path_archivo = req.file.path;
     let contenido_extraido = null;
 
-    // 1. Si el archivo es un PDF, extraemos su texto
-    if (req.file.mimetype === 'application/pdf') {
-        try {
+    try {
+        // --- INICIO DE LA LÓGICA DE EXTRACCIÓN ---
+
+        // Opción 1: Si es un PDF, extraemos su texto
+        if (req.file.mimetype === 'application/pdf') {
             const dataBuffer = fs.readFileSync(path_archivo);
             const data = await pdfParse(dataBuffer);
-            contenido_extraido = data.text; // Guardamos todo el texto del PDF
-        } catch (error) {
-            console.error("Error al parsear el PDF:", error);
-            // No detenemos el proceso, simplemente no guardamos el contenido
+            contenido_extraido = data.text;
         }
-    }
 
-    try {
+        // Opción 2: Si es una imagen, usamos Tesseract para OCR
+        if (req.file.mimetype === 'image/png' || req.file.mimetype === 'image/jpeg' || req.file.mimetype === 'image/tiff') {
+            console.log(`Iniciando OCR para el archivo: ${path_archivo}`);
+            const { data: { text } } = await Tesseract.recognize(path_archivo, 'spa'); // 'spa' para español
+            contenido_extraido = text;
+            console.log('OCR completado. Texto extraído.');
+        }
+
+        // --- FIN DE LA LÓGICA DE EXTRACCIÓN ---
+
         const radicado = await generarRadicado();
 
-        // 2. Incluimos el texto extraído en la consulta INSERT
         const [result] = await pool.query(
             `INSERT INTO documentos (radicado, asunto, id_oficina_productora, id_serie, id_subserie, remitente_nombre, remitente_identificacion, remitente_direccion, nombre_archivo_original, path_archivo, contenido_extraido, id_usuario_radicador)
              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
@@ -156,27 +163,25 @@ exports.advanceWorkflow = async (req, res) => {
 
 exports.firmarDocumento = async (req, res) => {
   const { id: id_documento } = req.params;
-  const { firma_imagen } = req.body; // Recibimos la firma como un string base64
+  const { firma_imagen } = req.body;
 
   if (!firma_imagen) {
     return res.status(400).json({ msg: 'No se ha proporcionado una firma.' });
   }
 
   try {
-    // 1. Buscamos el archivo físico del documento
     const [docs] = await pool.query('SELECT path_archivo FROM documentos WHERE id = ?', [id_documento]);
     if (docs.length === 0 || !docs[0].path_archivo || !fs.existsSync(docs[0].path_archivo)) {
       return res.status(404).json({ msg: 'El archivo físico del documento no se encuentra.' });
     }
     const filePath = docs[0].path_archivo;
 
-    // 2. Calculamos el hash (huella digital) del archivo
     const fileBuffer = fs.readFileSync(filePath);
+    // 2. Ahora 'crypto' estará definido y esta línea funcionará
     const hashSum = crypto.createHash('sha256');
     hashSum.update(fileBuffer);
     const firma_hash = hashSum.digest('hex');
 
-    // 3. Guardamos la firma, el hash y la fecha en la base de datos
     await pool.query(
       'UPDATE documentos SET firma_imagen = ?, firma_hash = ?, fecha_firma = NOW() WHERE id = ?',
       [firma_imagen, firma_hash, id_documento]

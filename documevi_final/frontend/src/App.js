@@ -31,6 +31,7 @@ import 'react-toastify/dist/ReactToastify.css';
 import GestionRoles from './components/GestionRoles';
 import OneDriveViewer from './components/OneDriveViewer';
 import GestionTransferencias from './components/GestionTransferencias';
+import GestionPermisos from './components/GestionPermisos';
 // 3. Importamos el CSS
 import './App.css';
 
@@ -96,6 +97,7 @@ function App() {
           <Route path="auditoria" element={<GestionAuditoria />} />
           <Route path="transferencias" element={<GestionTransferencias />} />
           <Route path="roles" element={<GestionRoles />} />
+          <Route path="roles/:id_rol/permisos" element={<GestionPermisos />} />
           <Route path="estadisticas" element={<Estadisticas />} />  
           <Route path="visor-onedrive" element={<OneDriveViewer />} />    
         </Route>

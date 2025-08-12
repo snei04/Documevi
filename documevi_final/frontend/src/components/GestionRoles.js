@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import api from '../api/axios';
 import { toast } from 'react-toastify';
+import { Link } from 'react-router-dom';
 
 const GestionRoles = () => {
   const [roles, setRoles] = useState([]);
@@ -112,6 +113,12 @@ const GestionRoles = () => {
                   </>
                 )}
               </td>
+              <td style={{ textAlign: 'center' }}>
+                {/* 👇 Enlace a la nueva página de gestión de permisos 👇 */}
+                <Link to={`/dashboard/roles/${rol.id}/permisos`}>
+                    Gestionar Permisos
+                </Link>
+            </td>
             </tr>
           ))}
         </tbody>

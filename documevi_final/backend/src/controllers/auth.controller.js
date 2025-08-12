@@ -71,25 +71,39 @@ exports.loginUser = async (req, res) => {
 
   try {
     const [users] = await pool.query('SELECT * FROM usuarios WHERE documento = ?', [documento]);
-    
     if (users.length === 0) {
       return res.status(400).json({ msg: 'Credenciales inválidas' });
     }
-
     const usuario = users[0];
 
     const isMatch = await bcrypt.compare(password, usuario.password);
-
     if (!isMatch) {
       return res.status(400).json({ msg: 'Credenciales inválidas' });
     }
-    
+
+    // --- INICIO DEL CAMBIO ---
+
+    // 1. Buscamos los permisos asociados al rol del usuario
+    const [permissions] = await pool.query(
+      `SELECT p.nombre_permiso 
+       FROM rol_permisos rp 
+       JOIN permisos p ON rp.id_permiso = p.id 
+       WHERE rp.id_rol = ?`,
+      [usuario.rol_id]
+    );
+    // Creamos un array simple con los nombres de los permisos: ['gestionar_usuarios', 'ver_reportes']
+    const userPermissions = permissions.map(p => p.nombre_permiso);
+
+    // 2. Creamos el nuevo payload para el token, incluyendo los permisos
     const payload = {
       user: {
         id: usuario.id,
-        rol: usuario.rol_id
+        rol: usuario.rol_id,
+        permissions: userPermissions 
       },
     };
+
+    // --- FIN DEL CAMBIO ---
 
     await pool.query(
       'INSERT INTO auditoria (usuario_id, accion, detalles) VALUES (?, ?, ?)',

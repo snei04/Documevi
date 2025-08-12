@@ -1,29 +1,32 @@
 // Archivo: backend/src/routes/workflow.routes.js
 const { Router } = require('express');
-const { getAllWorkflows, createWorkflow, getWorkflowPasos, createWorkflowPaso, getWorkflowById, getMyTasks  } = require('../controllers/workflow.controller');
+const { 
+  getAllWorkflows, 
+  createWorkflow, 
+  getWorkflowPasos, 
+  createWorkflowPaso, 
+  getWorkflowById, 
+  getMyTasks 
+} = require('../controllers/workflow.controller');
 const authMiddleware = require('../middleware/auth.middleware');
+// 👇 1. Importamos el nuevo middleware de permisos
+const authorizePermission = require('../middleware/authorizePermission');
 
 const router = Router();
 
-// Proteger todas las rutas
+// Protegemos todas las rutas con autenticación
 router.use(authMiddleware);
 
-// Ruta para obtener las tareas del usuario logueado
+// --- Rutas ---
+
+// Cualquiera puede ver la lista de workflows y sus tareas
+router.get('/', getAllWorkflows);
 router.get('/tareas', getMyTasks);
+router.get('/:id', getWorkflowById);
+router.get('/:id/pasos', getWorkflowPasos);
 
-// Rutas para la colección de workflows
-router.route('/')
-  .get(getAllWorkflows)
-  .post(createWorkflow);
-
-// Rutas para los pasos de un workflow específico
-router.route('/:id/pasos')
-  .get(getWorkflowPasos)
-  .post(createWorkflowPaso);
-
-// Ruta para obtener un workflow por ID
-router.route('/:id')
-  .get(getWorkflowById);
-
+// 👇 2. SOLO los usuarios con el permiso específico pueden CREAR workflows y PASOS
+router.post('/', authorizePermission('gestionar_workflows'), createWorkflow);
+router.post('/:id/pasos', authorizePermission('gestionar_workflows'), createWorkflowPaso);
 
 module.exports = router;

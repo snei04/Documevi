@@ -34,49 +34,72 @@ exports.getAllDocumentos = async (req, res) => {
 };
 
 exports.createDocumento = async (req, res) => {
+    // 1. Recibimos todos los datos del formulario
     const { asunto, id_oficina_productora, id_serie, id_subserie, remitente_nombre, remitente_identificacion, remitente_direccion } = req.body;
+    const customDataString = req.body.customData; // Datos personalizados vienen como texto JSON
     const id_usuario_radicador = req.user.id;
 
     if (!req.file) {
         return res.status(400).json({ msg: 'No se ha subido ningún archivo.' });
     }
 
-    const nombre_archivo_original = req.file.originalname;
-    const path_archivo = req.file.path;
-    let contenido_extraido = null;
+    const { originalname: nombre_archivo_original, path: path_archivo } = req.file;
 
+    // 2. Convertimos el texto JSON de los datos personalizados a un objeto
+    let customData = {};
+    if (customDataString) {
+        try {
+            customData = JSON.parse(customDataString);
+        } catch (e) {
+            return res.status(400).json({ msg: 'Los datos personalizados no tienen un formato JSON válido.' });
+        }
+    }
+
+    const connection = await pool.getConnection(); // Obtenemos una conexión para la transacción
     try {
-        // --- INICIO DE LA LÓGICA DE EXTRACCIÓN ---
+        await connection.beginTransaction(); // Iniciamos la transacción
 
-        // Opción 1: Si es un PDF, extraemos su texto
+        // --- Lógica de extracción de texto (sin cambios) ---
+        let contenido_extraido = null;
         if (req.file.mimetype === 'application/pdf') {
             const dataBuffer = fs.readFileSync(path_archivo);
             const data = await pdfParse(dataBuffer);
             contenido_extraido = data.text;
         }
-
-        // Opción 2: Si es una imagen, usamos Tesseract para OCR
         if (req.file.mimetype === 'image/png' || req.file.mimetype === 'image/jpeg' || req.file.mimetype === 'image/tiff') {
-            console.log(`Iniciando OCR para el archivo: ${path_archivo}`);
-            const { data: { text } } = await Tesseract.recognize(path_archivo, 'spa'); // 'spa' para español
+            const { data: { text } } = await Tesseract.recognize(path_archivo, 'spa');
             contenido_extraido = text;
-            console.log('OCR completado. Texto extraído.');
         }
-
-        // --- FIN DE LA LÓGICA DE EXTRACCIÓN ---
-
+        
         const radicado = await generarRadicado();
 
-        const [result] = await pool.query(
+        // 3. Insertamos el documento principal y obtenemos su ID
+        const [result] = await connection.query(
             `INSERT INTO documentos (radicado, asunto, id_oficina_productora, id_serie, id_subserie, remitente_nombre, remitente_identificacion, remitente_direccion, nombre_archivo_original, path_archivo, contenido_extraido, id_usuario_radicador)
              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [radicado, asunto, id_oficina_productora, id_serie, id_subserie, remitente_nombre, remitente_identificacion, remitente_direccion, nombre_archivo_original, path_archivo, contenido_extraido, id_usuario_radicador]
         );
+        const newDocumentId = result.insertId;
 
-        res.status(201).json({ id: result.insertId, radicado: radicado, ...req.body });
+        // 4. Si hay datos personalizados, los insertamos en la tabla correspondiente
+        if (Object.keys(customData).length > 0) {
+            // Convertimos el objeto {campoId: valor, ...} en un array de arrays [[docId, campoId, valor], ...]
+            const customDataValues = Object.entries(customData).map(([id_campo, valor]) => {
+                return [newDocumentId, parseInt(id_campo), valor];
+            });
+            // Hacemos una inserción múltiple
+            await connection.query('INSERT INTO documento_datos_personalizados (id_documento, id_campo, valor) VALUES ?', [customDataValues]);
+        }
+        
+        await connection.commit(); // Si todo sale bien, confirmamos los cambios
+        res.status(201).json({ id: newDocumentId, radicado: radicado, ...req.body });
+
     } catch (error) {
+        await connection.rollback(); // Si algo falla, revertimos todos los cambios
         console.error("Error al radicar documento:", error);
         res.status(500).json({ msg: 'Error en el servidor', error: error.message });
+    } finally {
+        connection.release(); // Siempre liberamos la conexión al final
     }
 };
 

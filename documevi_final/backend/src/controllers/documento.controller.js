@@ -34,9 +34,7 @@ exports.getAllDocumentos = async (req, res) => {
 };
 
 exports.createDocumento = async (req, res) => {
-    // 1. Recibimos todos los datos del formulario
     const { asunto, id_oficina_productora, id_serie, id_subserie, remitente_nombre, remitente_identificacion, remitente_direccion } = req.body;
-    const customDataString = req.body.customData; // Datos personalizados vienen como texto JSON
     const id_usuario_radicador = req.user.id;
 
     if (!req.file) {
@@ -44,62 +42,34 @@ exports.createDocumento = async (req, res) => {
     }
 
     const { originalname: nombre_archivo_original, path: path_archivo } = req.file;
+    let contenido_extraido = null;
 
-    // 2. Convertimos el texto JSON de los datos personalizados a un objeto
-    let customData = {};
-    if (customDataString) {
-        try {
-            customData = JSON.parse(customDataString);
-        } catch (e) {
-            return res.status(400).json({ msg: 'Los datos personalizados no tienen un formato JSON válido.' });
-        }
-    }
-
-    const connection = await pool.getConnection(); // Obtenemos una conexión para la transacción
     try {
-        await connection.beginTransaction(); // Iniciamos la transacción
-
-        // --- Lógica de extracción de texto (sin cambios) ---
-        let contenido_extraido = null;
+        // Lógica de extracción de texto (sin cambios)
         if (req.file.mimetype === 'application/pdf') {
             const dataBuffer = fs.readFileSync(path_archivo);
             const data = await pdfParse(dataBuffer);
             contenido_extraido = data.text;
         }
-        if (req.file.mimetype === 'image/png' || req.file.mimetype === 'image/jpeg' || req.file.mimetype === 'image/tiff') {
+        if (req.file.mimetype.startsWith('image/')) {
             const { data: { text } } = await Tesseract.recognize(path_archivo, 'spa');
             contenido_extraido = text;
         }
-        
+
         const radicado = await generarRadicado();
 
-        // 3. Insertamos el documento principal y obtenemos su ID
-        const [result] = await connection.query(
+        // Se revierte a la inserción simple, sin datos personalizados
+        const [result] = await pool.query(
             `INSERT INTO documentos (radicado, asunto, id_oficina_productora, id_serie, id_subserie, remitente_nombre, remitente_identificacion, remitente_direccion, nombre_archivo_original, path_archivo, contenido_extraido, id_usuario_radicador)
              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [radicado, asunto, id_oficina_productora, id_serie, id_subserie, remitente_nombre, remitente_identificacion, remitente_direccion, nombre_archivo_original, path_archivo, contenido_extraido, id_usuario_radicador]
         );
-        const newDocumentId = result.insertId;
 
-        // 4. Si hay datos personalizados, los insertamos en la tabla correspondiente
-        if (Object.keys(customData).length > 0) {
-            // Convertimos el objeto {campoId: valor, ...} en un array de arrays [[docId, campoId, valor], ...]
-            const customDataValues = Object.entries(customData).map(([id_campo, valor]) => {
-                return [newDocumentId, parseInt(id_campo), valor];
-            });
-            // Hacemos una inserción múltiple
-            await connection.query('INSERT INTO documento_datos_personalizados (id_documento, id_campo, valor) VALUES ?', [customDataValues]);
-        }
-        
-        await connection.commit(); // Si todo sale bien, confirmamos los cambios
-        res.status(201).json({ id: newDocumentId, radicado: radicado, ...req.body });
+        res.status(201).json({ id: result.insertId, radicado: radicado, ...req.body });
 
     } catch (error) {
-        await connection.rollback(); // Si algo falla, revertimos todos los cambios
         console.error("Error al radicar documento:", error);
         res.status(500).json({ msg: 'Error en el servidor', error: error.message });
-    } finally {
-        connection.release(); // Siempre liberamos la conexión al final
     }
 };
 

@@ -8,7 +8,12 @@ const WorkflowDetalle = () => {
   const [workflow, setWorkflow] = useState(null);
   const [pasos, setPasos] = useState([]);
   const [roles, setRoles] = useState([]);
-  const [formData, setFormData] = useState({ nombre_paso: '', orden: '', id_rol_responsable: '' });
+  const [formData, setFormData] = useState({ 
+    nombre_paso: '', 
+    orden: '', 
+    id_rol_responsable: '', 
+    requiere_firma: false
+});
   const [error, setError] = useState('');
 
   const fetchPasos = useCallback(async () => {
@@ -37,7 +42,13 @@ const WorkflowDetalle = () => {
     fetchInitialData();
   }, [id, fetchPasos]);
 
-  const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
+const handleChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setFormData(prev => ({
+        ...prev,
+        [name]: type === 'checkbox' ? checked : value
+    }));
+};
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -67,6 +78,15 @@ const WorkflowDetalle = () => {
             <option value="">-- Asignar a Rol --</option>
             {roles.map(rol => <option key={rol.id} value={rol.id}>{rol.nombre}</option>)}
           </select>
+          <label style={{ marginLeft: '10px' }}>
+            <input
+                type="checkbox"
+                name="requiere_firma"
+                checked={formData.requiere_firma}
+                onChange={handleChange}
+            />
+            ¿Requiere Firma?
+        </label>
           <button type="submit" style={{ marginLeft: '10px' }}>Añadir Paso</button>
         </form>
         {error && <p style={{color: 'red'}}>{error}</p>}

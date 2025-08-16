@@ -3,7 +3,7 @@ import api from '../api/axios';
 import { toast } from 'react-toastify';
 
 const CapturaDocumento = () => {
-    // 1. Definimos el estado inicial para poder reiniciar el formulario
+    // Define el estado inicial para poder reiniciar el formulario fácilmente
     const initialFormData = {
         asunto: '',
         id_oficina_productora: '',
@@ -24,8 +24,8 @@ const CapturaDocumento = () => {
     const [filteredSubseries, setFilteredSubseries] = useState([]);
     const [archivo, setArchivo] = useState(null);
     const [error, setError] = useState('');
-    const [customFields, setCustomFields] = useState([]);
-    const [customData, setCustomData] = useState({});
+    
+    // Referencia para poder limpiar el campo de archivo
     const fileInputRef = useRef(null);
 
     useEffect(() => {
@@ -50,31 +50,17 @@ const CapturaDocumento = () => {
 
     const handleDependenciaChange = (e) => {
         const depId = e.target.value;
-        // Reiniciamos los estados dependientes
         setFormData({ ...initialFormData, id_dependencia: depId });
         setFilteredOficinas(oficinas.filter(o => o.id_dependencia === parseInt(depId)));
         setFilteredSeries([]);
         setFilteredSubseries([]);
-        setCustomFields([]);
-        setCustomData({});
     };
 
-    const handleOficinaChange = async (e) => {
+    const handleOficinaChange = (e) => {
         const ofiId = e.target.value;
         setFormData(prev => ({ ...prev, id_oficina_productora: ofiId, id_serie: '', id_subserie: '' }));
         setFilteredSeries(series.filter(s => s.id_oficina_productora === parseInt(ofiId)));
         setFilteredSubseries([]);
-        setCustomFields([]);
-        setCustomData({});
-
-        if (ofiId) {
-            try {
-                const res = await api.get(`/campos-personalizados/oficina/${ofiId}`);
-                setCustomFields(res.data);
-            } catch (err) {
-                toast.error("No se pudieron cargar los campos personalizados para esta oficina.");
-            }
-        }
     };
     
     const handleSerieChange = (e) => {
@@ -91,17 +77,9 @@ const CapturaDocumento = () => {
         setArchivo(e.target.files[0]);
     };
 
-    const handleCustomDataChange = (e) => {
-        const { name, value } = e.target;
-        setCustomData(prev => ({ ...prev, [name]: value }));
-    };
-    
-    // 2. La función de reinicio que faltaba
     const resetForm = () => {
         setFormData(initialFormData);
         setArchivo(null);
-        setCustomFields([]);
-        setCustomData({});
         setFilteredOficinas([]);
         setFilteredSeries([]);
         setFilteredSubseries([]);
@@ -123,7 +101,6 @@ const CapturaDocumento = () => {
             formDataConArchivo.append(key, formData[key]);
         }
         formDataConArchivo.append('archivo', archivo);
-        formDataConArchivo.append('customData', JSON.stringify(customData));
 
         try {
             const res = await api.post('/documentos', formDataConArchivo, {
@@ -161,27 +138,6 @@ const CapturaDocumento = () => {
                     <option value="">-- Seleccione Subserie --</option>
                     {filteredSubseries.map(ss => <option key={ss.id} value={ss.id}>{ss.nombre_subserie}</option>)}
                 </select>
-
-                {customFields.length > 0 && (
-                    <div style={{ marginTop: '20px', paddingTop: '20px', borderTop: '1px solid #ccc' }}>
-                        <h3>Metadatos Adicionales</h3>
-                        {customFields.map(field => (
-                            <div key={field.id} style={{ marginBottom: '10px' }}>
-                                <label>
-                                    {field.nombre_campo}{field.es_obligatorio ? ' *' : ''}:
-                                    <input
-                                        type={field.tipo_campo}
-                                        name={field.id}
-                                        value={customData[field.id] || ''}
-                                        onChange={handleCustomDataChange}
-                                        required={field.es_obligatorio}
-                                        style={{ marginLeft: '10px' }}
-                                    />
-                                </label>
-                            </div>
-                        ))}
-                    </div>
-                )}
 
                 <h3 style={{marginTop: '20px'}}>Datos del Remitente</h3>
                 <input type="text" name="remitente_nombre" placeholder="Nombre del Remitente" value={formData.remitente_nombre} onChange={handleChange} required />

@@ -114,7 +114,7 @@ const GestionRoles = () => {
                 )}
               </td>
               <td style={{ textAlign: 'center' }}>
-                {/* 👇 Enlace a la nueva página de gestión de permisos 👇 */}
+               
                 <Link to={`/dashboard/roles/${rol.id}/permisos`}>
                     Gestionar Permisos
                 </Link>

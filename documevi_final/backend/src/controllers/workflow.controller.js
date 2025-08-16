@@ -1,6 +1,8 @@
 // Archivo: backend/src/controllers/workflow.controller.js
 const pool = require('../config/db');
 
+
+
 // Obtener todos los workflows
 exports.getAllWorkflows = async (req, res) => {
   try {
@@ -54,7 +56,7 @@ exports.getWorkflowPasos = async (req, res) => {
 // Crear un nuevo paso en un workflow
 exports.createWorkflowPaso = async (req, res) => {
   const { id: id_workflow } = req.params;
-  const { nombre_paso, orden, id_rol_responsable } = req.body;
+  const { nombre_paso, orden, id_rol_responsable, requiere_firma } = req.body; 
 
   if (!nombre_paso || !orden || !id_rol_responsable) {
     return res.status(400).json({ msg: 'Nombre, orden y rol son obligatorios.' });
@@ -62,8 +64,8 @@ exports.createWorkflowPaso = async (req, res) => {
 
   try {
     const [result] = await pool.query(
-      'INSERT INTO workflow_pasos (id_workflow, nombre_paso, orden, id_rol_responsable) VALUES (?, ?, ?, ?)',
-      [id_workflow, nombre_paso, orden, id_rol_responsable]
+      'INSERT INTO workflow_pasos (id_workflow, nombre_paso, orden, id_rol_responsable, requiere_firma) VALUES (?, ?, ?, ?, ?)',
+      [id_workflow, nombre_paso, orden, id_rol_responsable, requiere_firma || false]
     );
     res.status(201).json({
       id: result.insertId,
@@ -92,7 +94,7 @@ exports.getWorkflowById = async (req, res) => {
 };
 
 exports.getMyTasks = async (req, res) => {
-  const userRoleId = req.user.rol; // Obtenemos el ROL del usuario desde el token
+  const userRoleId = req.user.rol;
 
   try {
     const [tasks] = await pool.query(`
@@ -101,8 +103,10 @@ exports.getMyTasks = async (req, res) => {
         d.id as id_documento,
         d.radicado,
         d.asunto,
+        d.path_archivo,
         w.nombre as nombre_workflow,
-        wp.nombre_paso as paso_actual
+        wp.nombre_paso as paso_actual,
+        wp.requiere_firma
       FROM documento_workflows dw
       JOIN documentos d ON dw.id_documento = d.id
       JOIN workflows w ON dw.id_workflow = w.id

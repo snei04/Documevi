@@ -135,3 +135,97 @@
   text-decoration: none;
   color: inherit;
 }
+
+
+.page-header {
+  margin-bottom: 1.5rem;
+}
+
+.page-header h1 {
+  font-size: 1.875rem; /* 30px */
+  font-weight: bold;
+  color: #1a2531; /* Un gris muy oscuro */
+}
+
+.page-header p {
+  color: #718096; /* Un gris medio */
+  margin-top: 0.25rem;
+}
+
+.action-bar {
+  display: flex;
+  gap: 0.75rem; /* 12px */
+  margin-bottom: 1.5rem;
+}
+
+/* Un contenedor blanco y con sombra para los formularios */
+.content-box {
+  background-color: white;
+  padding: 1.5rem;
+  border-radius: 8px;
+  margin: 1.5rem 0;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+}
+
+.content-box h3 {
+  margin-top: 0;
+  margin-bottom: 1rem;
+  font-size: 1.125rem; /* 18px */
+  font-weight: 600;
+}
+
+/* Estilos para una tabla profesional */
+.styled-table {
+  width: 100%;
+  border-collapse: collapse;
+  background-color: white;
+  font-size: 0.875rem; /* 14px */
+}
+
+.styled-table thead tr {
+  background-color: #f7fafc; /* Gris muy claro */
+}
+
+.styled-table th,
+.styled-table td {
+  border-bottom: 1px solid #e2e8f0; /* Borde gris claro */
+  padding: 0.75rem 1rem;
+  text-align: left;
+}
+
+.styled-table tbody tr:hover {
+  background-color: #f7fafc;
+}
+
+.action-cell {
+  display: flex;
+  gap: 0.5rem; /* 8px */
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+/* Estilos para botones genéricos dentro del contenido */
+.button {
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background-color 0.2s;
+}
+
+.button-primary {
+  background-color: #0077B6;
+  color: white;
+}
+.button-primary:hover {
+  background-color: #005f8a;
+}
+
+.button-danger {
+  background-color: #e53e3e;
+  color: white;
+}
+.button-danger:hover {
+  background-color: #c53030;
+}

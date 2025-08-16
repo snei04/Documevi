@@ -4,9 +4,12 @@ const {
   createExpediente,
   getExpedienteById,          
   addDocumentoToExpediente,
-  closeExpediente     
+  closeExpediente,
+  getExpedienteCustomData,
+  updateExpedienteCustomData  
 } = require('../controllers/expediente.controller');
 const authMiddleware = require('../middleware/auth.middleware');
+const authorizePermission = require('../middleware/authorizePermission');
 
 const router = Router();
 
@@ -27,5 +30,9 @@ router.route('/:id_expediente/documentos')
 
 router.route('/:id/cerrar')
   .put(closeExpediente);
+
+  router.route('/:id/custom-data')
+  .get(getExpedienteCustomData)
+  .put(authorizePermission('gestionar_expedientes'), updateExpedienteCustomData);
 
 module.exports = router;

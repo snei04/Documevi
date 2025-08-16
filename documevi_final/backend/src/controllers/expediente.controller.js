@@ -85,31 +85,32 @@ exports.getExpedienteById = async (req, res) => {
 // Añadir un documento a un expediente (Índice Electrónico)
 exports.addDocumentoToExpediente = async (req, res) => {
   const { id_expediente } = req.params;
-  const { id_documento } = req.body;
+  // Recibimos el nuevo campo 'requiere_firma' desde el frontend
+  const { id_documento, requiere_firma } = req.body;
 
   if (!id_documento) {
     return res.status(400).json({ msg: 'El ID del documento es obligatorio.' });
   }
 
   try {
-    // Calculamos el siguiente número de foliado
     const [folioRows] = await pool.query(
       'SELECT MAX(orden_foliado) as max_folio FROM expediente_documentos WHERE id_expediente = ?',
       [id_expediente]
     );
     const nuevoFolio = (folioRows[0].max_folio || 0) + 1;
 
-    // Insertamos el registro en la tabla pivote (el índice)
+    // Actualizamos la consulta para incluir el nuevo campo
     const [result] = await pool.query(
-      'INSERT INTO expediente_documentos (id_expediente, id_documento, orden_foliado) VALUES (?, ?, ?)',
-      [id_expediente, id_documento, nuevoFolio]
+      'INSERT INTO expediente_documentos (id_expediente, id_documento, orden_foliado, requiere_firma) VALUES (?, ?, ?, ?)',
+      [id_expediente, id_documento, nuevoFolio, requiere_firma || false]
     );
 
     res.status(201).json({ 
       id: result.insertId,
       id_expediente,
       id_documento,
-      orden_foliado: nuevoFolio
+      orden_foliado: nuevoFolio,
+      requiere_firma
     });
 
   } catch (error) {
@@ -153,5 +154,57 @@ exports.closeExpediente = async (req, res) => {
   } catch (error) {
     console.error("Error al cerrar el expediente:", error);
     res.status(500).json({ msg: 'Error en el servidor', error: error.message });
+  }
+};
+
+exports.getExpedienteCustomData = async (req, res) => {
+  const { id } = req.params;
+  try {
+    // Asegúrate de que el nombre de la tabla ('expediente_datos_personalizados')
+    // y de la columna ('id_expediente') sean correctos en tu base de datos.
+    const [rows] = await pool.query(
+      'SELECT id_campo, valor FROM expediente_datos_personalizados WHERE id_expediente = ?',
+      [id]
+    );
+
+    const data = rows.reduce((acc, row) => {
+      acc[row.id_campo] = row.valor;
+      return acc;
+    }, {});
+
+    res.json(data);
+
+  } catch (error) {
+    // Este log es crucial para ver el error exacto de SQL
+    console.error("Error al obtener datos personalizados:", error); 
+    res.status(500).json({ msg: 'Error en el servidor' });
+  }
+};
+
+// Guardar o actualizar los datos personalizados de un expediente
+exports.updateExpedienteCustomData = async (req, res) => {
+  const { id: id_expediente } = req.params;
+  const customData = req.body; // Esperamos un objeto: { campoId: valor, ... }
+
+  const connection = await pool.getConnection();
+  try {
+    await connection.beginTransaction();
+    // 1. Borramos los datos antiguos para este expediente
+    await connection.query('DELETE FROM expediente_datos_personalizados WHERE id_expediente = ?', [id_expediente]);
+
+    // 2. Insertamos los nuevos datos
+    const values = Object.entries(customData).map(([id_campo, valor]) => [id_expediente, id_campo, valor]);
+    if (values.length > 0) {
+      await connection.query('INSERT INTO expediente_datos_personalizados (id_expediente, id_campo, valor) VALUES ?', [values]);
+    }
+
+    await connection.commit();
+    res.json({ msg: 'Datos personalizados guardados con éxito.' });
+  } catch (error) {
+    await connection.rollback();
+    console.error("Error al guardar datos personalizados:", error);
+    res.status(500).json({ msg: 'Error en el servidor' });
+  } finally {
+    connection.release();
   }
 };

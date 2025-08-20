@@ -1,4 +1,8 @@
 const pool = require('../config/db');
+const { generarRadicado } = require('../utils/radicado.util');
+const { PDFDocument, rgb } = require('pdf-lib');
+const fs = require('fs/promises');
+const path = require('path');
 
 // Obtener todos los expedientes
 exports.getAllExpedientes = async (req, res) => {
@@ -207,4 +211,83 @@ exports.updateExpedienteCustomData = async (req, res) => {
   } finally {
     connection.release();
   }
+};
+
+exports.createDocumentoFromPlantilla = async (req, res) => {
+    const { id: id_expediente } = req.params;
+    const { id_plantilla, datos_rellenados, id_serie, id_subserie, id_oficina_productora } = req.body;
+    const id_usuario_radicador = req.user.id;
+
+    if (!id_plantilla || !datos_rellenados || !id_serie || !id_subserie) {
+        return res.status(400).json({ msg: 'Faltan datos para generar el documento.' });
+    }
+
+    const connection = await pool.getConnection();
+    try {
+        await connection.beginTransaction();
+
+        const [plantillaInfo] = await connection.query('SELECT nombre FROM plantillas WHERE id = ?', [id_plantilla]);
+        const nombrePlantilla = plantillaInfo[0].nombre;
+        const asunto = `${nombrePlantilla} - Creado desde plantilla`;
+        const radicado = await generarRadicado();
+
+        // 1. Se crea un documento PDF en blanco
+        const pdfDoc = await PDFDocument.create();
+        const page = pdfDoc.addPage();
+        const { width, height } = page.getSize();
+        let yPosition = height - 50; // Posición vertical inicial (cerca de la parte superior)
+
+        // 2. EDITA AQUÍ: Escribimos el título en el PDF
+        page.drawText(nombrePlantilla, { 
+        x: 50, // Posición horizontal
+        y: yPosition, 
+        size: 24, // Tamaño de la fuente
+        color: rgb(0, 0, 0) }); // Color del texto
+        yPosition -= 50; // Movemos la posición hacia abajo para el siguiente texto
+
+        // 3. EDITA AQUÍ: Se recorren los datos del formulario y se escriben en el PDF
+        for (const [key, value] of Object.entries(datos_rellenados)) {
+          // Puedes cambiar cómo se muestra cada campo. Por ejemplo, en negrita:
+            page.drawText(`${key}: ${value}`, { 
+            x: 50, 
+            y: yPosition, 
+            size: 12 });
+            yPosition -= 20; // Movemos la posición hacia abajo para el siguiente campo
+        }
+
+        // 4. Se genera el archivo PDF
+        const pdfBytes = await pdfDoc.save();
+        
+        // 5. Se guarda el PDF en el servidor
+        const fileName = `${radicado}.pdf`;
+        const filePath = path.join('uploads', fileName);
+        await fs.writeFile(filePath, pdfBytes);
+        // --- FIN: LÓGICA PARA CREAR EL ARCHIVO PDF ---
+
+        // Ahora insertamos el documento con la ruta al archivo físico
+        const [docResult] = await connection.query(
+            `INSERT INTO documentos (radicado, asunto, id_oficina_productora, id_serie, id_subserie, remitente_nombre, id_usuario_radicador, path_archivo, nombre_archivo_original)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [radicado, asunto, id_oficina_productora, id_serie, id_subserie, 'Generado Internamente', id_usuario_radicador, filePath, fileName]
+        );
+        const newDocumentId = docResult.insertId;
+
+        // Añadimos el nuevo documento al índice del expediente
+        const [folioRows] = await connection.query('SELECT MAX(orden_foliado) as max_folio FROM expediente_documentos WHERE id_expediente = ?', [id_expediente]);
+        const nuevoFolio = (folioRows[0].max_folio || 0) + 1;
+        await connection.query(
+            'INSERT INTO expediente_documentos (id_expediente, id_documento, orden_foliado) VALUES (?, ?, ?)',
+            [id_expediente, newDocumentId, nuevoFolio]
+        );
+        
+        await connection.commit();
+        res.status(201).json({ msg: 'Documento PDF generado desde plantilla y añadido al expediente con éxito.' });
+
+    } catch (error) {
+        await connection.rollback();
+        console.error("Error al generar documento desde plantilla:", error);
+        res.status(500).json({ msg: 'Error en el servidor' });
+    } finally {
+        connection.release();
+    }
 };

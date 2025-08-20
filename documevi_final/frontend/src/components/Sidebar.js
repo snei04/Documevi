@@ -45,6 +45,7 @@ const Sidebar = ({ isOpen }) => {
             <li><Link to="/dashboard/subseries">Subseries (TRD)</Link></li>
             <li><Link to="/dashboard/campos-personalizados">Campos Personalizados</Link></li>
             <li><Link to="/dashboard/workflows">Flujos de Trabajo</Link></li>
+            <li><Link to="/dashboard/plantillas">Gestión de Plantillas</Link></li>
           </ul>
         </li>
 

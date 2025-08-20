@@ -33,6 +33,8 @@ import OneDriveViewer from './components/OneDriveViewer';
 import GestionTransferencias from './components/GestionTransferencias';
 import GestionPermisos from './components/GestionPermisos';
 import GestionCamposPersonalizados from './components/GestionCamposPersonalizados'; 
+import GestionPlantillas from './components/GestionPlantillas'; 
+import PlantillaDetalle from './components/PlantillaDetalle';
 // 3. Importamos el CSS
 import './App.css';
 
@@ -97,6 +99,8 @@ function App() {
           <Route path="reportes-fuid" element={<ReporteFUID />} />
           <Route path="auditoria" element={<GestionAuditoria />} />
           <Route path="campos-personalizados" element={<GestionCamposPersonalizados />} />
+          <Route path="plantillas" element={<GestionPlantillas />} />
+          <Route path="plantillas/:id" element={<PlantillaDetalle />} />
           <Route path="transferencias" element={<GestionTransferencias />} />
           <Route path="roles" element={<GestionRoles />} />
           <Route path="roles/:id_rol/permisos" element={<GestionPermisos />} />

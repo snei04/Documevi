@@ -6,7 +6,8 @@ const {
   addDocumentoToExpediente,
   closeExpediente,
   getExpedienteCustomData,
-  updateExpedienteCustomData  
+  updateExpedienteCustomData,
+  createDocumentoFromPlantilla  
 } = require('../controllers/expediente.controller');
 const authMiddleware = require('../middleware/auth.middleware');
 const authorizePermission = require('../middleware/authorizePermission');
@@ -34,5 +35,6 @@ router.route('/:id/cerrar')
   router.route('/:id/custom-data')
   .get(getExpedienteCustomData)
   .put(authorizePermission('gestionar_expedientes'), updateExpedienteCustomData);
+  router.post('/:id/documentos-desde-plantilla', authorizePermission('gestionar_expedientes'), createDocumentoFromPlantilla);
 
 module.exports = router;

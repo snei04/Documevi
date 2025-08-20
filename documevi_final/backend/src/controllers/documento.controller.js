@@ -4,23 +4,7 @@ const crypto = require('crypto');
 const pdfParse = require('pdf-parse');
 const Tesseract = require('tesseract.js');
 
-const generarRadicado = async () => {
-    const hoy = new Date();
-    const yyyy = hoy.getFullYear();
-    const mm = String(hoy.getMonth() + 1).padStart(2, '0');
-    const dd = String(hoy.getDate()).padStart(2, '0');
-    const fechaPrefix = `${yyyy}${mm}${dd}`;
-
-    const [rows] = await pool.query(
-      "SELECT COUNT(*) as count FROM documentos WHERE radicado LIKE ?", 
-      [`${fechaPrefix}%`]
-    );
-    
-    const nuevoConsecutivo = rows[0].count + 1;
-    const consecutivoStr = String(nuevoConsecutivo).padStart(4, '0');
-
-    return `${fechaPrefix}-${consecutivoStr}`;
-};
+const { generarRadicado } = require('../utils/radicado.util');
 
 // 👇 ASEGÚRATE DE QUE ESTA FUNCIÓN ESTÉ EXPORTADA
 exports.getAllDocumentos = async (req, res) => {
@@ -155,35 +139,36 @@ exports.advanceWorkflow = async (req, res) => {
 };
 
 exports.firmarDocumento = async (req, res) => {
-  const { id: id_documento } = req.params;
-  const { firma_imagen } = req.body;
+    const { id: id_documento } = req.params;
+    const { firma_imagen } = req.body;
 
-  if (!firma_imagen) {
-    return res.status(400).json({ msg: 'No se ha proporcionado una firma.' });
-  }
-
-  try {
-    const [docs] = await pool.query('SELECT path_archivo FROM documentos WHERE id = ?', [id_documento]);
-    if (docs.length === 0 || !docs[0].path_archivo || !fs.existsSync(docs[0].path_archivo)) {
-      return res.status(404).json({ msg: 'El archivo físico del documento no se encuentra.' });
+    if (!firma_imagen) {
+        return res.status(400).json({ msg: 'No se ha proporcionado una firma.' });
     }
-    const filePath = docs[0].path_archivo;
 
-    const fileBuffer = fs.readFileSync(filePath);
-    // 2. Ahora 'crypto' estará definido y esta línea funcionará
-    const hashSum = crypto.createHash('sha256');
-    hashSum.update(fileBuffer);
-    const firma_hash = hashSum.digest('hex');
+    try {
+        
+        const [docs] = await pool.query('SELECT path_archivo FROM documentos WHERE id = ?', [id_documento]);
+        if (docs.length === 0 || !docs[0].path_archivo || !fs.existsSync(docs[0].path_archivo)) {
+            return res.status(404).json({ msg: 'No se puede firmar porque no existe un archivo físico para este documento. Los documentos generados desde plantillas deben tener un archivo asociado antes de ser firmados.' });
+        }
+        const filePath = docs[0].path_archivo;
+        // --- Fin de la Verificación ---
 
-    await pool.query(
-      'UPDATE documentos SET firma_imagen = ?, firma_hash = ?, fecha_firma = NOW() WHERE id = ?',
-      [firma_imagen, firma_hash, id_documento]
-    );
-    
-    res.json({ msg: 'Documento firmado con éxito.' });
+        const fileBuffer = fs.readFileSync(filePath);
+        const hashSum = crypto.createHash('sha256');
+        hashSum.update(fileBuffer);
+        const firma_hash = hashSum.digest('hex');
 
-  } catch (error) {
-    console.error("Error al firmar el documento:", error);
-    res.status(500).json({ msg: 'Error en el servidor', error: error.message });
-  }
+        await pool.query(
+            'UPDATE documentos SET firma_imagen = ?, firma_hash = ?, fecha_firma = NOW() WHERE id = ?',
+            [firma_imagen, firma_hash, id_documento]
+        );
+        
+        res.json({ msg: 'Documento firmado con éxito.' });
+
+    } catch (error) {
+        console.error("Error al firmar el documento:", error);
+        res.status(500).json({ msg: 'Error en el servidor', error: error.message });
+    }
 };

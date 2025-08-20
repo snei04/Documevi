@@ -7,36 +7,34 @@ import SignaturePad from 'react-signature-pad-wrapper';
 import './Dashboard.css';
 
 const ExpedienteDetalle = () => {
-    // --- ESTADOS DEL COMPONENTE ---
+    // --- ESTADOS ---
     const { id } = useParams();
     const [expediente, setExpediente] = useState(null);
     const [documentosDisponibles, setDocumentosDisponibles] = useState([]);
     const [selectedDocumento, setSelectedDocumento] = useState('');
     const [error, setError] = useState('');
 
-    // Estados para Préstamo
+    // Estados para Préstamo, Workflow, Visor, Firma...
     const [showPrestamoForm, setShowPrestamoForm] = useState(false);
     const [fechaDevolucion, setFechaDevolucion] = useState('');
     const [observaciones, setObservaciones] = useState('');
-
-    // Estados para Workflow
     const [workflows, setWorkflows] = useState([]);
     const [selectedWorkflow, setSelectedWorkflow] = useState('');
     const [targetDocumentoId, setTargetDocumentoId] = useState(null);
-
-    // Estados para Visor Modal
     const [modalIsOpen, setModalIsOpen] = useState(false);
     const [viewingFileUrl, setViewingFileUrl] = useState('');
-
-    // Estados para Firma en Pantalla
     const [showSignatureModal, setShowSignatureModal] = useState(false);
     const [signatureTargetId, setSignatureTargetId] = useState(null);
     const sigPad = useRef(null);
-
-    // Estados para Campos Personalizados
     const [customFields, setCustomFields] = useState([]);
     const [customData, setCustomData] = useState({});
     const [requiereFirma, setRequiereFirma] = useState(false);
+
+    // --- INICIO: ESTADOS PARA PLANTILLAS ---
+    const [plantillas, setPlantillas] = useState([]);
+    const [selectedPlantilla, setSelectedPlantilla] = useState(null);
+    const [plantillaData, setPlantillaData] = useState({});
+    // --- FIN: ESTADOS PARA PLANTILLAS ---
 
 
     // --- CARGA DE DATOS ---
@@ -66,12 +64,15 @@ const ExpedienteDetalle = () => {
     useEffect(() => {
         const fetchDropdownData = async () => {
             try {
-                const [resDocs, resWfs] = await Promise.all([
+                // Hacemos todas las peticiones en paralelo
+                const [resDocs, resWfs, resPlantillas] = await Promise.all([
                     api.get('/documentos'),
-                    api.get('/workflows')
+                    api.get('/workflows'),
+                    api.get('/plantillas') // <-- Añadir carga de plantillas
                 ]);
                 setDocumentosDisponibles(resDocs.data);
                 setWorkflows(resWfs.data);
+                setPlantillas(resPlantillas.data); // <-- Guardar plantillas
             } catch (err) {
                 setError('Error al cargar datos de la página.');
             }
@@ -88,6 +89,7 @@ const ExpedienteDetalle = () => {
             await api.post(`/expedientes/${id}/documentos`, { 
                 id_documento: selectedDocumento,
                 requiere_firma: requiereFirma
+
             });
             toast.success('Documento añadido con éxito.');
             setSelectedDocumento('');
@@ -108,6 +110,54 @@ const ExpedienteDetalle = () => {
     const handleSignatureSubmit = async () => { if (sigPad.current.isEmpty()) { return toast.warn('Por favor, dibuje su firma.'); } const firma_imagen = sigPad.current.toDataURL('image/png'); try { await api.post(`/documentos/${signatureTargetId}/firmar`, { firma_imagen }); toast.success('Documento firmado con éxito.'); closeSignatureModal(); fetchExpediente(); } catch (err) { toast.error(err.response?.data?.msg || 'Error al firmar el documento.'); } };
     const handleCustomDataChange = (e) => { const { name, value } = e.target; setCustomData(prev => ({ ...prev, [name]: value })); };
     const handleSaveCustomData = async () => { try { await api.put(`/expedientes/${id}/custom-data`, customData); toast.success('Metadatos personalizados guardados con éxito.'); } catch (err) { toast.error(err.response?.data?.msg || 'Error al guardar los metadatos.'); } };
+    const handleSelectPlantilla = async (plantillaId) => {
+        if (!plantillaId) {
+            setSelectedPlantilla(null);
+            setPlantillaData({});
+            return;
+        }
+        try {
+            const res = await api.get(`/plantillas/${plantillaId}`);
+            setSelectedPlantilla(res.data);
+            setPlantillaData({}); // Limpiar datos anteriores
+        } catch (err) {
+            toast.error('Error al cargar los campos de la plantilla.');
+        }
+    };
+
+    const handlePlantillaDataChange = (e) => {
+        setPlantillaData({ ...plantillaData, [e.target.name]: e.target.value });
+    };
+
+    const handleGenerateDocument = async (e) => {
+        e.preventDefault();
+        if (!expediente || !expediente.id_serie) {
+            return toast.error("No se puede determinar la serie o subserie del expediente.");
+        }
+        try {
+            // Buscamos la oficina productora a partir de la serie
+            const resSeries = await api.get('/series');
+            const serieDelExpediente = resSeries.data.find(s => s.id === expediente.id_serie);
+            if (!serieDelExpediente) {
+                return toast.error("No se encontró la oficina productora para este expediente.");
+            }
+
+            await api.post(`/expedientes/${id}/documentos-desde-plantilla`, {
+                id_plantilla: selectedPlantilla.id,
+                datos_rellenados: plantillaData,
+                id_serie: expediente.id_serie,
+                id_subserie: expediente.id_subserie,
+                id_oficina_productora: serieDelExpediente.id_oficina_productora
+            });
+            toast.success('Documento generado con éxito.');
+            setSelectedPlantilla(null);
+            setPlantillaData({});
+            fetchExpediente(); // Recargar el índice
+        } catch (err) {
+            toast.error(err.response?.data?.msg || 'Error al generar el documento.');
+        }
+    };
+
 
     if (!expediente) return <div>Cargando...</div>;
 
@@ -170,6 +220,36 @@ const ExpedienteDetalle = () => {
                     </form>
                 </div>
             )}
+
+            <div className="content-box">
+                <h3>Generar Documento desde Plantilla</h3>
+                <select onChange={(e) => handleSelectPlantilla(e.target.value)} style={{marginBottom: '15px'}}>
+                    <option value="">-- Seleccione una Plantilla --</option>
+                    {plantillas.map(p => <option key={p.id} value={p.id}>{p.nombre}</option>)}
+                </select>
+
+                {selectedPlantilla && (
+                    <form onSubmit={handleGenerateDocument}>
+                        {selectedPlantilla.campos.sort((a, b) => a.orden - b.orden).map(campo => (
+                            <div key={campo.id} style={{marginBottom: '10px'}}>
+                                <label>{campo.nombre_campo}:
+                                    <input
+                                        type={campo.tipo_campo}
+                                        name={campo.nombre_campo}
+                                        value={plantillaData[campo.nombre_campo] || ''}
+                                        onChange={handlePlantillaDataChange}
+                                        required
+                                        style={{marginLeft: '10px', width: '300px'}}
+                                    />
+                                </label>
+                            </div>
+                        ))}
+                        <button type="submit" className="button button-primary" style={{marginTop: '10px'}}>
+                            Generar y Añadir al Expediente
+                        </button>
+                    </form>
+                )}
+            </div>
 
             <h3>Índice Electrónico</h3>
             <table className="styled-table">

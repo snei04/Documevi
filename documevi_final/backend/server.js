@@ -27,6 +27,7 @@ const auditoriaRoutes = require('./src/routes/auditoria.routes.js');
 const transferenciaRoutes = require('./src/routes/transferencia.routes.js');
 const permisoRoutes = require('./src/routes/permiso.routes.js');
 const campoRoutes = require('./src/routes/campo_personalizado.routes.js');
+const plantillaRoutes = require('./src/routes/plantilla.routes.js');
 
 // Inicialización de Express
 const app = express();
@@ -62,6 +63,7 @@ app.use('/api/auditoria', auditoriaRoutes);
 app.use('/api/transferencias', transferenciaRoutes);
 app.use('/api/permisos', permisoRoutes);
 app.use('/api/campos-personalizados', campoRoutes);
+app.use('/api/plantillas', plantillaRoutes);
 // --- Iniciar el Servidor ---
 const PORT = process.env.PORT || 4000;
 app.listen(PORT, () => {

@@ -35,6 +35,7 @@ import GestionPermisos from './components/GestionPermisos';
 import GestionCamposPersonalizados from './components/GestionCamposPersonalizados'; 
 import GestionPlantillas from './components/GestionPlantillas'; 
 import PlantillaDetalle from './components/PlantillaDetalle';
+import GestionEliminacion from './components/GestionEliminacion';
 // 3. Importamos el CSS
 import './App.css';
 
@@ -102,6 +103,7 @@ function App() {
           <Route path="plantillas" element={<GestionPlantillas />} />
           <Route path="plantillas/:id" element={<PlantillaDetalle />} />
           <Route path="transferencias" element={<GestionTransferencias />} />
+          <Route path="eliminacion" element={<GestionEliminacion />} /> 
           <Route path="roles" element={<GestionRoles />} />
           <Route path="roles/:id_rol/permisos" element={<GestionPermisos />} />
           <Route path="estadisticas" element={<Estadisticas />} />  

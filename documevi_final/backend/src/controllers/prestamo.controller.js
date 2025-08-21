@@ -1,48 +1,141 @@
 // Archivo: backend/src/controllers/prestamo.controller.js
 const pool = require('../config/db');
 const { sendEmail } = require('../services/email.service');
+const { addBusinessDays } = require('../utils/date.util');
 
 // Crear una nueva solicitud de préstamo
 exports.createPrestamo = async (req, res) => {
-  const { id_expediente, fecha_devolucion_prevista, observaciones } = req.body;
-  const id_usuario_solicitante = req.user.id; // Obtenido del token
+    const { id_expediente, observaciones, tipo_prestamo } = req.body;
+    const id_usuario_solicitante = req.user.id;
 
-  if (!id_expediente || !fecha_devolucion_prevista) {
-    return res.status(400).json({ msg: 'El expediente y la fecha de devolución son obligatorios.' });
-  }
+    const fecha_devolucion_prevista = addBusinessDays(new Date(), 10);
 
-  try {
-    const [result] = await pool.query(
-      'INSERT INTO prestamos (id_expediente, id_usuario_solicitante, fecha_devolucion_prevista, observaciones) VALUES (?, ?, ?, ?)',
-      [id_expediente, id_usuario_solicitante, fecha_devolucion_prevista, observaciones]
-    );
+    const connection = await pool.getConnection();
+    try {
+        await connection.beginTransaction();
 
-     const [admins] = await pool.query("SELECT email FROM usuarios WHERE rol_id = 1 AND activo = true");
-    const [solicitantes] = await pool.query("SELECT nombre_completo FROM usuarios WHERE id = ?", [id_usuario_solicitante]);
-    const solicitante = solicitantes[0];
-    const [expedientes] = await pool.query("SELECT nombre_expediente FROM expedientes WHERE id = ?", [id_expediente]);
-    const expediente = expedientes[0];
-    // 3. Si hay administradores, les enviamos el correo
-    if (admins.length > 0 && solicitante && expediente) {
-      const subject = `Nueva Solicitud de Préstamo - ${expediente.nombre_expediente}`;
-      const text = `El usuario ${solicitante.nombre_completo} ha solicitado un préstamo del expediente "${expediente.nombre_expediente}".\nPor favor, ingrese a la plataforma para aprobar o rechazar la solicitud.`;
-      const html = `<p>El usuario <b>${solicitante.nombre_completo}</b> ha solicitado un préstamo del expediente <b>"${expediente.nombre_expediente}"</b>.</p><p>Por favor, ingrese a la plataforma para aprobar o rechazar la solicitud.</p>`;
-      
-      for (const admin of admins) {
-        await sendEmail(admin.email, subject, text, html);
-      }
+        const [expedientes] = await connection.query("SELECT disponibilidad, nombre_expediente FROM expedientes WHERE id = ?", [id_expediente]);
+        if (expedientes.length === 0 || expedientes[0].disponibilidad !== 'Disponible') {
+            await connection.rollback();
+            return res.status(400).json({ msg: 'El expediente no está disponible para préstamo en este momento.' });
+        }
+
+        const [result] = await connection.query(
+            'INSERT INTO prestamos (id_expediente, id_usuario_solicitante, fecha_devolucion_prevista, observaciones, tipo_prestamo) VALUES (?, ?, ?, ?, ?)',
+            [id_expediente, id_usuario_solicitante, fecha_devolucion_prevista, observaciones, tipo_prestamo]
+        );
+
+        const [admins] = await connection.query("SELECT email FROM usuarios WHERE rol_id = 1 AND activo = true");
+        if (admins.length > 0) {
+            const [solicitantes] = await connection.query("SELECT nombre_completo FROM usuarios WHERE id = ?", [id_usuario_solicitante]);
+            if (solicitantes.length > 0) {
+                const solicitante = solicitantes[0];
+                const subject = `Nueva Solicitud de Préstamo - Expediente: ${expedientes[0].nombre_expediente}`;
+                const text = `El usuario ${solicitante.nombre_completo} ha solicitado el expediente "${expedientes[0].nombre_expediente}". Ingrese a la plataforma para aprobar la solicitud.`;
+                for (const admin of admins) {
+                    await sendEmail(admin.email, subject, text);
+                }
+            }
+        }
+        
+        await connection.commit();
+
+        // 👇 INICIO: REGISTRO DE AUDITORÍA PARA LA SOLICITUD 👇
+        await pool.query(
+            'INSERT INTO auditoria (usuario_id, accion, detalles) VALUES (?, ?, ?)',
+            [id_usuario_solicitante, 'SOLICITUD_PRESTAMO', `El usuario solicitó el expediente con ID: ${id_expediente}`]
+        );
+        // --- FIN: REGISTRO DE AUDITORÍA ---
+        
+        res.status(201).json({ id: result.insertId, ...req.body });
+    } catch (error) {
+        await connection.rollback();
+        console.error("Error al crear la solicitud de préstamo:", error);
+        res.status(500).json({ msg: 'Error en el servidor' });
+    } finally {
+        connection.release();
     }
-      
-      
-    
-    res.status(201).json({
-      id: result.insertId,
-      ...req.body
-    });
-  } catch (error) {
-    console.error("Error al crear la solicitud de préstamo:", error);
-    res.status(500).json({ msg: 'Error en el servidor', error: error.message });
-  }
+};
+
+// Aprobar un préstamo (acción del archivista)
+exports.approvePrestamo = async (req, res) => {
+    const { id } = req.params; // ID del préstamo
+    const connection = await pool.getConnection();
+    try {
+        await connection.beginTransaction();
+
+        const [prestamos] = await connection.query("SELECT id_expediente FROM prestamos WHERE id = ? AND estado = 'Solicitado'", [id]);
+        if (prestamos.length === 0) {
+            await connection.rollback();
+            return res.status(404).json({ msg: 'Solicitud de préstamo no encontrada o ya procesada.' });
+        }
+        const { id_expediente } = prestamos[0];
+
+        await connection.query("UPDATE prestamos SET estado = 'Prestado' WHERE id = ?", [id]);
+        await connection.query("UPDATE expedientes SET disponibilidad = 'Prestado' WHERE id = ?", [id_expediente]);
+
+        await connection.commit();
+
+        // 👇 INICIO: REGISTRO DE AUDITORÍA PARA LA APROBACIÓN 👇
+        await pool.query(
+            'INSERT INTO auditoria (usuario_id, accion, detalles) VALUES (?, ?, ?)',
+            [req.user.id, 'APROBACION_PRESTAMO', `Se aprobó el préstamo con ID: ${id}`]
+        );
+        // --- FIN: REGISTRO DE AUDITORÍA ---
+
+        res.json({ msg: 'Préstamo aprobado con éxito. El expediente ahora figura como no disponible.' });
+    } catch (error) {
+        await connection.rollback();
+        res.status(500).json({ msg: 'Error en el servidor' });
+    } finally {
+        connection.release();
+    }
+};
+
+// Registrar la devolución de un expediente (acción del archivista)
+exports.returnPrestamo = async (req, res) => {
+    const { id } = req.params; // ID del préstamo
+    const { folios, estado_conservacion, inconsistencias } = req.body; // Datos del checklist
+
+    const connection = await pool.getConnection();
+    try {
+        await connection.beginTransaction();
+
+        // 1. Obtenemos los datos del préstamo, incluyendo su tipo
+        const [prestamos] = await connection.query("SELECT id_expediente, tipo_prestamo FROM prestamos WHERE id = ? AND estado = 'Prestado'", [id]);
+        
+        if (prestamos.length === 0) {
+            await connection.rollback();
+            return res.status(404).json({ msg: 'Préstamo no encontrado o no está en estado "Prestado".' });
+        }
+        
+        const { id_expediente, tipo_prestamo } = prestamos[0];
+
+        // 2. Verificación condicional del checklist
+        // Si el préstamo es Físico y faltan datos del checklist, devolvemos un error
+        if (tipo_prestamo === 'Físico' && (folios === undefined || !estado_conservacion)) {
+            await connection.rollback();
+            return res.status(400).json({ msg: 'Para préstamos físicos, los folios y el estado de conservación son obligatorios.' });
+        }
+
+        // 3. Actualizamos el préstamo. Si es electrónico, los campos del checklist serán NULL
+        await connection.query(
+            "UPDATE prestamos SET estado = 'Devuelto', fecha_devolucion_real = NOW(), dev_folios_confirmados = ?, dev_estado_conservacion = ?, dev_inconsistencias = ? WHERE id = ?",
+            [folios, estado_conservacion, inconsistencias, id]
+        );
+        
+        // 4. El expediente vuelve a estar disponible
+        await connection.query("UPDATE expedientes SET disponibilidad = 'Disponible' WHERE id = ?", [id_expediente]);
+
+        await connection.commit();
+        res.json({ msg: 'Devolución registrada con éxito. El expediente está disponible nuevamente.' });
+    } catch (error) {
+        await connection.rollback();
+        console.error("Error al registrar la devolución:", error);
+        res.status(500).json({ msg: 'Error en el servidor' });
+    } finally {
+        connection.release();
+    }
 };
 
 // Obtener todos los préstamos (para administradores)
@@ -83,7 +176,10 @@ exports.updatePrestamoStatus = async (req, res) => {
 
         query += ' WHERE id = ?';
 
-        const [result] = await pool.query(query, params);
+        const [result] = await pool.query(
+      'INSERT INTO prestamos (id_expediente, id_usuario_solicitante, fecha_devolucion_prevista, observaciones, tipo_prestamo) VALUES (?, ?, ?, ?, ?)',
+      [id_expediente, id_usuario_solicitante, fecha_devolucion_prevista, observaciones, tipo_prestamo]
+    );
 
         if (result.affectedRows === 0) {
             return res.status(404).json({ msg: 'Préstamo no encontrado.' });
@@ -94,4 +190,71 @@ exports.updatePrestamoStatus = async (req, res) => {
         console.error("Error al actualizar el préstamo:", error);
         res.status(500).json({ msg: 'Error en el servidor', error: error.message });
     }
+};
+
+// Solicitar una prórroga para un préstamo (acción del usuario)
+exports.requestProrroga = async (req, res) => {
+    const { id } = req.params; // ID del préstamo
+    const id_usuario_solicitante = req.user.id;
+
+    try {
+        // Verificamos que el préstamo pertenezca al usuario y esté en estado 'Prestado'
+        const [prestamos] = await pool.query(
+            "SELECT * FROM prestamos WHERE id = ? AND id_usuario_solicitante = ? AND estado = 'Prestado'",
+            [id, id_usuario_solicitante]
+        );
+
+        if (prestamos.length === 0) {
+            return res.status(404).json({ msg: 'Préstamo no encontrado o no apto para prórroga.' });
+        }
+
+        // Actualizamos el estado a 'Prorroga Solicitada' (o un estado similar que definas)
+        // Por simplicidad, aquí solo incrementaremos el contador
+        await pool.query("UPDATE prestamos SET prorrogas_solicitadas = prorrogas_solicitadas + 1 WHERE id = ?", [id]);
+
+        // Aquí podrías enviar un email al administrador notificando la solicitud de prórroga
+        
+        res.json({ msg: 'Solicitud de prórroga enviada con éxito.' });
+    } catch (error) {
+        res.status(500).json({ msg: 'Error en el servidor' });
+    }
+};
+
+
+// Aprobar una prórroga (acción del administrador)
+exports.approveProrroga = async (req, res) => {
+    const { id } = req.params; // ID del préstamo
+
+    try {
+        const [prestamos] = await pool.query("SELECT fecha_devolucion_prevista FROM prestamos WHERE id = ?", [id]);
+        if (prestamos.length === 0) {
+            return res.status(404).json({ msg: 'Préstamo no encontrado.' });
+        }
+
+        // 5. Calculamos la nueva fecha: 5 días hábiles desde la fecha prevista anterior
+        const nuevaFecha = addBusinessDays(new Date(prestamos[0].fecha_devolucion_prevista), 5);
+
+        await pool.query("UPDATE prestamos SET fecha_devolucion_prevista = ? WHERE id = ?", [nuevaFecha, id]);
+
+        res.json({ msg: 'Prórroga aprobada. La fecha de devolución ha sido extendida.' });
+    } catch (error) {
+        res.status(500).json({ msg: 'Error en el servidor' });
+    }
+};
+
+exports.getMyPrestamos = async (req, res) => {
+  const id_usuario_solicitante = req.user.id; // Obtenido del token
+
+  try {
+    const [rows] = await pool.query(`
+        SELECT p.*, e.nombre_expediente
+        FROM prestamos p
+        JOIN expedientes e ON p.id_expediente = e.id
+        WHERE p.id_usuario_solicitante = ?
+        ORDER BY p.fecha_solicitud DESC
+    `, [id_usuario_solicitante]);
+    res.json(rows);
+  } catch (error) {
+    res.status(500).json({ msg: 'Error en el servidor', error: error.message });
+  }
 };

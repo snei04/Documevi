@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import api from '../api/axios';
 import { toast } from 'react-toastify';
-import './Dashboard.css';
+import './Dashboard.css'; // Asegúrate de que el CSS esté importado
 
 const GestionEliminacion = () => {
   const [elegibles, setElegibles] = useState([]);
@@ -35,7 +35,7 @@ const GestionEliminacion = () => {
     if (selectedIds.length === 0) {
       return toast.warn('Por favor, seleccione al menos un expediente para eliminar.');
     }
-    if (!motivo) {
+    if (!motivo.trim()) {
       return toast.warn('Por favor, ingrese un motivo o justificación para la eliminación.');
     }
     if (window.confirm(`¿Está seguro de que desea ELIMINAR PERMANENTEMENTE ${selectedIds.length} expedientes? Esta acción no se puede deshacer.`)) {
@@ -47,7 +47,7 @@ const GestionEliminacion = () => {
         toast.success(res.data.msg);
         setSelectedIds([]);
         setMotivo('');
-        fetchElegibles(); // Recargar la lista
+        fetchElegibles();
       } catch (err) {
         toast.error(err.response?.data?.msg || 'Error al ejecutar la eliminación.');
       }
@@ -61,8 +61,7 @@ const GestionEliminacion = () => {
         <div className="page-header">
             <h1>Disposición Final: Eliminación de Expedientes</h1>
             <p>
-                Esta sección muestra los expedientes que han cumplido su tiempo de retención total (en archivo de gestión y central) 
-                y cuya disposición final, según la TRD, es "Eliminación".
+                Esta sección muestra los expedientes que han cumplido su tiempo de retención y cuya disposición final en la TRD es "Eliminación".
             </p>
         </div>
       
@@ -74,7 +73,7 @@ const GestionEliminacion = () => {
                     value={motivo}
                     onChange={(e) => setMotivo(e.target.value)}
                     placeholder="Motivo de la eliminación (requerido)"
-                    style={{ minWidth: '300px' }}
+                    style={{ minWidth: '300px', padding: '0.5rem' }}
                 />
                 <button 
                     onClick={handleEliminar} 

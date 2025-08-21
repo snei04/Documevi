@@ -18,42 +18,77 @@ exports.getAllDocumentos = async (req, res) => {
 };
 
 exports.createDocumento = async (req, res) => {
-    const { asunto, id_oficina_productora, id_serie, id_subserie, remitente_nombre, remitente_identificacion, remitente_direccion } = req.body;
+    const { asunto, tipo_soporte, ubicacion_fisica, id_oficina_productora, id_serie, id_subserie, remitente_nombre, remitente_identificacion, remitente_direccion } = req.body;
+    const customDataString = req.body.customData;
     const id_usuario_radicador = req.user.id;
 
-    if (!req.file) {
-        return res.status(400).json({ msg: 'No se ha subido ningún archivo.' });
+    if (tipo_soporte === 'Electrónico' && !req.file) {
+        return res.status(400).json({ msg: 'Para un documento electrónico, se requiere adjuntar un archivo.' });
+    }
+    if (tipo_soporte === 'Físico' && (!ubicacion_fisica || !ubicacion_fisica.trim())) {
+        return res.status(400).json({ msg: 'Para un documento físico, se requiere especificar su ubicación.' });
     }
 
-    const { originalname: nombre_archivo_original, path: path_archivo } = req.file;
+    let path_archivo = null;
+    let nombre_archivo_original = null;
     let contenido_extraido = null;
+    if (req.file) {
+        path_archivo = req.file.path;
+        nombre_archivo_original = req.file.originalname;
+    }
+    
+    let customData = {};
+    if (customDataString) {
+        try {
+            customData = JSON.parse(customDataString);
+        } catch (e) {
+            return res.status(400).json({ msg: 'Los datos personalizados no tienen un formato JSON válido.' });
+        }
+    }
 
+    // --- INICIO DE LA LÓGICA DE TRANSACCIÓN ---
+    const connection = await pool.getConnection();
     try {
-        // Lógica de extracción de texto (sin cambios)
-        if (req.file.mimetype === 'application/pdf') {
-            const dataBuffer = fs.readFileSync(path_archivo);
-            const data = await pdfParse(dataBuffer);
-            contenido_extraido = data.text;
-        }
-        if (req.file.mimetype.startsWith('image/')) {
-            const { data: { text } } = await Tesseract.recognize(path_archivo, 'spa');
-            contenido_extraido = text;
-        }
+        await connection.beginTransaction(); // 1. Iniciar la transacción
 
+        if (req.file) {
+            if (req.file.mimetype === 'application/pdf') {
+                const dataBuffer = fs.readFileSync(path_archivo);
+                const data = await pdfParse(dataBuffer);
+                contenido_extraido = data.text;
+            }
+            if (req.file.mimetype.startsWith('image/')) {
+                const { data: { text } } = await Tesseract.recognize(path_archivo, 'spa');
+                contenido_extraido = text;
+            }
+        }
+        
         const radicado = await generarRadicado();
 
-        // Se revierte a la inserción simple, sin datos personalizados
-        const [result] = await pool.query(
-            `INSERT INTO documentos (radicado, asunto, id_oficina_productora, id_serie, id_subserie, remitente_nombre, remitente_identificacion, remitente_direccion, nombre_archivo_original, path_archivo, contenido_extraido, id_usuario_radicador)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-            [radicado, asunto, id_oficina_productora, id_serie, id_subserie, remitente_nombre, remitente_identificacion, remitente_direccion, nombre_archivo_original, path_archivo, contenido_extraido, id_usuario_radicador]
+        const [result] = await connection.query(
+            `INSERT INTO documentos (radicado, asunto, tipo_soporte, id_oficina_productora, id_serie, id_subserie, remitente_nombre, remitente_identificacion, remitente_direccion, nombre_archivo_original, path_archivo, ubicacion_fisica, contenido_extraido, id_usuario_radicador)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [radicado, asunto, tipo_soporte, id_oficina_productora, id_serie, id_subserie, remitente_nombre, remitente_identificacion, remitente_direccion, nombre_archivo_original, path_archivo, ubicacion_fisica, contenido_extraido, id_usuario_radicador]
         );
+        const newDocumentId = result.insertId;
 
-        res.status(201).json({ id: result.insertId, radicado: radicado, ...req.body });
+        if (Object.keys(customData).length > 0) {
+            const customDataValues = Object.entries(customData).map(([id_campo, valor]) => {
+                return [newDocumentId, parseInt(id_campo), valor];
+            });
+            await connection.query('INSERT INTO documento_datos_personalizados (id_documento, id_campo, valor) VALUES ?', [customDataValues]);
+        }
+        
+        await connection.commit(); // 2. Si todo sale bien, se confirman los cambios
+
+        res.status(201).json({ id: newDocumentId, radicado: radicado });
 
     } catch (error) {
+        await connection.rollback(); // 3. Si algo falla, se revierten todos los cambios
         console.error("Error al radicar documento:", error);
         res.status(500).json({ msg: 'Error en el servidor', error: error.message });
+    } finally {
+        connection.release(); // 4. Se libera la conexión
     }
 };
 

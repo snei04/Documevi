@@ -48,12 +48,16 @@
   width: 250px;
   padding: 20px;
   flex-shrink: 0;
+  overflow-y: auto; /* Permite scroll vertical si es necesario */
+  overflow-x: hidden;
 }
-.sidebar ul {
-  list-style-type: none;
-  padding: 0;
-  margin: 0;
+.sidebar.collapsed {
+  width: 0;
+  padding: 1rem 0;
+  overflow: hidden; /* Mantenemos el 'hidden' cuando está colapsado */
 }
+
+
 .sidebar ul li {
   padding: 10px 10px;
   cursor: pointer;
@@ -72,19 +76,10 @@
 }
 
 /* Estilos para el menú colapsado */
-.sidebar.collapsed {
-  width: 0;
-  padding: 20px 0;
-  overflow: hidden;
-}
+
 
 /* Estilo para los links del menú */
-.sidebar a {
-  color: white;
-  text-decoration: none;
-  display: block;
-  padding: 10px 10px;
-}
+
 /* Estilos para el dashboard de estadísticas */
 .stats-container {
   display: flex;
@@ -321,4 +316,126 @@
 }
 .button-danger:hover {
   background-color: #c53030;
+}
+
+
+
+.dashboard-main-content {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.main-content-area {
+  flex-grow: 1; /* Ocupa el resto de la altura */
+  overflow-y: auto; /* Permite el scroll vertical si el contenido es largo */
+  padding: 2rem;
+  background-color: #f7fafc; /* Fondo gris claro */
+}
+
+/* --- BARRA SUPERIOR (HEADER) --- */
+.header {
+  height: 60px;
+  background-color: #0077B6;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 1.5rem;
+  flex-shrink: 0; /* Evita que el header se encoja */
+  z-index: 10;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.header-menu-button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: white;
+  padding: 0;
+}
+
+.header-logo {
+  height: 40px;
+}
+
+.header-user-info {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.header-user-info span {
+  font-weight: 500;
+}
+
+.header-logout-button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 0.875rem;
+  color: #e0e0e0;
+}
+
+.header-logout-button:hover {
+  color: white;
+  text-decoration: underline;
+}
+
+
+/* --- MENÚ LATERAL (SIDEBAR) --- */
+.sidebar {
+  width: 250px;
+  background-color: #0077B6;
+  color: white;
+  padding: 1rem;
+  transition: width 0.3s ease-in-out, padding 0.3s ease-in-out;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+
+.sidebar-nav ul {
+  list-style-type: none;
+  padding: 0;
+  margin: 0;
+  white-space: nowrap; /* Evita que el texto se rompa al colapsar */
+}
+
+.sidebar-nav a, .menu-title {
+  display: block;
+  color: white;
+  text-decoration: none;
+  padding: 0.1rem 1rem;
+  border-radius: 6px;
+  margin: 0.1rem 0;
+  transition: background-color 0.2s;
+}
+
+.sidebar-nav a:hover, .menu-title:hover {
+  background-color: #005f8a; /* Azul más oscuro */
+}
+
+.sidebar-nav a.active {
+  background-color: #004c6d; /* Azul aún más oscuro para el activo */
+}
+
+.menu-title {
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.submenu {
+  list-style-type: none;
+  padding-left: 1.5rem;
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.4s ease-in-out;
+}
+
+.submenu.open {
+  max-height: 500px;
 }

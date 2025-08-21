@@ -14,18 +14,26 @@ const ExpedienteDetalle = () => {
     const [selectedDocumento, setSelectedDocumento] = useState('');
     const [error, setError] = useState('');
 
-    // Estados para Préstamo, Workflow, Visor, Firma...
+    // Estados para Préstamo
     const [showPrestamoForm, setShowPrestamoForm] = useState(false);
-    const [fechaDevolucion, setFechaDevolucion] = useState('');
     const [observaciones, setObservaciones] = useState('');
+    const [tipoPrestamo, setTipoPrestamo] = useState('Electrónico');
+
+    // Estados para Workflow
     const [workflows, setWorkflows] = useState([]);
     const [selectedWorkflow, setSelectedWorkflow] = useState('');
     const [targetDocumentoId, setTargetDocumentoId] = useState(null);
+
+    // Estados para Visor Modal
     const [modalIsOpen, setModalIsOpen] = useState(false);
     const [viewingFileUrl, setViewingFileUrl] = useState('');
+
+    // Estados para Firma en Pantalla
     const [showSignatureModal, setShowSignatureModal] = useState(false);
     const [signatureTargetId, setSignatureTargetId] = useState(null);
     const sigPad = useRef(null);
+
+    // Estados para Campos Personalizados
     const [customFields, setCustomFields] = useState([]);
     const [customData, setCustomData] = useState({});
     const [requiereFirma, setRequiereFirma] = useState(false);
@@ -35,7 +43,6 @@ const ExpedienteDetalle = () => {
     const [selectedPlantilla, setSelectedPlantilla] = useState(null);
     const [plantillaData, setPlantillaData] = useState({});
     // --- FIN: ESTADOS PARA PLANTILLAS ---
-
 
     // --- CARGA DE DATOS ---
     const fetchExpediente = useCallback(async () => {
@@ -64,15 +71,14 @@ const ExpedienteDetalle = () => {
     useEffect(() => {
         const fetchDropdownData = async () => {
             try {
-                // Hacemos todas las peticiones en paralelo
                 const [resDocs, resWfs, resPlantillas] = await Promise.all([
                     api.get('/documentos'),
                     api.get('/workflows'),
-                    api.get('/plantillas') // <-- Añadir carga de plantillas
+                    api.get('/plantillas') // <-- Se añade la carga de plantillas
                 ]);
                 setDocumentosDisponibles(resDocs.data);
                 setWorkflows(resWfs.data);
-                setPlantillas(resPlantillas.data); // <-- Guardar plantillas
+                setPlantillas(resPlantillas.data); // <-- Se guardan las plantillas
             } catch (err) {
                 setError('Error al cargar datos de la página.');
             }
@@ -82,25 +88,9 @@ const ExpedienteDetalle = () => {
     }, [fetchExpediente]);
 
     // --- MANEJADORES DE EVENTOS ---
-    const handleAddDocumento = async (e) => {
-        e.preventDefault();
-        if (!selectedDocumento) return toast.warn('Por favor, seleccione un documento.');
-        try {
-            await api.post(`/expedientes/${id}/documentos`, { 
-                id_documento: selectedDocumento,
-                requiere_firma: requiereFirma
-
-            });
-            toast.success('Documento añadido con éxito.');
-            setSelectedDocumento('');
-            setRequiereFirma(false);
-            fetchExpediente();
-        } catch (err) {
-            toast.error(err.response?.data?.msg || 'Error al añadir el documento.');
-        }
-    };
+    const handleAddDocumento = async (e) => { e.preventDefault(); if (!selectedDocumento) return toast.warn('Por favor, seleccione un documento.'); try { await api.post(`/expedientes/${id}/documentos`, { id_documento: selectedDocumento, requiere_firma: requiereFirma }); toast.success('Documento añadido con éxito.'); setSelectedDocumento(''); setRequiereFirma(false); fetchExpediente(); } catch (err) { toast.error(err.response?.data?.msg || 'Error al añadir el documento.'); } };
     const handleCloseExpediente = async () => { if (window.confirm('¿Estás seguro?')) { try { await api.put(`/expedientes/${id}/cerrar`); toast.success('Expediente cerrado con éxito.'); fetchExpediente(); } catch (err) { toast.error(err.response?.data?.msg || 'Error al cerrar el expediente.'); } } };
-    const handleRequestPrestamo = async (e) => { e.preventDefault(); if (!fechaDevolucion) return toast.warn('Por favor, seleccione una fecha.'); try { await api.post('/prestamos', { id_expediente: id, fecha_devolucion_prevista: fechaDevolucion, observaciones }); toast.success('Solicitud de préstamo enviada.'); setShowPrestamoForm(false); setFechaDevolucion(''); setObservaciones(''); } catch (err) { toast.error(err.response?.data?.msg || 'Error al solicitar el préstamo.'); } };
+    const handleRequestPrestamo = async (e) => { e.preventDefault(); try { await api.post('/prestamos', { id_expediente: id, observaciones, tipo_prestamo: tipoPrestamo }); toast.success('Solicitud de préstamo enviada.'); setShowPrestamoForm(false); setObservaciones(''); setTipoPrestamo('Electrónico'); } catch (err) { toast.error(err.response?.data?.msg || 'Error al solicitar el préstamo.'); } };
     const handleStartWorkflow = async (e) => { e.preventDefault(); if (!selectedWorkflow) return toast.warn('Por favor, seleccione un workflow.'); try { await api.post(`/documentos/${targetDocumentoId}/start-workflow`, { id_workflow: selectedWorkflow }); toast.success('Workflow iniciado con éxito.'); setTargetDocumentoId(null); setSelectedWorkflow(''); } catch (err) { toast.error(err.response?.data?.msg || 'Error al iniciar el workflow.'); } };
     const openModal = (fileUrl) => { setViewingFileUrl(fileUrl); setModalIsOpen(true); };
     const closeModal = () => { setModalIsOpen(false); setViewingFileUrl(''); };
@@ -110,6 +100,8 @@ const ExpedienteDetalle = () => {
     const handleSignatureSubmit = async () => { if (sigPad.current.isEmpty()) { return toast.warn('Por favor, dibuje su firma.'); } const firma_imagen = sigPad.current.toDataURL('image/png'); try { await api.post(`/documentos/${signatureTargetId}/firmar`, { firma_imagen }); toast.success('Documento firmado con éxito.'); closeSignatureModal(); fetchExpediente(); } catch (err) { toast.error(err.response?.data?.msg || 'Error al firmar el documento.'); } };
     const handleCustomDataChange = (e) => { const { name, value } = e.target; setCustomData(prev => ({ ...prev, [name]: value })); };
     const handleSaveCustomData = async () => { try { await api.put(`/expedientes/${id}/custom-data`, customData); toast.success('Metadatos personalizados guardados con éxito.'); } catch (err) { toast.error(err.response?.data?.msg || 'Error al guardar los metadatos.'); } };
+
+    // --- INICIO: FUNCIONES PARA PLANTILLAS ---
     const handleSelectPlantilla = async (plantillaId) => {
         if (!plantillaId) {
             setSelectedPlantilla(null);
@@ -119,7 +111,7 @@ const ExpedienteDetalle = () => {
         try {
             const res = await api.get(`/plantillas/${plantillaId}`);
             setSelectedPlantilla(res.data);
-            setPlantillaData({}); // Limpiar datos anteriores
+            setPlantillaData({}); // Limpiar datos anteriores al seleccionar nueva plantilla
         } catch (err) {
             toast.error('Error al cargar los campos de la plantilla.');
         }
@@ -132,16 +124,14 @@ const ExpedienteDetalle = () => {
     const handleGenerateDocument = async (e) => {
         e.preventDefault();
         if (!expediente || !expediente.id_serie) {
-            return toast.error("No se puede determinar la serie o subserie del expediente.");
+            return toast.error("No se puede determinar la serie del expediente.");
         }
         try {
-            // Buscamos la oficina productora a partir de la serie
             const resSeries = await api.get('/series');
             const serieDelExpediente = resSeries.data.find(s => s.id === expediente.id_serie);
             if (!serieDelExpediente) {
-                return toast.error("No se encontró la oficina productora para este expediente.");
+                return toast.error("No se encontró la oficina productora del expediente.");
             }
-
             await api.post(`/expedientes/${id}/documentos-desde-plantilla`, {
                 id_plantilla: selectedPlantilla.id,
                 datos_rellenados: plantillaData,
@@ -149,15 +139,15 @@ const ExpedienteDetalle = () => {
                 id_subserie: expediente.id_subserie,
                 id_oficina_productora: serieDelExpediente.id_oficina_productora
             });
-            toast.success('Documento generado con éxito.');
+            toast.success('Documento generado y añadido al expediente.');
             setSelectedPlantilla(null);
             setPlantillaData({});
-            fetchExpediente(); // Recargar el índice
+            fetchExpediente();
         } catch (err) {
             toast.error(err.response?.data?.msg || 'Error al generar el documento.');
         }
     };
-
+    // --- FIN: FUNCIONES PARA PLANTILLAS ---
 
     if (!expediente) return <div>Cargando...</div>;
 
@@ -178,9 +168,12 @@ const ExpedienteDetalle = () => {
                 <div className="content-box">
                     <h4>Nueva Solicitud de Préstamo</h4>
                     <form onSubmit={handleRequestPrestamo}>
-                        <label>Fecha Devolución:</label>
-                        <input type="date" value={fechaDevolucion} onChange={(e) => setFechaDevolucion(e.target.value)} required />
-                        <input type="text" placeholder="Observaciones" value={observaciones} onChange={(e) => setObservaciones(e.target.value)} style={{ marginLeft: '10px' }}/>
+                        <label>Tipo de Préstamo: </label>
+                        <select value={tipoPrestamo} onChange={(e) => setTipoPrestamo(e.target.value)}>
+                            <option value="Electrónico">Electrónico</option>
+                            <option value="Físico">Físico</option>
+                        </select>
+                        <input type="text" placeholder="Observaciones (opcional)" value={observaciones} onChange={(e) => setObservaciones(e.target.value)} style={{ marginLeft: '10px' }}/>
                         <button type="submit" style={{ marginLeft: '10px' }} className="button button-primary">Confirmar</button>
                     </form>
                 </div>
@@ -221,6 +214,7 @@ const ExpedienteDetalle = () => {
                 </div>
             )}
 
+            {/* --- INICIO: SECCIÓN PARA GENERAR DESDE PLANTILLA --- */}
             <div className="content-box">
                 <h3>Generar Documento desde Plantilla</h3>
                 <select onChange={(e) => handleSelectPlantilla(e.target.value)} style={{marginBottom: '15px'}}>
@@ -250,6 +244,7 @@ const ExpedienteDetalle = () => {
                     </form>
                 )}
             </div>
+            {/* --- FIN: SECCIÓN PARA GENERAR DESDE PLANTILLA --- */}
 
             <h3>Índice Electrónico</h3>
             <table className="styled-table">

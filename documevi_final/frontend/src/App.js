@@ -36,6 +36,7 @@ import GestionCamposPersonalizados from './components/GestionCamposPersonalizado
 import GestionPlantillas from './components/GestionPlantillas'; 
 import PlantillaDetalle from './components/PlantillaDetalle';
 import GestionEliminacion from './components/GestionEliminacion';
+import MisPrestamos from './components/MisPrestamos';
 // 3. Importamos el CSS
 import './App.css';
 
@@ -96,6 +97,7 @@ function App() {
           <Route path="expedientes/:id" element={<ExpedienteDetalle />} />
           <Route path="workflows/:id" element={<WorkflowDetalle />} />
           <Route path="prestamos" element={<GestionPrestamos />} />
+          <Route path="mis-prestamos" element={<MisPrestamos />} /> 
           <Route path="usuarios" element={<GestionUsuarios />} />
           <Route path="reportes-fuid" element={<ReporteFUID />} />
           <Route path="auditoria" element={<GestionAuditoria />} />

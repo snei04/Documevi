@@ -51,6 +51,12 @@ exports.updateRolePermissions = async (req, res) => {
     }
 
     await connection.commit();
+    // 3. Registrar la auditoría
+    await pool.query(
+    'INSERT INTO auditoria (usuario_id, accion, detalles) VALUES (?, ?, ?)',
+    [req.user.id, 'ACTUALIZACION_PERMISOS', `Se modificaron los permisos para el rol con ID: ${id_rol}`]
+);
+
     res.json({ msg: 'Permisos del rol actualizados con éxito.' });
   } catch (error) {
     await connection.rollback();

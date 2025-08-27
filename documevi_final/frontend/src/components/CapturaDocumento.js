@@ -196,7 +196,7 @@ const CapturaDocumento = () => {
                                 <label>
                                     {field.nombre_campo}{field.es_obligatorio ? ' *' : ''}:
                                     <input
-                                        type={field.tipo_campo}
+                                        type={field.tipo_campo === 'fecha' ? 'date' : field.tipo_campo}
                                         name={field.id}
                                         value={customData[field.id] || ''}
                                         onChange={handleCustomDataChange}

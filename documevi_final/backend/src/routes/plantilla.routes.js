@@ -12,16 +12,12 @@ const authorizePermission = require('../middleware/authorizePermission');
 const router = Router();
 router.use(authMiddleware);
 
-// Rutas para gestionar las plantillas (solo administradores de TRD)
-router.route('/')
-    .get(getAllPlantillas)
-    .post(authorizePermission('gestionar_parametros_trd'), createPlantilla);
+// Cualquiera puede ver la lista de plantillas
+router.get('/', getAllPlantillas);
+router.get('/:id', getPlantillaWithCampos);
 
-// Rutas para una plantilla específica y sus campos
-router.route('/:id')
-    .get(getPlantillaWithCampos);
-
-router.route('/:id/campos')
-    .post(authorizePermission('gestionar_parametros_trd'), addCampoToPlantilla);
+// SOLO usuarios con el permiso 'gestionar_plantillas' pueden crear y modificar
+router.post('/', authorizePermission('gestionar_plantillas'), createPlantilla);
+router.post('/:id/campos', authorizePermission('gestionar_plantillas'), addCampoToPlantilla);
 
 module.exports = router;

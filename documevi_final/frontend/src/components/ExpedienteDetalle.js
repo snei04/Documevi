@@ -185,7 +185,7 @@ const ExpedienteDetalle = () => {
                     {customFields.map(field => (
                         <div key={field.id} style={{ marginBottom: '10px' }}>
                             <label>{field.nombre_campo}{field.es_obligatorio ? ' *' : ''}:
-                                <input type={field.tipo_campo} name={field.id} value={customData[field.id] || ''} onChange={handleCustomDataChange} required={field.es_obligatorio} style={{ marginLeft: '10px' }}/>
+                                <input type={field.tipo_campo === 'fecha' ? 'date' : field.tipo_campo} name={field.id} value={customData[field.id] || ''} onChange={handleCustomDataChange} required={field.es_obligatorio} style={{ marginLeft: '10px' }}/>
                             </label>
                         </div>
                     ))}

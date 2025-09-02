@@ -7,8 +7,8 @@ import './Dashboard.css';
 const GestionPrestamos = () => {
   const [prestamos, setPrestamos] = useState([]);
   const [error, setError] = useState('');
-
-  // Estados para el modal del checklist de devolución
+  
+  // --- INICIO: AÑADIDOS PARA EL CHECKLIST DE DEVOLUCIÓN ---
   const [modalIsOpen, setModalIsOpen] = useState(false);
   const [currentPrestamo, setCurrentPrestamo] = useState(null);
   const [checklistData, setChecklistData] = useState({
@@ -16,6 +16,7 @@ const GestionPrestamos = () => {
     estado_conservacion: 'Bueno',
     inconsistencias: ''
   });
+  // --- FIN: AÑADIDOS PARA EL CHECKLIST DE DEVOLUCIÓN ---
 
   const fetchPrestamos = useCallback(async () => {
     try {
@@ -30,7 +31,6 @@ const GestionPrestamos = () => {
     fetchPrestamos();
   }, [fetchPrestamos]);
 
-  // Función para aprobar una solicitud inicial
   const handleApprove = async (id) => {
     try {
       await api.put(`/prestamos/${id}/approve`);
@@ -41,7 +41,6 @@ const GestionPrestamos = () => {
     }
   };
 
-  // Función para aprobar una solicitud de prórroga
   const handleApproveProrroga = async (id) => {
     try {
         await api.put(`/prestamos/${id}/approve-prorroga`);
@@ -51,8 +50,8 @@ const GestionPrestamos = () => {
         toast.error(err.response?.data?.msg || 'Error al aprobar la prórroga.');
     }
   };
-
-  // Funciones para el modal del checklist
+  
+  // --- INICIO: FUNCIONES PARA EL CHECKLIST Y LA DEVOLUCIÓN ---
   const openReturnModal = (prestamo) => {
     setCurrentPrestamo(prestamo);
     setModalIsOpen(true);
@@ -68,7 +67,6 @@ const GestionPrestamos = () => {
     setChecklistData({ ...checklistData, [e.target.name]: e.target.value });
   };
   
-  // Función que se ejecuta al enviar el formulario del checklist
   const handleReturnSubmit = async (e) => {
     e.preventDefault();
     try {
@@ -98,6 +96,7 @@ const GestionPrestamos = () => {
       openReturnModal(prestamo);
     }
   };
+  // --- FIN: FUNCIONES PARA EL CHECKLIST Y LA DEVOLUCIÓN ---
 
   return (
     <div>

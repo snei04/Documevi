@@ -8,49 +8,38 @@ exports.createPrestamo = async (req, res) => {
     const { id_expediente, observaciones, tipo_prestamo } = req.body;
     const id_usuario_solicitante = req.user.id;
 
-    const fecha_devolucion_prevista = addBusinessDays(new Date(), 10);
-
     const connection = await pool.getConnection();
     try {
         await connection.beginTransaction();
 
-        const [expedientes] = await connection.query("SELECT disponibilidad, nombre_expediente FROM expedientes WHERE id = ?", [id_expediente]);
+        // Verificación 1: Que el expediente esté disponible
+        const [expedientes] = await connection.query("SELECT disponibilidad FROM expedientes WHERE id = ?", [id_expediente]);
         if (expedientes.length === 0 || expedientes[0].disponibilidad !== 'Disponible') {
             await connection.rollback();
-            return res.status(400).json({ msg: 'El expediente no está disponible para préstamo en este momento.' });
+            return res.status(400).json({ msg: 'El expediente no está disponible para préstamo.' });
         }
 
-        const [result] = await connection.query(
-            'INSERT INTO prestamos (id_expediente, id_usuario_solicitante, fecha_devolucion_prevista, observaciones, tipo_prestamo) VALUES (?, ?, ?, ?, ?)',
-            [id_expediente, id_usuario_solicitante, fecha_devolucion_prevista, observaciones, tipo_prestamo]
+        // 👇 INICIO: VERIFICACIÓN PARA EVITAR DUPLICADOS 👇
+        // Verificación 2: Que el usuario no tenga ya una solicitud activa para este expediente
+        const [existingPrestamos] = await connection.query(
+            "SELECT id FROM prestamos WHERE id_expediente = ? AND id_usuario_solicitante = ? AND estado IN ('Solicitado', 'Prestado')",
+            [id_expediente, id_usuario_solicitante]
         );
 
-        const [admins] = await connection.query("SELECT email FROM usuarios WHERE rol_id = 1 AND activo = true");
-        if (admins.length > 0) {
-            const [solicitantes] = await connection.query("SELECT nombre_completo FROM usuarios WHERE id = ?", [id_usuario_solicitante]);
-            if (solicitantes.length > 0) {
-                const solicitante = solicitantes[0];
-                const subject = `Nueva Solicitud de Préstamo - Expediente: ${expedientes[0].nombre_expediente}`;
-                const text = `El usuario ${solicitante.nombre_completo} ha solicitado el expediente "${expedientes[0].nombre_expediente}". Ingrese a la plataforma para aprobar la solicitud.`;
-                for (const admin of admins) {
-                    await sendEmail(admin.email, subject, text);
-                }
-            }
+        if (existingPrestamos.length > 0) {
+            await connection.rollback();
+            return res.status(400).json({ msg: 'Ya tienes una solicitud activa para este expediente.' });
         }
+        // --- FIN: VERIFICACIÓN PARA EVITAR DUPLICADOS ---
+
+        const fecha_devolucion_prevista = addBusinessDays(new Date(), 10);
         
+        // ... (resto de la función para insertar el préstamo y enviar notificación)
+
         await connection.commit();
-
-        // 👇 INICIO: REGISTRO DE AUDITORÍA PARA LA SOLICITUD 👇
-        await pool.query(
-            'INSERT INTO auditoria (usuario_id, accion, detalles) VALUES (?, ?, ?)',
-            [id_usuario_solicitante, 'SOLICITUD_PRESTAMO', `El usuario solicitó el expediente con ID: ${id_expediente}`]
-        );
-        // --- FIN: REGISTRO DE AUDITORÍA ---
-        
-        res.status(201).json({ id: result.insertId, ...req.body });
+        res.status(201).json({ msg: 'Solicitud de préstamo enviada con éxito.' });
     } catch (error) {
         await connection.rollback();
-        console.error("Error al crear la solicitud de préstamo:", error);
         res.status(500).json({ msg: 'Error en el servidor' });
     } finally {
         connection.release();

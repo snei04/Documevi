@@ -1,109 +1,93 @@
-/* src/components/Login.css */
-
+/* Estilos para el contenedor principal del login */
 .login-container {
-  background-color: #0080c9; /* Un azul similar al de tu imagen */
-  padding: 40px 30px;
-  border-radius: 20px;
-  width: 300px;
+  background-color: #0077B6; /* Tu color azul */
+  padding: 2rem;
+  border-radius: 1.5rem;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+  width: 100%;
+  max-width: 24rem; /* 384px */
+  position: relative;
+  color: white;
+  text-align: center;
+}
+
+.login-logo {
+  width: 5rem; /* 80px */
+  height: 5rem; /* 80px */
+  margin: 0 auto 1rem auto;
+}
+
+.login-title {
+  font-size: 1.5rem; /* 24px */
+  font-family: serif;
+  letter-spacing: 0.1em;
+  font-weight: bold;
+  margin-bottom: 2rem;
+}
+
+/* Estilos del formulario */
+.login-form {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-  color: white;
+  gap: 1.5rem;
 }
-/* Capa que cubre el formulario */
+
+.form-group {
+  text-align: left;
+}
+
+.form-label {
+  display: block;
+  font-size: 0.875rem; /* 14px */
+  font-weight: 500;
+  margin-bottom: 0.25rem;
+}
+
+.form-input {
+  width: 100%;
+  background-color: transparent;
+  border: none;
+  border-bottom: 2px solid #3b82f6; /* Un azul más claro para la línea */
+  color: white;
+  padding: 0.5rem 0;
+}
+
+.form-input:focus {
+  outline: none;
+  border-bottom-color: white;
+}
+
+.login-button {
+  width: 100%;
+  background-color: #111827; /* Un gris casi negro */
+  color: white;
+  font-weight: bold;
+  padding: 0.75rem 1rem;
+  border: none;
+  border-radius: 0.375rem; /* 6px */
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.login-button:hover {
+  background-color: #000;
+}
+
+.login-button:disabled {
+    opacity: 0.5;
+}
+
+/* Estilos para el overlay que contiene el loader */
 .loading-overlay {
   position: absolute;
   top: 0;
   left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 119, 182, 0.7); /* Azul semitransparente */
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 119, 182, 0.7); /* Azul con transparencia */
   display: flex;
   justify-content: center;
   align-items: center;
-  border-radius: 20px; /* Mismo borde que el contenedor */
   z-index: 10;
-}
-
-/* El círculo que gira (spinner) */
-.spinner {
-  width: 50px;
-  height: 50px;
-  border: 5px solid rgba(255, 255, 255, 0.3);
-  border-top-color: #ffffff;
-  border-radius: 50%;
-  animation: spin 5s linear infinite;
-}
-
-/* Animación de rotación */
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-.login-logo {
-  width: 80px;
-  height: 80px;
-  margin-bottom: 20px;
-}
-
-.login-title {
-  font-family: 'Georgia', serif; /* Una fuente con serifa como en la imagen */
-  letter-spacing: 2px;
-  font-weight: bold;
-  margin: 0;
-  margin-bottom: 30px;
-}
-
-.login-form {
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-}
-
-.form-group {
-  margin-bottom: 25px;
-  width: 100%;
-}
-
-.form-label {
-  font-family: 'Arial', sans-serif;
-  font-size: 20px;
-  margin-bottom: 5px;
-  display: flex; /* Para que ocupe su propia línea */
-  justify-content: start;
-}
-
-.form-input {
-  background-color: transparent; /* Fondo transparente */
-  border: none; /* Sin bordes */
-  border-bottom: 2px solid rgba(255, 255, 255, 0.7); /* Solo la línea de abajo */
-  color: white; /* Color del texto que se escribe */
-  width: 100%;
-  padding: 8px 0;
-  font-size: 16px;
-  outline: none; /* Quita el borde que aparece al hacer clic */
-}
-
-.form-input:focus {
-  border-bottom-color: white; /* La línea se vuelve blanca al hacer clic */
-}
-
-.login-button {
-  background-color: #003d7b; /* Un negro no tan puro */
-  color: white;
-  border: none;
-  border-radius: 5px;
-  padding: 12px 0;
-  font-size: 16px;
-  font-weight: bold;
-  cursor: pointer;
-  margin-top: 20px;
-  transition: background-color 0.3s ease;
-}
-
-.login-button:hover {
-  background-color: #000000; /* Se oscurece al pasar el mouse */
+  border-radius: 1.5rem; /* Mantiene los bordes redondeados del login */
 }

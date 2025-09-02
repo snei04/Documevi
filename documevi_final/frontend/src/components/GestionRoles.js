@@ -2,12 +2,12 @@ import React, { useState, useEffect, useCallback } from 'react';
 import api from '../api/axios';
 import { toast } from 'react-toastify';
 import { Link } from 'react-router-dom';
+import './Dashboard.css'; // Asegúrate de que el CSS esté importado
 
 const GestionRoles = () => {
   const [roles, setRoles] = useState([]);
   const [newRoleName, setNewRoleName] = useState('');
   
-  // Estados para la edición en línea
   const [editingRoleId, setEditingRoleId] = useState(null);
   const [editingRoleName, setEditingRoleName] = useState('');
 
@@ -61,25 +61,33 @@ const GestionRoles = () => {
   };
 
   return (
-    <div style={{ padding: '20px' }}>
-      <h1>Gestión de Roles</h1>
+    <div>
+      <div className="page-header">
+        <h1>Gestión de Roles del Sistema</h1>
+      </div>
       
-      <form onSubmit={handleCreate} style={{ marginBottom: '20px' }}>
-        <input 
-          type="text"
-          value={newRoleName}
-          onChange={(e) => setNewRoleName(e.target.value)}
-          placeholder="Nombre del nuevo rol"
-          required 
-        />
-        <button type="submit" style={{ marginLeft: '10px' }}>Crear Rol</button>
-      </form>
+      <div className="content-box">
+        <h3>Crear Nuevo Rol</h3>
+        <form onSubmit={handleCreate} className="action-bar">
+          <input 
+            type="text"
+            value={newRoleName}
+            onChange={(e) => setNewRoleName(e.target.value)}
+            placeholder="Nombre del nuevo rol"
+            required 
+            style={{flexGrow: 1, padding: '0.5rem', border: '1px solid #ccc', borderRadius: '6px'}}
+          />
+          <button type="submit" className="button button-primary">Crear Rol</button>
+        </form>
+      </div>
 
-      <table border="1" style={{ width: '100%', borderCollapse: 'collapse', background: '#fff' }}>
+      <h3>Roles Existentes</h3>
+      <table className="styled-table">
         <thead>
-          <tr style={{ background: '#eee' }}>
+          <tr>
             <th>Nombre del Rol</th>
             <th>Acciones</th>
+            <th>Permisos</th>
           </tr>
         </thead>
         <tbody>
@@ -96,29 +104,28 @@ const GestionRoles = () => {
                   rol.nombre
                 )}
               </td>
-              <td style={{ textAlign: 'center' }}>
+              <td className="action-cell">
                 {editingRoleId === rol.id ? (
                   <>
-                    <button onClick={() => handleUpdate(rol.id)}>Guardar</button>
-                    <button onClick={() => setEditingRoleId(null)} style={{marginLeft: '5px'}}>Cancelar</button>
+                    <button onClick={() => handleUpdate(rol.id)} className="button button-primary">Guardar</button>
+                    <button onClick={() => setEditingRoleId(null)} className="button">Cancelar</button>
                   </>
                 ) : (
                   <>
-                    <button onClick={() => { setEditingRoleId(rol.id); setEditingRoleName(rol.nombre); }}>
+                    <button onClick={() => { setEditingRoleId(rol.id); setEditingRoleName(rol.nombre); }} className="button">
                       Editar
                     </button>
-                    <button onClick={() => handleDelete(rol.id)} style={{ marginLeft: '5px' }}>
+                    <button onClick={() => handleDelete(rol.id)} className="button button-danger">
                       Eliminar
                     </button>
                   </>
                 )}
               </td>
               <td style={{ textAlign: 'center' }}>
-               
                 <Link to={`/dashboard/roles/${rol.id}/permisos`}>
                     Gestionar Permisos
                 </Link>
-            </td>
+              </td>
             </tr>
           ))}
         </tbody>

@@ -4,60 +4,62 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 import { toast } from 'react-toastify';
+import './Dashboard.css'; // Asegúrate de que el CSS esté importado
 
 const ReporteFUID = () => {
-  const [oficinas, setOficinas] = useState([]);
-  const [selectedOficina, setSelectedOficina] = useState('');
-  const [reportData, setReportData] = useState([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
+    const [oficinas, setOficinas] = useState([]);
+    const [selectedOficina, setSelectedOficina] = useState('');
+    const [reportData, setReportData] = useState([]);
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState('');
 
-  // Lógica para descubrir las cabeceras de las columnas personalizadas
-  const customHeaders = useMemo(() => {
-    if (!reportData || reportData.length === 0) return [];
-    const headers = new Set();
-    reportData.forEach(item => {
-        if (item.metadatos_personalizados) {
+    const customHeaders = useMemo(() => {
+        if (!reportData || reportData.length === 0) return [];
+        const headers = new Set();
+        reportData.forEach(item => {
+            if (item.metadatos_personalizados) {
+                try {
+                    const metadata = JSON.parse(item.metadatos_personalizados);
+                    if (Array.isArray(metadata)) {
+                        metadata.forEach(meta => headers.add(meta.nombre));
+                    }
+                } catch (e) {}
+            }
+        });
+        return Array.from(headers);
+    }, [reportData]);
+
+    useEffect(() => {
+        const fetchOficinas = async () => {
             try {
-                const metadata = JSON.parse(item.metadatos_personalizados);
-                if (Array.isArray(metadata)) {
-                    metadata.forEach(meta => headers.add(meta.nombre));
-                }
-            } catch (e) {}
+                const res = await api.get('/oficinas');
+                setOficinas(res.data);
+            } catch (err) {
+                setError('No se pudieron cargar las oficinas.');
+            }
+        };
+        fetchOficinas();
+    }, []);
+
+    const handleGenerateReport = async (e) => {
+        e.preventDefault();
+        if (!selectedOficina) {
+            return toast.warn('Por favor, seleccione una oficina.');
         }
-    });
-    return Array.from(headers);
-  }, [reportData]);
-
-  useEffect(() => {
-    const fetchOficinas = async () => {
-      try {
-        const res = await api.get('/oficinas');
-        setOficinas(res.data);
-      } catch (err) {
-        setError('No se pudieron cargar las oficinas.');
-      }
+        setIsLoading(true);
+        setError('');
+        setReportData([]);
+        try {
+            const res = await api.get(`/reportes/fuid?oficinaId=${selectedOficina}`);
+            setReportData(res.data);
+        } catch (err) {
+            setError('Error al generar el reporte.');
+        } finally {
+            setIsLoading(false);
+        }
     };
-    fetchOficinas();
-  }, []);
 
-  const handleGenerateReport = async (e) => {
-    e.preventDefault();
-    if (!selectedOficina) return toast.warn('Por favor, seleccione una oficina.');
-    setIsLoading(true);
-    setError('');
-    setReportData([]);
-    try {
-      const res = await api.get(`/reportes/fuid?oficinaId=${selectedOficina}`);
-      setReportData(res.data);
-    } catch (err) {
-      setError('Error al generar el reporte.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleExportPDF = () => {
+    const handleExportPDF = () => {
     if (!reportData || reportData.length === 0) return toast.warn("No hay datos para exportar.");
     
     const baseColumns = ["N° Orden", "Cód. Serie", "Nombre Serie", "Fechas", "Folios", "Soporte"];
@@ -96,8 +98,7 @@ const ReporteFUID = () => {
     autoTable(doc, { head: [tableColumn], body: tableRows, startY: 45 });
     doc.save(`FUID_${reportData[0].nombre_oficina.replace(/\s/g, '_')}.pdf`);
   };
-
-  const handleExportExcel = () => {
+     const handleExportExcel = () => {
     if (!reportData || reportData.length === 0) return toast.warn("No hay datos para exportar.");
     
     const dataForExcel = reportData.map(item => {
@@ -130,67 +131,82 @@ const ReporteFUID = () => {
     XLSX.writeFile(workbook, `FUID_${reportData[0].nombre_oficina.replace(/\s/g, '_')}.xlsx`);
   };
 
-  return (
-    <div style={{ padding: '20px' }}>
-      <h1>Reporte FUID</h1>
-      <form onSubmit={handleGenerateReport} style={{ marginBottom: '20px' }}>
-        <select value={selectedOficina} onChange={(e) => setSelectedOficina(e.target.value)} required>
-          <option value="">-- Seleccione una Oficina --</option>
-          {oficinas.map(ofi => <option key={ofi.id} value={ofi.id}>{ofi.nombre_oficina}</option>)}
-        </select>
-        <button type="submit" style={{ marginLeft: '10px' }} disabled={isLoading}>
-          {isLoading ? 'Generando...' : 'Generar Reporte'}
-        </button>
-        {error && <p style={{ color: 'red' }}>{error}</p>}
-      </form>
+    return (
+        <div>
+            <div className="page-header">
+                <h1>Reporte FUID (Formato Único de Inventario Documental)</h1>
+            </div>
 
-      {reportData.length > 0 && (
-        <>
-          <div style={{marginBottom: '10px', display: 'flex', gap: '10px'}}>
-            <button onClick={handleExportPDF}>Exportar a PDF</button>
-            <button onClick={handleExportExcel}>Exportar a Excel</button>
-          </div>
-          <table border="1" style={{ width: '100%', borderCollapse: 'collapse', background: '#fff', fontSize: '12px' }}>
-            <thead>
-              <tr>
-                <th>N° Orden</th>
-                <th>Cód. Serie</th>
-                <th>Nombre Serie</th>
-                <th>Fechas</th>
-                <th>Folios</th>
-                <th>Soporte</th>
-                {customHeaders.map(header => <th key={header}>{header}</th>)}
-              </tr>
-            </thead>
-            <tbody>
-              {reportData.map(item => {
-                  let customValues = {};
-                  if (item.metadatos_personalizados) {
-                      try {
-                          const metadata = JSON.parse(item.metadatos_personalizados);
-                          if (Array.isArray(metadata)) {
-                            metadata.forEach(meta => { customValues[meta.nombre] = meta.valor; });
-                          }
-                      } catch(e) {}
-                  }
-                  return (
-                      <tr key={item.numero_orden}>
-                          <td>{item.numero_orden}</td>
-                          <td>{item.codigo_serie}</td>
-                          <td>{item.nombre_serie}</td>
-                          <td>{`${new Date(item.fecha_apertura).toLocaleDateString()} - ${item.fecha_cierre ? new Date(item.fecha_cierre).toLocaleDateString() : 'Abierto'}`}</td>
-                          <td>{item.numero_folios}</td>
-                          <td>{item.soporte}</td>
-                          {customHeaders.map(header => <td key={header}>{customValues[header] || ''}</td>)}
-                      </tr>
-                  );
-              })}
-            </tbody>
-          </table>
-        </>
-      )}
-    </div>
-  );
+            <div className="content-box">
+                <h3>Generar Reporte por Oficina</h3>
+                <form onSubmit={handleGenerateReport} className="action-bar">
+                    <select value={selectedOficina} onChange={(e) => setSelectedOficina(e.target.value)} required>
+                        <option value="">-- Seleccione una Oficina Productora --</option>
+                        {oficinas.map(ofi => (
+                            <option key={ofi.id} value={ofi.id}>{ofi.nombre_oficina}</option>
+                        ))}
+                    </select>
+                    <button type="submit" className="button button-primary" disabled={isLoading}>
+                        {isLoading ? 'Generando...' : 'Generar Reporte'}
+                    </button>
+                </form>
+                {error && <p style={{ color: 'red' }}>{error}</p>}
+            </div>
+
+            {reportData.length > 0 && (
+                <div className="content-box">
+                    <div className="action-bar" style={{ justifyContent: 'start' }}>
+                        <button onClick={handleExportPDF} className="button">Exportar a PDF</button>
+                        <button onClick={handleExportExcel} className="button">Exportar a Excel</button>
+                    </div>
+                    
+                    <div style={{ overflowX: 'auto' }}>
+                        <table className="styled-table">
+                            <thead>
+                                <tr>
+                                    <th>N° Orden</th>
+                                    <th>Cód. Serie</th>
+                                    <th>Nombre Serie</th>
+                                    <th>Cód. Subserie</th>
+                                    <th>Nombre Subserie</th>
+                                    <th>Fechas Extremas</th>
+                                    <th>N° Folios</th>
+                                    <th>Soporte</th>
+                                    {customHeaders.map(header => <th key={header}>{header}</th>)}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {reportData.map(item => {
+                                    let customValues = {};
+                                    if (item.metadatos_personalizados) {
+                                        try {
+                                            const metadata = JSON.parse(item.metadatos_personalizados);
+                                            if (Array.isArray(metadata)) {
+                                                metadata.forEach(meta => { customValues[meta.nombre] = meta.valor; });
+                                            }
+                                        } catch(e) {}
+                                    }
+                                    return (
+                                        <tr key={item.numero_orden}>
+                                            <td>{item.numero_orden}</td>
+                                            <td>{item.codigo_serie}</td>
+                                            <td>{item.nombre_serie}</td>
+                                            <td>{item.codigo_subserie}</td>
+                                            <td>{item.nombre_subserie}</td>
+                                            <td>{`${new Date(item.fecha_apertura).toLocaleDateString()} - ${item.fecha_cierre ? new Date(item.fecha_cierre).toLocaleDateString() : 'Abierto'}`}</td>
+                                            <td>{item.numero_folios}</td>
+                                            <td>{item.soporte}</td>
+                                            {customHeaders.map(header => <td key={header}>{customValues[header] || ''}</td>)}
+                                        </tr>
+                                    );
+                                })}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
 };
 
 export default ReporteFUID;

@@ -11,35 +11,23 @@ const ExpedienteDetalle = () => {
     const { id } = useParams();
     const [expediente, setExpediente] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState('');
     const [documentosDisponibles, setDocumentosDisponibles] = useState([]);
     const [selectedDocumento, setSelectedDocumento] = useState('');
-    const [error, setError] = useState('');
-
-    // Estados para Préstamo
     const [showPrestamoForm, setShowPrestamoForm] = useState(false);
     const [observaciones, setObservaciones] = useState('');
     const [tipoPrestamo, setTipoPrestamo] = useState('Electrónico');
-
-    // Estados para Workflow
+    const [requiereFirma, setRequiereFirma] = useState(false);
     const [workflows, setWorkflows] = useState([]);
     const [selectedWorkflow, setSelectedWorkflow] = useState('');
     const [targetDocumentoId, setTargetDocumentoId] = useState(null);
-
-    // Estados para Visor Modal
     const [modalIsOpen, setModalIsOpen] = useState(false);
     const [viewingFileUrl, setViewingFileUrl] = useState('');
-
-    // Estados para Firma en Pantalla
     const [showSignatureModal, setShowSignatureModal] = useState(false);
     const [signatureTargetId, setSignatureTargetId] = useState(null);
     const sigPad = useRef(null);
-
-    // Estados para Campos Personalizados
     const [customFields, setCustomFields] = useState([]);
     const [customData, setCustomData] = useState({});
-    const [requiereFirma, setRequiereFirma] = useState(false);
-
-    // Estados para Plantillas
     const [plantillas, setPlantillas] = useState([]);
     const [selectedPlantilla, setSelectedPlantilla] = useState(null);
     const [plantillaData, setPlantillaData] = useState({});
@@ -47,12 +35,13 @@ const ExpedienteDetalle = () => {
     // --- CARGA DE DATOS ---
     const fetchExpediente = useCallback(async () => {
         setIsLoading(true);
+        setError('');
         try {
-            const resExpediente = await api.get(`/expedientes/${id}`);
-            setExpediente(resExpediente.data);
+            const res = await api.get(`/expedientes/${id}`);
+            setExpediente(res.data);
 
-            // Si la vista no es restringida, cargamos datos adicionales
-            if (resExpediente.data.vista !== 'solicitante_restringido') {
+            // Si la vista no es restringida, cargamos los datos adicionales necesarios para los formularios
+            if (res.data.vista !== 'solicitante_restringido') {
                 const [resDocs, resWfs, resPlantillas] = await Promise.all([
                     api.get('/documentos'),
                     api.get('/workflows'),
@@ -62,9 +51,9 @@ const ExpedienteDetalle = () => {
                 setWorkflows(resWfs.data);
                 setPlantillas(resPlantillas.data);
 
-                if (resExpediente.data.id_serie) {
+                if (res.data.id_serie) {
                     const resSeries = await api.get('/series');
-                    const serieDelExpediente = resSeries.data.find(s => s.id === resExpediente.data.id_serie);
+                    const serieDelExpediente = resSeries.data.find(s => s.id === res.data.id_serie);
                     if (serieDelExpediente) {
                         const idOficina = serieDelExpediente.id_oficina_productora;
                         const resCampos = await api.get(`/campos-personalizados/oficina/${idOficina}`);
@@ -117,7 +106,7 @@ const ExpedienteDetalle = () => {
     const handleSelectPlantilla = async (plantillaId) => { if (!plantillaId) { setSelectedPlantilla(null); setPlantillaData({}); return; } try { const res = await api.get(`/plantillas/${plantillaId}`); setSelectedPlantilla(res.data); setPlantillaData({}); } catch (err) { toast.error('Error al cargar los campos de la plantilla.'); } };
     const handlePlantillaDataChange = (e) => { setPlantillaData({ ...plantillaData, [e.target.name]: e.target.value }); };
     const handleGenerateDocument = async (e) => { e.preventDefault(); if (!expediente || !expediente.id_serie) return toast.error("No se puede determinar la serie del expediente."); try { const resSeries = await api.get('/series'); const serieDelExpediente = resSeries.data.find(s => s.id === expediente.id_serie); if (!serieDelExpediente) return toast.error("No se encontró la oficina productora del expediente."); await api.post(`/expedientes/${id}/documentos-desde-plantilla`, { id_plantilla: selectedPlantilla.id, datos_rellenados: plantillaData, id_serie: expediente.id_serie, id_subserie: expediente.id_subserie, id_oficina_productora: serieDelExpediente.id_oficina_productora }); toast.success('Documento generado y añadido al expediente.'); setSelectedPlantilla(null); setPlantillaData({}); fetchExpediente(); } catch (err) { toast.error(err.response?.data?.msg || 'Error al generar el documento.'); } };
-    
+
     // --- RENDERIZADO ---
     if (isLoading) return <div style={{ padding: '20px' }}>Cargando expediente...</div>;
     if (error) return <div style={{ padding: '20px', color: 'red' }}>{error}</div>;
@@ -135,7 +124,7 @@ const ExpedienteDetalle = () => {
                     <h3>Acceso Restringido</h3>
                     <p>No tienes acceso a los documentos de este expediente. Para verlos, debes solicitar un préstamo.</p>
                     <div className="action-bar" style={{ justifyContent: 'start', marginTop: '1rem' }}>
-                         <button onClick={() => setShowPrestamoForm(true)} className="button button-primary">Solicitar Préstamo</button>
+                         <button onClick={() => setShowPrestamoForm(!showPrestamoForm)} className="button button-primary">{showPrestamoForm ? 'Cancelar' : 'Solicitar Préstamo'}</button>
                     </div>
                     {showPrestamoForm && (
                         <div style={{ marginTop: '1rem' }}>
@@ -278,12 +267,13 @@ const ExpedienteDetalle = () => {
                 </tbody>
             </table>
             
-            <Modal isOpen={modalIsOpen} onRequestClose={closeModal} contentLabel="Visor de Documento">
+            <Modal isOpen={modalIsOpen} onRequestClose={closeModal} contentLabel="Visor de Documento" style={{ content: { inset: '5%' }, overlay: { backgroundColor: 'rgba(0, 0, 0, 0.75)' } }}>
                 <button onClick={closeModal} style={{ float: 'right' }} className="button">Cerrar</button>
                 <h2>Visor de Documento</h2>
                 <iframe src={viewingFileUrl} title="Visor" width="100%" height="90%" style={{ border: 'none', marginTop: '10px' }}></iframe>
             </Modal>
-            <Modal isOpen={showSignatureModal} onRequestClose={closeSignatureModal} contentLabel="Firmar Documento">
+
+            <Modal isOpen={showSignatureModal} onRequestClose={closeSignatureModal} contentLabel="Firmar Documento" style={{ content: { top: '50%', left: '50%', right: 'auto', bottom: 'auto', transform: 'translate(-50%, -50%)', width: '550px' } }}>
                 <h2>Firmar Documento</h2>
                 <p>Por favor, dibuje su firma.</p>
                 <div style={{ border: '1px solid black', borderRadius: '5px' }}>

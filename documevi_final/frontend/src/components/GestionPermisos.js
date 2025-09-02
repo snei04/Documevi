@@ -2,9 +2,11 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from '../api/axios';
 import { toast } from 'react-toastify';
+import Checkbox from './Checkbox'; // <-- 1. Importar el nuevo componente
+import './Dashboard.css';
 
 const GestionPermisos = () => {
-    const { id_rol } = useParams(); // Obtenemos el ID del rol desde la URL
+    const { id_rol } = useParams();
     const navigate = useNavigate();
     const [allPermissions, setAllPermissions] = useState([]);
     const [rolePermissions, setRolePermissions] = useState([]);
@@ -13,17 +15,15 @@ const GestionPermisos = () => {
 
     const fetchData = useCallback(async () => {
         try {
-            // Hacemos todas las peticiones en paralelo para más eficiencia
             const [resAllPerms, resRolePerms, resRoles] = await Promise.all([
                 api.get('/permisos'),
                 api.get(`/permisos/rol/${id_rol}`),
-                api.get('/roles') // Necesitamos el nombre del rol
+                api.get('/roles')
             ]);
             
             setAllPermissions(resAllPerms.data);
-            setRolePermissions(resRolePerms.data); // Esto es un array de IDs: [1, 3, 5]
+            setRolePermissions(resRolePerms.data);
             
-            // Encontrar el nombre del rol actual
             const currentRole = resRoles.data.find(r => r.id === parseInt(id_rol));
             if (currentRole) {
                 setRoleName(currentRole.nombre);
@@ -35,10 +35,7 @@ const GestionPermisos = () => {
             setIsLoading(false);
         }
     }, [id_rol]);
-
-    useEffect(() => {
-        fetchData();
-    }, [fetchData]);
+    useEffect(() => { fetchData(); }, [fetchData]);
 
     const handleCheckboxChange = (permissionId) => {
         setRolePermissions(prev =>
@@ -52,34 +49,42 @@ const GestionPermisos = () => {
         try {
             await api.put(`/permisos/rol/${id_rol}`, { permisosIds: rolePermissions });
             toast.success('Permisos actualizados con éxito.');
-            navigate('/dashboard/roles'); // Volvemos a la lista de roles
+            navigate('/dashboard/roles');
         } catch (err) {
             toast.error(err.response?.data?.msg || 'Error al guardar los cambios.');
         }
     };
-
     if (isLoading) return <div>Cargando permisos...</div>;
 
     return (
-        <div style={{ padding: '20px' }}>
-            <h1>Gestionar Permisos para el Rol: "{roleName}"</h1>
-            <div style={{ background: '#fff', padding: '20px', borderRadius: '8px' }}>
-                {allPermissions.map(permission => (
-                    <div key={permission.id}>
-                        <label>
-                            <input
-                                type="checkbox"
-                                checked={rolePermissions.includes(permission.id)}
-                                onChange={() => handleCheckboxChange(permission.id)}
-                            />
-                            {permission.nombre_permiso}
-                        </label>
-                    </div>
-                ))}
+        <div>
+            <div className="page-header">
+                <h1>Gestionar Permisos para el Rol: "{roleName}"</h1>
             </div>
-            <button onClick={handleSaveChanges} style={{ marginTop: '20px' }}>
-                Guardar Cambios
-            </button>
+            
+            <div className="content-box">
+                <h3>Permisos Disponibles</h3>
+                <div className="permissions-grid">
+                    {allPermissions.map(permission => (
+                        <div key={permission.id} className="permission-item">
+                            <label style={{display: 'flex', alignItems: 'center', gap: '10px'}}>
+                                {/* 👇 2. Reemplazamos el input por el nuevo componente Checkbox 👇 */}
+                                <Checkbox
+                                    checked={rolePermissions.includes(permission.id)}
+                                    onChange={() => handleCheckboxChange(permission.id)}
+                                />
+                                <span>{permission.nombre_permiso}</span>
+                            </label>
+                        </div>
+                    ))}
+                </div>
+            </div>
+            
+            <div className="action-bar" style={{justifyContent: 'start'}}>
+                <button onClick={handleSaveChanges} className="button button-primary">
+                    Guardar Cambios
+                </button>
+            </div>
         </div>
     );
 };

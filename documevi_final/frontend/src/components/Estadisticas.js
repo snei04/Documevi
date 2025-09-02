@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import api from '../api/axios';
+import './Dashboard.css'; // Asegúrate de que el CSS esté importado
 
 const Estadisticas = () => {
   const [docsPorOficina, setDocsPorOficina] = useState([]);
@@ -29,23 +30,25 @@ const Estadisticas = () => {
   }
 
   return (
-    <div style={{ padding: '20px' }}>
-      <h1>Estadísticas Detalladas</h1>
+    <div>
+      <div className="page-header">
+        <h1>Estadísticas Detalladas</h1>
+      </div>
       
-      <div style={{ marginTop: '30px' }}>
+      <div className="content-box">
         <h3>Documentos Radicados por Oficina</h3>
-        <table border="1" style={{ width: '60%', borderCollapse: 'collapse', background: '#fff' }}>
+        <table className="styled-table" style={{ width: '100%', maxWidth: '600px' }}>
           <thead>
-            <tr style={{ background: '#eee' }}>
-              <th style={{ padding: '8px' }}>Oficina Productora</th>
-              <th style={{ padding: '8px' }}>Total de Documentos</th>
+            <tr>
+              <th>Oficina Productora</th>
+              <th>Total de Documentos</th>
             </tr>
           </thead>
           <tbody>
             {docsPorOficina.map((stat, index) => (
               <tr key={index}>
-                <td style={{ padding: '8px' }}>{stat.nombre_oficina}</td>
-                <td style={{ padding: '8px', textAlign: 'center' }}>{stat.total_documentos}</td>
+                <td>{stat.nombre_oficina}</td>
+                <td style={{ textAlign: 'center' }}>{stat.total_documentos}</td>
               </tr>
             ))}
           </tbody>

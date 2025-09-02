@@ -1,13 +1,12 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import api from '../api/axios';
 import { toast } from 'react-toastify';
+import './Dashboard.css'; // Asegúrate de que el CSS esté importado
 
 const GestionUsuarios = () => {
   const [users, setUsers] = useState([]);
   const [roles, setRoles] = useState([]);
-  const [error, setError] = useState('');
   const [showCreateForm, setShowCreateForm] = useState(false);
-  
   const [newUser, setNewUser] = useState({
     nombre_completo: '',
     email: '',
@@ -20,7 +19,7 @@ const GestionUsuarios = () => {
       const res = await api.get('/usuarios');
       setUsers(res.data);
     } catch (err) {
-      setError('No se pudo cargar la lista de usuarios.');
+      toast.error('No se pudo cargar la lista de usuarios.');
     }
   }, []);
 
@@ -30,8 +29,7 @@ const GestionUsuarios = () => {
       try {
         const res = await api.get('/roles');
         setRoles(res.data);
-      } catch (err)
- {
+      } catch (err) {
         console.error('No se pudieron cargar los roles.');
       }
     };
@@ -55,8 +53,7 @@ const GestionUsuarios = () => {
   const handleInviteUser = async (e) => {
     e.preventDefault();
     if (!newUser.rol_id) {
-      toast.success("Por favor, seleccione un rol para el nuevo usuario.");
-      return;
+      return toast.warn("Por favor, seleccione un rol para el nuevo usuario.");
     }
     try {
       await api.post('/usuarios/invite', newUser);
@@ -70,34 +67,41 @@ const GestionUsuarios = () => {
   };
 
   return (
-    <div style={{ padding: '20px' }}>
-      <h1>Gestión de Usuarios</h1>
-      {error && <p style={{ color: 'red' }}>{error}</p>}
-
-      <button onClick={() => setShowCreateForm(!showCreateForm)} style={{ marginBottom: '20px' }}>
-        {showCreateForm ? 'Cancelar' : 'Invitar Nuevo Usuario'}
-      </button>
+    <div>
+      <div className="page-header">
+        <h1>Gestión de Usuarios</h1>
+      </div>
+      
+      <div className="action-bar">
+        <button onClick={() => setShowCreateForm(!showCreateForm)} className="button button-primary">
+          {showCreateForm ? 'Cancelar' : 'Invitar Nuevo Usuario'}
+        </button>
+      </div>
 
       {showCreateForm && (
-        <form onSubmit={handleInviteUser} style={{ marginBottom: '40px', background: '#fff', padding: '20px', borderRadius: '8px' }}>
+        <div className="content-box">
           <h3>Formulario de Invitación</h3>
-          <input type="text" name="nombre_completo" placeholder="Nombre Completo" value={newUser.nombre_completo} onChange={handleNewUserChange} required />
-          <input type="email" name="email" placeholder="Email" value={newUser.email} onChange={handleNewUserChange} required style={{ marginLeft: '10px' }} />
-          <input type="text" name="documento" placeholder="Documento" value={newUser.documento} onChange={handleNewUserChange} required style={{ marginLeft: '10px' }} />
-          <select name="rol_id" value={newUser.rol_id} onChange={handleNewUserChange} required style={{ marginLeft: '10px' }}>
-            <option value="">-- Seleccione un Rol --</option>
-            {roles.map(rol => (
-              <option key={rol.id} value={rol.id}>{rol.nombre}</option>
-            ))}
-          </select>
-          <button type="submit" style={{ marginLeft: '10px' }}>Enviar Invitación</button>
-        </form>
+          <form onSubmit={handleInviteUser}>
+            <div className="form-grid">
+              <input type="text" name="nombre_completo" placeholder="Nombre Completo" value={newUser.nombre_completo} onChange={handleNewUserChange} required />
+              <input type="email" name="email" placeholder="Email" value={newUser.email} onChange={handleNewUserChange} required />
+              <input type="text" name="documento" placeholder="Documento" value={newUser.documento} onChange={handleNewUserChange} required />
+            </div>
+            <div className="action-bar" style={{ justifyContent: 'start', marginTop: '1rem' }}>
+              <select name="rol_id" value={newUser.rol_id} onChange={handleNewUserChange} required>
+                <option value="">-- Seleccione un Rol --</option>
+                {roles.map(rol => <option key={rol.id} value={rol.id}>{rol.nombre}</option>)}
+              </select>
+              <button type="submit" className="button button-primary">Enviar Invitación</button>
+            </div>
+          </form>
+        </div>
       )}
 
       <h3>Usuarios Existentes</h3>
-      <table border="1" style={{ width: '100%', borderCollapse: 'collapse', background: '#fff' }}>
+      <table className="styled-table">
         <thead>
-          <tr style={{ background: '#eee' }}>
+          <tr>
             <th>Nombre Completo</th>
             <th>Email</th>
             <th>Documento</th>
@@ -114,7 +118,7 @@ const GestionUsuarios = () => {
               <td>{user.documento}</td>
               <td>
                 <select 
-                  value={roles.find(r => r.nombre === user.rol)?.id}
+                  value={roles.find(r => r.nombre === user.rol)?.id || ''}
                   onChange={(e) => handleUpdate(user.id, { rol_id: e.target.value })}
                 >
                   {roles.map(rol => (
@@ -122,9 +126,13 @@ const GestionUsuarios = () => {
                   ))}
                 </select>
               </td>
-              <td>{user.activo ? 'Activo' : 'Inactivo'}</td>
               <td>
-                <button onClick={() => handleUpdate(user.id, { activo: !user.activo })}>
+                <span className={`status ${user.activo ? 'status-active' : 'status-inactive'}`}>
+                    {user.activo ? 'Activo' : 'Inactivo'}
+                </span>
+              </td>
+              <td className="action-cell">
+                <button onClick={() => handleUpdate(user.id, { activo: !user.activo })} className="button">
                   {user.activo ? 'Desactivar' : 'Activar'}
                 </button>
               </td>

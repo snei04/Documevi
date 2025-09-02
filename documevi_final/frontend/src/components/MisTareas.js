@@ -3,26 +3,29 @@ import api from '../api/axios';
 import { toast } from 'react-toastify';
 import Modal from 'react-modal';
 import SignaturePad from 'react-signature-pad-wrapper';
+import './Dashboard.css';
 
 const MisTareas = () => {
   const [tareas, setTareas] = useState([]);
   const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
 
+  // Estados para los modales
+  const [modalIsOpen, setModalIsOpen] = useState(false);
+  const [viewingFileUrl, setViewingFileUrl] = useState('');
   const [showSignatureModal, setShowSignatureModal] = useState(false);
   const [signingDocumentId, setSigningDocumentId] = useState(null);
   const sigPad = useRef(null);
-  
-  // --- INICIO: AÑADIDOS PARA EL VISOR ---
-  const [modalIsOpen, setModalIsOpen] = useState(false);
-  const [viewingFileUrl, setViewingFileUrl] = useState('');
-  // --- FIN: AÑADIDOS PARA EL VISOR ---
 
   const fetchTareas = useCallback(async () => {
+    setIsLoading(true);
     try {
       const res = await api.get('/workflows/tareas');
       setTareas(res.data);
     } catch (err) {
       setError('No se pudieron cargar tus tareas pendientes.');
+    } finally {
+      setIsLoading(false);
     }
   }, []);
 
@@ -42,10 +45,12 @@ const MisTareas = () => {
     }
   };
 
+  // Funciones para los modales
+  const openModal = (fileUrl) => { setViewingFileUrl(fileUrl); setModalIsOpen(true); };
+  const closeModal = () => { setModalIsOpen(false); setViewingFileUrl(''); };
   const openSignatureModal = (docId) => { setSigningDocumentId(docId); setShowSignatureModal(true); };
   const closeSignatureModal = () => { setShowSignatureModal(false); setSigningDocumentId(null); };
   const clearSignature = () => { sigPad.current.clear(); };
-
   const handleSignAndAdvance = async () => {
     if (sigPad.current.isEmpty()) {
         return toast.warn('Por favor, dibuje su firma.');
@@ -63,24 +68,18 @@ const MisTareas = () => {
     }
   };
   
-  // --- INICIO: FUNCIONES PARA EL VISOR ---
-  const openModal = (fileUrl) => {
-    setViewingFileUrl(fileUrl);
-    setModalIsOpen(true);
-  };
-  const closeModal = () => {
-    setModalIsOpen(false);
-    setViewingFileUrl('');
-  };
-  // --- FIN: FUNCIONES PARA EL VISOR ---
+  if (isLoading) return <div>Cargando tus tareas...</div>;
 
   return (
-    <div style={{ padding: '20px' }}>
-      <h1>Mis Tareas Pendientes</h1>
+    <div>
+      <div className="page-header">
+        <h1>Mis Tareas Pendientes</h1>
+        <p>Documentos que requieren tu revisión o aprobación para continuar en su flujo de trabajo.</p>
+      </div>
       {error && <p style={{ color: 'red' }}>{error}</p>}
-      <table border="1" style={{ width: '100%', borderCollapse: 'collapse', background: '#fff' }}>
+      <table className="styled-table">
         <thead>
-          <tr style={{ background: '#eee' }}>
+          <tr>
             <th>Radicado</th>
             <th>Asunto del Documento</th>
             <th>Workflow</th>
@@ -92,7 +91,6 @@ const MisTareas = () => {
           {tareas.length > 0 ? tareas.map(tarea => (
             <tr key={tarea.id_seguimiento}>
               <td>
-                {/* Ahora el radicado abre el visor */}
                 {tarea.path_archivo ? (
                   <button onClick={() => openModal(`http://localhost:4000/${tarea.path_archivo}`)} className="link-button">
                     {tarea.radicado}
@@ -104,13 +102,13 @@ const MisTareas = () => {
               <td>{tarea.asunto}</td>
               <td>{tarea.nombre_workflow}</td>
               <td>{tarea.paso_actual}</td>
-              <td>
+              <td className="action-cell">
                 {tarea.requiere_firma ? (
-                  <button onClick={() => openSignatureModal(tarea.id_documento)} style={{ backgroundColor: 'green', color: 'white' }}>
+                  <button onClick={() => openSignatureModal(tarea.id_documento)} className="button" style={{backgroundColor: 'green', color: 'white'}}>
                     Firmar y Avanzar
                   </button>
                 ) : (
-                  <button onClick={() => handleAdvance(tarea.id_documento)}>
+                  <button onClick={() => handleAdvance(tarea.id_documento)} className="button button-primary">
                     Aprobar y Avanzar
                   </button>
                 )}
@@ -118,30 +116,25 @@ const MisTareas = () => {
             </tr>
           )) : (
             <tr>
-              <td colSpan="5" style={{ textAlign: 'center', padding: '20px' }}>No tienes tareas pendientes.</td>
+              <td colSpan="5" style={{ textAlign: 'center', padding: '20px' }}>
+                No tienes tareas pendientes. ¡Buen trabajo!
+              </td>
             </tr>
           )}
         </tbody>
       </table>
 
-      {/* MODAL PARA EL VISOR DE DOCUMENTOS */}
-      <Modal
-        isOpen={modalIsOpen}
-        onRequestClose={closeModal}
-        contentLabel="Visor de Documento"
-        style={{ content: { inset: '5%' }, overlay: { backgroundColor: 'rgba(0, 0, 0, 0.75)' } }}
-      >
-        <button onClick={closeModal} style={{ float: 'right' }}>Cerrar</button>
+      <Modal isOpen={modalIsOpen} onRequestClose={closeModal} contentLabel="Visor de Documento" style={{ content: { inset: '5%' }, overlay: { backgroundColor: 'rgba(0, 0, 0, 0.75)' } }}>
+        <button onClick={closeModal} style={{ float: 'right' }} className="button">Cerrar</button>
         <h2>Visor de Documento</h2>
         <iframe src={viewingFileUrl} title="Visor" width="100%" height="90%" style={{ border: 'none', marginTop: '10px' }}></iframe>
       </Modal>
 
-      {/* MODAL PARA LA FIRMA */}
       <Modal
           isOpen={showSignatureModal}
           onRequestClose={closeSignatureModal}
           contentLabel="Firmar Documento para Avanzar"
-          style={{ content: { top: '50%', left: '50%', right: 'auto', bottom: 'auto', marginRight: '-50%', transform: 'translate(-50%, -50%)', width: '550px' } }}
+          style={{ content: { top: '50%', left: '50%', right: 'auto', bottom: 'auto', transform: 'translate(-50%, -50%)', width: '550px' } }}
       >
           <h2>Firmar Documento</h2>
           <p>Tu firma es requerida para completar este paso del flujo de trabajo.</p>
@@ -153,9 +146,9 @@ const MisTareas = () => {
               />
           </div>
           <div style={{ marginTop: '10px' }}>
-              <button onClick={handleSignAndAdvance}>Guardar Firma y Avanzar</button>
-              <button onClick={clearSignature} style={{ marginLeft: '10px' }}>Limpiar</button>
-              <button onClick={closeSignatureModal} style={{ float: 'right' }}>Cancelar</button>
+              <button onClick={handleSignAndAdvance} className="button button-primary">Guardar Firma y Avanzar</button>
+              <button onClick={clearSignature} style={{ marginLeft: '10px' }} className="button">Limpiar</button>
+              <button onClick={closeSignatureModal} style={{ float: 'right' }} className="button">Cancelar</button>
           </div>
       </Modal>
     </div>

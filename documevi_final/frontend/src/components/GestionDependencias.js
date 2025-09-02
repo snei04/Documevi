@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { useOutletContext } from 'react-router-dom'; // Hook para recibir el contexto
+import { useOutletContext } from 'react-router-dom';
 import api from '../api/axios';
 import { toast } from 'react-toastify';
+import './Dashboard.css'; // Asegúrate de que el CSS esté importado
 
 const GestionDependencias = () => {
-  // 1. Recibimos los datos y la función del padre (DashboardLayout)
   const { dependencias, refreshDependencias } = useOutletContext();
   
   const [codigo, setCodigo] = useState('');
@@ -22,29 +22,44 @@ const GestionDependencias = () => {
       toast.success('¡Dependencia creada con éxito!');
       setCodigo('');
       setNombre('');
-      
-      // 2. Le avisamos al padre que refresque la lista para todos
       refreshDependencias();
-
     } catch (err) {
-      setError(err.response.data.msg || 'Error al crear la dependencia');
+      setError(err.response?.data?.msg || 'Error al crear la dependencia');
     }
   };
 
   return (
-    <div style={{ padding: '20px' }}>
-      <h2>Gestión de Dependencias</h2>
-      <form onSubmit={handleSubmit} style={{ marginBottom: '20px' }}>
-        {/* ... El formulario no cambia ... */}
-        <input type="text" placeholder="Código (ej. 01.01)" value={codigo} onChange={(e) => setCodigo(e.target.value)} required />
-        <input type="text" placeholder="Nombre de la Dependencia" value={nombre} onChange={(e) => setNombre(e.target.value)} required style={{ marginLeft: '10px' }}/>
-        <button type="submit" style={{ marginLeft: '10px' }}>Crear</button>
-        {error && <p style={{ color: 'red' }}>{error}</p>}
-      </form>
+    <div>
+      <div className="page-header">
+        <h1>Gestión de Dependencias</h1>
+      </div>
+      
+      <div className="content-box">
+        <h3>Crear Nueva Dependencia</h3>
+        <form onSubmit={handleSubmit} className="action-bar">
+          <input 
+            type="text" 
+            placeholder="Código (ej. 100)" 
+            value={codigo} 
+            onChange={(e) => setCodigo(e.target.value)} 
+            required 
+            style={{ padding: '0.5rem' }}
+          />
+          <input 
+            type="text" 
+            placeholder="Nombre de la Dependencia" 
+            value={nombre} 
+            onChange={(e) => setNombre(e.target.value)} 
+            required 
+            style={{ flexGrow: 1, padding: '0.5rem' }}
+          />
+          <button type="submit" className="button button-primary">Crear</button>
+        </form>
+        {error && <p style={{ color: 'red', marginTop: '10px' }}>{error}</p>}
+      </div>
 
       <h3>Dependencias Existentes</h3>
-      {/* 3. La tabla ahora usa la lista que viene del padre */}
-      <table border="1" style={{ width: '100%', borderCollapse: 'collapse' }}>
+      <table className="styled-table">
         <thead>
           <tr>
             <th>Código</th>

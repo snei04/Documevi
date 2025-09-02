@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useCallback } from 'react';
+// 👇 LA CORRECCIÓN ESTÁ EN ESTA LÍNEA 👇
 import { useParams } from 'react-router-dom';
 import api from '../api/axios';
 import { toast } from 'react-toastify';
+import './Dashboard.css';
 
 const PlantillaDetalle = () => {
-    const { id } = useParams(); // Obtiene el ID de la plantilla desde la URL
+    const { id } = useParams();
     const [plantilla, setPlantilla] = useState(null);
     const [campos, setCampos] = useState([]);
     const [newCampo, setNewCampo] = useState({
@@ -37,7 +39,7 @@ const PlantillaDetalle = () => {
             await api.post(`/plantillas/${id}/campos`, newCampo);
             toast.success('Campo añadido a la plantilla con éxito.');
             setNewCampo({ nombre_campo: '', tipo_campo: 'texto', orden: '' });
-            fetchPlantillaData(); // Recargar los campos
+            fetchPlantillaData();
         } catch (err) {
             toast.error(err.response?.data?.msg || 'Error al añadir el campo.');
         }
@@ -46,41 +48,46 @@ const PlantillaDetalle = () => {
     if (!plantilla) return <div>Cargando plantilla...</div>;
 
     return (
-        <div style={{ padding: '20px' }}>
-            <h1>Administrar Campos para Plantilla: "{plantilla.nombre}"</h1>
-            <p>{plantilla.descripcion}</p>
+        <div>
+            <div className="page-header">
+                <h1>Administrar Campos para Plantilla: "{plantilla.nombre}"</h1>
+                <p>{plantilla.descripcion}</p>
+            </div>
 
-            <form onSubmit={handleSubmit} style={{ margin: '20px 0', background: '#fff', padding: '20px', borderRadius: '8px' }}>
+            <div className="content-box">
                 <h3>Añadir Nuevo Campo</h3>
-                <input
-                    type="number"
-                    name="orden"
-                    value={newCampo.orden}
-                    onChange={handleChange}
-                    placeholder="Orden (ej. 1)"
-                    required
-                />
-                <input
-                    type="text"
-                    name="nombre_campo"
-                    value={newCampo.nombre_campo}
-                    onChange={handleChange}
-                    placeholder="Nombre del Campo (ej. Nombre Contratista)"
-                    required
-                    style={{ marginLeft: '10px' }}
-                />
-                <select name="tipo_campo" value={newCampo.tipo_campo} onChange={handleChange} style={{ marginLeft: '10px' }}>
-                    <option value="texto">Texto</option>
-                    <option value="numero">Número</option>
-                    <option value="fecha">Fecha</option>
-                </select>
-                <button type="submit" style={{ marginLeft: '10px' }}>Añadir Campo</button>
-            </form>
+                <form onSubmit={handleSubmit} className="action-bar" style={{flexWrap: 'wrap'}}>
+                    <input
+                        type="number"
+                        name="orden"
+                        value={newCampo.orden}
+                        onChange={handleChange}
+                        placeholder="Orden (ej. 1)"
+                        required
+                        style={{width: '100px'}}
+                    />
+                    <input
+                        type="text"
+                        name="nombre_campo"
+                        value={newCampo.nombre_campo}
+                        onChange={handleChange}
+                        placeholder="Nombre del Campo (ej. Nombre Contratista)"
+                        required
+                        style={{flexGrow: 1}}
+                    />
+                    <select name="tipo_campo" value={newCampo.tipo_campo} onChange={handleChange}>
+                        <option value="texto">Texto</option>
+                        <option value="numero">Número</option>
+                        <option value="fecha">Fecha</option>
+                    </select>
+                    <button type="submit" className="button button-primary">Añadir Campo</button>
+                </form>
+            </div>
 
             <h3>Campos Existentes en la Plantilla</h3>
-            <table border="1" style={{ width: '100%', borderCollapse: 'collapse', background: '#fff' }}>
+            <table className="styled-table">
                 <thead>
-                    <tr style={{ background: '#eee' }}>
+                    <tr>
                         <th>Orden</th>
                         <th>Nombre del Campo</th>
                         <th>Tipo</th>

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import api from '../api/axios';
 import { toast } from 'react-toastify';
+import './Dashboard.css'; 
 
 const GestionTransferencias = () => {
   const [expedientes, setExpedientes] = useState([]);
@@ -21,7 +22,6 @@ const GestionTransferencias = () => {
     fetchExpedientes();
   }, []);
   
-  // Filtramos los expedientes que están listos para transferir
   const expedientesElegibles = useMemo(() => 
     expedientes.filter(exp => exp.estado === 'Cerrado en Gestión'),
     [expedientes]
@@ -35,14 +35,12 @@ const GestionTransferencias = () => {
 
   const handleTransfer = async () => {
     if (selectedIds.length === 0) {
-      toast.warn('Por favor, seleccione al menos un expediente para transferir.');
-      return;
+      return toast.warn('Por favor, seleccione al menos un expediente para transferir.');
     }
     if (window.confirm(`¿Está seguro de que desea transferir ${selectedIds.length} expedientes al Archivo Central?`)) {
       try {
         const res = await api.post('/transferencias', { expedientesIds: selectedIds });
         toast.success(res.data.msg);
-        // Recargar la lista de expedientes para que se actualice la vista
         const updatedExpedientes = await api.get('/expedientes');
         setExpedientes(updatedExpedientes.data);
         setSelectedIds([]);
@@ -52,25 +50,28 @@ const GestionTransferencias = () => {
     }
   };
 
-
   if (isLoading) return <div>Cargando expedientes...</div>;
 
   return (
-    <div style={{ padding: '20px' }}>
-      <h1>Transferencias Documentales Primarias</h1>
-      <p>Seleccione los expedientes en estado "Cerrado en Gestión" que desea transferir al Archivo Central.</p>
+    <div>
+      <div className="page-header">
+        <h1>Transferencias Documentales Primarias</h1>
+        <p>Seleccione los expedientes en estado "Cerrado en Gestión" que desea transferir al Archivo Central.</p>
+      </div>
       
-      <button 
-        onClick={handleTransfer} 
-        disabled={selectedIds.length === 0}
-        style={{ marginBottom: '20px' }}
-      >
-        Transferir {selectedIds.length} Expediente(s)
-      </button>
+      <div className="action-bar" style={{ justifyContent: 'start' }}>
+        <button 
+          onClick={handleTransfer} 
+          disabled={selectedIds.length === 0}
+          className="button button-primary"
+        >
+          Transferir {selectedIds.length} Expediente(s)
+        </button>
+      </div>
 
-      <table border="1" style={{ width: '100%', borderCollapse: 'collapse', background: '#fff' }}>
+      <table className="styled-table">
         <thead>
-          <tr style={{ background: '#eee' }}>
+          <tr>
             <th>Seleccionar</th>
             <th>Nombre Expediente</th>
             <th>Serie</th>

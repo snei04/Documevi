@@ -2,17 +2,16 @@ import React, { useState, useEffect, useCallback } from 'react';
 import api from '../api/axios';
 import * as XLSX from 'xlsx';
 import { toast } from 'react-toastify';
+import './Dashboard.css'; // Asegúrate de que el CSS esté importado
 
 const GestionAuditoria = () => {
   const [auditLog, setAuditLog] = useState([]);
-  const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
 
   const fetchAuditLog = useCallback(async (start, end) => {
     setIsLoading(true);
-    setError('');
     try {
       let url = '/auditoria';
       if (start && end) {
@@ -21,7 +20,7 @@ const GestionAuditoria = () => {
       const res = await api.get(url);
       setAuditLog(res.data);
     } catch (err) {
-      setError('No se pudo cargar el registro de auditoría.');
+      toast.error('No se pudo cargar el registro de auditoría.');
     } finally {
       setIsLoading(false);
     }
@@ -38,8 +37,7 @@ const GestionAuditoria = () => {
 
   const handleExportExcel = () => {
     if (auditLog.length === 0) {
-      toast.success("No hay datos para exportar.");
-      return;
+      return toast.warn("No hay datos para exportar.");
     }
     const dataForExcel = auditLog.map(log => ({
       'Fecha': new Date(log.fecha).toLocaleString(),
@@ -53,49 +51,50 @@ const GestionAuditoria = () => {
     XLSX.writeFile(workbook, "Reporte_Auditoria.xlsx");
   };
 
-  return (
-    <div style={{ padding: '20px' }}>
-      <h1>Registro de Auditoría del Sistema</h1>
-      <p>Aquí se registran todas las acciones importantes realizadas en la plataforma.</p>
-      
-      {/* 👇 AQUÍ AÑADIMOS LA LÍNEA PARA MOSTRAR EL ERROR 👇 */}
-      {error && <p style={{ color: 'red' }}>{error}</p>}
+  if (isLoading) return <div>Cargando registro de auditoría...</div>;
 
-      <div style={{ background: '#fff', padding: '15px', borderRadius: '8px', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '15px' }}>
-        <form onSubmit={handleFilter}>
-          <label>Desde: </label>
-          <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
-          <label style={{ marginLeft: '10px' }}>Hasta: </label>
-          <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
-          <button type="submit" style={{ marginLeft: '10px' }}>Filtrar</button>
-        </form>
-        <button onClick={handleExportExcel}>Exportar a Excel</button>
+  return (
+    <div>
+      <div className="page-header">
+        <h1>Registro de Auditoría del Sistema</h1>
+        <p>Aquí se registran todas las acciones importantes realizadas en la plataforma.</p>
       </div>
 
-      {isLoading ? (
-        <p>Cargando registro...</p>
-      ) : (
-        <table border="1" style={{ width: '100%', borderCollapse: 'collapse', background: '#fff' }}>
-          <thead>
-            <tr style={{ background: '#eee' }}>
-              <th style={{ padding: '8px' }}>Fecha</th>
-              <th style={{ padding: '8px' }}>Usuario</th>
-              <th style={{ padding: '8px' }}>Acción</th>
-              <th style={{ padding: '8px' }}>Detalles</th>
+      <div className="content-box">
+        <h3>Filtros y Acciones</h3>
+        <div className="action-bar">
+          <form onSubmit={handleFilter} className="action-bar">
+            <label>Desde: </label>
+            <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
+            <label style={{ marginLeft: '10px' }}>Hasta: </label>
+            <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
+            <button type="submit" className="button button-primary">Filtrar</button>
+          </form>
+          <button onClick={handleExportExcel} className="button">Exportar a Excel</button>
+        </div>
+      </div>
+
+      <h3>Registros de Auditoría</h3>
+      <table className="styled-table">
+        <thead>
+          <tr>
+            <th>Fecha</th>
+            <th>Usuario</th>
+            <th>Acción</th>
+            <th>Detalles</th>
+          </tr>
+        </thead>
+        <tbody>
+          {auditLog.map(log => (
+            <tr key={log.id}>
+              <td>{new Date(log.fecha).toLocaleString()}</td>
+              <td>{log.usuario || 'N/A'}</td>
+              <td>{log.accion}</td>
+              <td>{log.detalles}</td>
             </tr>
-          </thead>
-          <tbody>
-            {auditLog.map(log => (
-              <tr key={log.id}>
-                <td style={{ padding: '8px' }}>{new Date(log.fecha).toLocaleString()}</td>
-                <td style={{ padding: '8px' }}>{log.usuario || 'N/A'}</td>
-                <td style={{ padding: '8px' }}>{log.accion}</td>
-                <td style={{ padding: '8px' }}>{log.detalles}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 };

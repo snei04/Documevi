@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import api from '../api/axios';
 import { toast } from 'react-toastify';
+import FileUpload from './FileUpload';
 import './Dashboard.css';
 
 const CapturaDocumento = () => {
@@ -100,8 +101,8 @@ const CapturaDocumento = () => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
-    const handleFileChange = (e) => {
-        setArchivo(e.target.files[0]);
+    const handleFileChange = (file) => {
+        setArchivo(file);
     };
 
     const handleCustomDataChange = (e) => {
@@ -223,7 +224,7 @@ const CapturaDocumento = () => {
                     {formData.tipo_soporte === 'Electrónico' ? (
                         <div>
                             <label>Adjuntar Archivo Digital *</label><br/>
-                            <input type="file" onChange={handleFileChange} ref={fileInputRef} />
+                           <FileUpload onFileChange={handleFileChange} />   
                         </div>
                     ) : (
                         <div>

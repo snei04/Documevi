@@ -60,59 +60,52 @@ exports.createExpediente = async (req, res) => {
 exports.getExpedienteById = async (req, res) => {
   const { id: id_expediente } = req.params;
   const id_usuario_actual = req.user.id;
+  const permisos_usuario = req.user.permissions || []; // Obtenemos los permisos del token
 
   try {
-    // 1. Obtenemos los datos principales del expediente y quién es su responsable
     const [expedientes] = await pool.query("SELECT * FROM expedientes WHERE id = ?", [id_expediente]);
     if (expedientes.length === 0) {
       return res.status(404).json({ msg: 'Expediente no encontrado.' });
     }
     const expediente = expedientes[0];
-
-    // 2. Verificamos si el usuario actual es el "Usuario Productor" (el responsable)
     const esProductor = expediente.id_usuario_responsable === id_usuario_actual;
 
-    // 3. Lógica de Diferenciación de Vistas
-    if (esProductor) {
-      // VISTA SGDE PARA EL PRODUCTOR: Tiene acceso total
-      const [documentos] = await pool.query(`
-        SELECT d.id, d.radicado, d.asunto, d.path_archivo, d.firma_hash, d.fecha_firma, 
-               ed.orden_foliado, ed.fecha_incorporacion, ed.requiere_firma
-        FROM expediente_documentos ed
-        JOIN documentos d ON ed.id_documento = d.id
-        WHERE ed.id_expediente = ? ORDER BY ed.orden_foliado ASC`, 
-        [id_expediente]
-      );
-      // Enviamos todos los datos y un indicador de la vista
-      res.json({ ...expediente, documentos: documentos, vista: 'productor' });
-
-    } else {
-      // VISTA SGDEA PARA EL SOLICITANTE
-      // Verificamos si tiene un préstamo activo para este expediente
-      const [prestamos] = await pool.query(
-        "SELECT * FROM prestamos WHERE id_expediente = ? AND id_usuario_solicitante = ? AND estado = 'Prestado' AND fecha_devolucion_prevista >= CURDATE()",
-        [id_expediente, id_usuario_actual]
-      );
-
-      if (prestamos.length > 0) {
-        // Tiene un préstamo activo: puede ver los documentos en modo solo lectura
+    // --- INICIO: NUEVA LÓGICA DE PERMISO ESPECIAL ---
+    const tienePermisoEspecial = permisos_usuario.includes('ver_expedientes_cerrados');
+    
+    if (esProductor || tienePermisoEspecial) {
+        // VISTA SGDE (PRODUCTOR) O VISTA DE AUDITOR: Acceso total a los documentos
         const [documentos] = await pool.query(`
-          SELECT d.id, d.radicado, d.asunto, d.path_archivo, ed.orden_foliado, ed.fecha_incorporacion
-          FROM expediente_documentos ed
-          JOIN documentos d ON ed.id_documento = d.id
-          WHERE ed.id_expediente = ? ORDER BY ed.orden_foliado ASC`,
-          [id_expediente]
+            SELECT d.*, ed.orden_foliado, ed.fecha_incorporacion, ed.requiere_firma
+            FROM expediente_documentos ed
+            JOIN documentos d ON ed.id_documento = d.id
+            WHERE ed.id_expediente = ? ORDER BY ed.orden_foliado ASC`, 
+            [id_expediente]
         );
-        res.json({ ...expediente, documentos: documentos, vista: 'solicitante_prestamo' });
-      } else {
-        // No tiene préstamo: solo puede ver los metadatos básicos
-        res.json({
-          nombre_expediente: expediente.nombre_expediente,
-          fecha_apertura: expediente.fecha_apertura,
-          estado: expediente.estado,
-          vista: 'solicitante_restringido'
-        });
-      }
+        // Distinguimos si es el productor o un auditor para el frontend
+        const vista = esProductor ? 'productor' : 'auditor';
+        return res.json({ ...expediente, documentos: documentos, vista: vista });
+    }
+    // --- FIN: NUEVA LÓGICA DE PERMISO ESPECIAL ---
+
+    // VISTA SGDEA PARA EL SOLICITANTE (sin permiso especial)
+    const [prestamos] = await pool.query(
+      "SELECT * FROM prestamos WHERE id_expediente = ? AND id_usuario_solicitante = ? AND estado = 'Prestado' AND fecha_devolucion_prevista >= CURDATE()",
+      [id_expediente, id_usuario_actual]
+    );
+
+    if (prestamos.length > 0) {
+      // Tiene un préstamo activo: puede ver los documentos
+      const [documentos] = await pool.query(`...`, [id_expediente]);
+      res.json({ ...expediente, documentos: documentos, vista: 'solicitante_prestamo' });
+    } else {
+      // No tiene préstamo: vista restringida
+      res.json({
+        nombre_expediente: expediente.nombre_expediente,
+        fecha_apertura: expediente.fecha_apertura,
+        estado: expediente.estado,
+        vista: 'solicitante_restringido'
+      });
     }
   } catch (error) {
     console.error("Error al obtener el expediente:", error);

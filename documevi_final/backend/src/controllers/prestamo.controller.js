@@ -8,39 +8,67 @@ exports.createPrestamo = async (req, res) => {
     const { id_expediente, observaciones, tipo_prestamo } = req.body;
     const id_usuario_solicitante = req.user.id;
 
+    if (!id_expediente) {
+        return res.status(400).json({ msg: 'El expediente es obligatorio.' });
+    }
+
     const connection = await pool.getConnection();
     try {
         await connection.beginTransaction();
 
         // Verificación 1: Que el expediente esté disponible
-        const [expedientes] = await connection.query("SELECT disponibilidad FROM expedientes WHERE id = ?", [id_expediente]);
+        const [expedientes] = await connection.query("SELECT disponibilidad, nombre_expediente FROM expedientes WHERE id = ?", [id_expediente]);
         if (expedientes.length === 0 || expedientes[0].disponibilidad !== 'Disponible') {
             await connection.rollback();
-            return res.status(400).json({ msg: 'El expediente no está disponible para préstamo.' });
+            return res.status(400).json({ msg: 'El expediente no está disponible para préstamo en este momento.' });
         }
+        const nombre_expediente = expedientes[0].nombre_expediente;
 
-        // 👇 INICIO: VERIFICACIÓN PARA EVITAR DUPLICADOS 👇
-        // Verificación 2: Que el usuario no tenga ya una solicitud activa para este expediente
+        // Verificación 2: Que este usuario no tenga ya una solicitud activa para este expediente
         const [existingPrestamos] = await connection.query(
             "SELECT id FROM prestamos WHERE id_expediente = ? AND id_usuario_solicitante = ? AND estado IN ('Solicitado', 'Prestado')",
             [id_expediente, id_usuario_solicitante]
         );
-
         if (existingPrestamos.length > 0) {
             await connection.rollback();
             return res.status(400).json({ msg: 'Ya tienes una solicitud activa para este expediente.' });
         }
-        // --- FIN: VERIFICACIÓN PARA EVITAR DUPLICADOS ---
 
+        // Se calcula la fecha de devolución automáticamente (10 días hábiles)
         const fecha_devolucion_prevista = addBusinessDays(new Date(), 10);
         
-        // ... (resto de la función para insertar el préstamo y enviar notificación)
-
+        // Se crea el registro del préstamo en la base de datos
+        const [result] = await connection.query(
+            'INSERT INTO prestamos (id_expediente, id_usuario_solicitante, fecha_devolucion_prevista, observaciones, tipo_prestamo) VALUES (?, ?, ?, ?, ?)',
+            [id_expediente, id_usuario_solicitante, fecha_devolucion_prevista, observaciones, tipo_prestamo]
+        );
+        
         await connection.commit();
+
+        // Lógica de notificación (fuera de la transacción para no revertir si falla el email)
+        try {
+            const [admins] = await pool.query("SELECT email FROM usuarios WHERE rol_id = 1 AND activo = true");
+            const [solicitantes] = await pool.query("SELECT nombre_completo FROM usuarios WHERE id = ?", [id_usuario_solicitante]);
+
+            if (admins.length > 0 && solicitantes.length > 0) {
+                const nombre_solicitante = solicitantes[0].nombre_completo;
+                const subject = `Nueva Solicitud de Préstamo - Expediente: ${nombre_expediente}`;
+                const text = `El usuario ${nombre_solicitante} ha solicitado el expediente "${nombre_expediente}". Ingrese a la plataforma para aprobar la solicitud.`;
+                
+                for (const admin of admins) {
+                    await sendEmail(admin.email, subject, text);
+                }
+            }
+        } catch (emailError) {
+            console.error("La solicitud se creó, pero falló la notificación por correo:", emailError);
+        }
+        
         res.status(201).json({ msg: 'Solicitud de préstamo enviada con éxito.' });
+
     } catch (error) {
         await connection.rollback();
-        res.status(500).json({ msg: 'Error en el servidor' });
+        console.error("Error crítico al crear la solicitud de préstamo:", error);
+        res.status(500).json({ msg: 'Error en el servidor al procesar la solicitud.' });
     } finally {
         connection.release();
     }

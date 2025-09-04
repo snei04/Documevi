@@ -476,3 +476,20 @@
 .permission-item label:hover {
     background-color: #f7fafc;
 }
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+
+@media (min-width: 600px) {
+  .form-grid {
+    grid-template-columns: auto auto;
+  }
+}
+
+.form-grid .button {
+  grid-column: 1 / -1;
+  justify-self: start;
+  margin-top: 1rem;
+}

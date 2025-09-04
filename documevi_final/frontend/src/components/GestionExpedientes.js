@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../api/axios';
 import { toast } from 'react-toastify';
-import './Dashboard.css'; // Asegúrate de que el CSS esté importado
+import './Dashboard.css';
 
 const GestionExpedientes = () => {
     const [expedientes, setExpedientes] = useState([]);

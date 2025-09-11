@@ -40,6 +40,7 @@ const GestionPrestamos = () => {
       toast.error(err.response?.data?.msg || 'Error al aprobar el préstamo.');
     }
   };
+// -- Prorroga --
 
   const handleApproveProrroga = async (id) => {
     try {

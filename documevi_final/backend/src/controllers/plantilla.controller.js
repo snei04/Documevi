@@ -67,3 +67,84 @@ exports.addCampoToPlantilla = async (req, res) => {
         res.status(500).json({ msg: 'Error al añadir el campo a la plantilla' });
     }
 };
+
+exports.uploadBackgroundImage = async (req, res) => {
+    const { id } = req.params;
+    if (!req.file) {
+        return res.status(400).send({ msg: 'No se subió ningún archivo.' });
+    }
+
+    // req.file.path es la ruta donde multer guardó el archivo (ej: 'uploads/imagen.png')
+    const imagePath = req.file.path; 
+
+    try {
+        await pool.query(
+            'UPDATE plantillas SET background_image_path = ? WHERE id = ?',
+            [imagePath, id]
+        );
+        res.json({ msg: 'Imagen de fondo actualizada.', filePath: imagePath });
+    } catch (error) {
+        console.error("Error al guardar la ruta de la imagen:", error);
+        res.status(500).json({ msg: 'Error en el servidor.' });
+    }
+};
+
+exports.getPlantillaById = async (req, res) => {
+    const { id } = req.params;
+    try {
+        const [rows] = await pool.query('SELECT * FROM plantillas WHERE id = ?', [id]);
+        if (rows.length === 0) {
+            return res.status(404).json({ msg: 'Plantilla no encontrada.' });
+        }
+        res.json(rows[0]);
+    } catch (error) {
+        console.error("Error al obtener la plantilla:", error);
+        res.status(500).json({ msg: 'Error en el servidor.' });
+    }
+};
+
+exports.getVariablesDisponibles = async (req, res) => {
+    // Obtenemos el ID de la plantilla desde los parámetros de la URL
+    const { id: id_plantilla } = req.params; 
+    
+    try {
+        // Buscamos en la tabla `plantilla_campos` todos los campos de esa plantilla
+        const [campos] = await pool.query(
+            // Seleccionamos el nombre del campo y lo devolvemos con los alias "id" y "label"
+            // para que el frontend no necesite cambios.
+            'SELECT nombre_campo as id, nombre_campo as label FROM plantilla_campos WHERE id_plantilla = ?', 
+            [id_plantilla]
+        );
+        
+        // Devolvemos los campos encontrados
+        res.json(campos);
+
+    } catch (error) {
+        res.status(500).json({ msg: 'Error en el servidor al obtener variables', error: error.message });
+    }
+};
+
+exports.updateDisenoPlantilla = async (req, res) => {
+    const { id } = req.params; // El ID de la plantilla
+    const disenoJSON = req.body; // El objeto JSON que viene del editor
+
+    if (!disenoJSON) {
+        return res.status(400).json({ msg: 'No se proporcionó un diseño.' });
+    }
+
+    try {
+        // Convertimos el objeto JSON a un string para guardarlo en la columna TEXT
+        const disenoString = JSON.stringify(disenoJSON);
+
+        // Actualizamos la plantilla en la base de datos
+        await pool.query(
+            'UPDATE plantillas SET diseño_json = ? WHERE id = ?',
+            [disenoString, id]
+        );
+
+        res.json({ msg: 'Diseño de la plantilla guardado con éxito.' });
+    } catch (error) {
+        console.error("Error al guardar diseño:", error);
+        res.status(500).json({ msg: 'Error en el servidor al guardar el diseño', error: error.message });
+    }
+};

@@ -34,7 +34,12 @@ const eliminacionRoutes = require('./src/routes/eliminacion.routes.js');
 const app = express();
 
 // --- Middlewares Esenciales ---
-app.use(cors());
+const corsOptions = {
+  origin: '*', // Para desarrollo. En producción, deberías usar 'http://tusitio.com'
+  methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+  allowedHeaders: ['Content-Type', 'x-auth-token'] // <-- La parte más importante
+};
+app.use(cors(corsOptions));
 app.use(express.json());
 
 // --- Rutas de la API ---

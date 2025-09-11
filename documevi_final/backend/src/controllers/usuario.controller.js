@@ -41,10 +41,54 @@ exports.inviteUser = async (req, res) => {
 
     // 4. Enviar el correo de invitación
     const inviteURL = `http://localhost:3000/set-password/${resetToken}`;
-    const subject = 'Invitación para unirte a Documevi';
-    const text = `Hola ${nombre_completo},\n\nHas sido invitado a unirte a Documevi. Por favor, haz clic en el siguiente enlace o pégalo en tu navegador para crear tu contraseña:\n\n${inviteURL}\n\nSi no esperabas esta invitación, por favor ignora este correo.\n`;
-    
-    await sendEmail(email, subject, text);
+        const subject = 'Invitación para unirte a Documevi';
+
+        // Creamos el cuerpo del correo en HTML
+        const htmlBody = `
+            <!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; padding: 0; background-color: #f4f7f6; }
+        .container { max-width: 600px; margin: 20px auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        .header { background-color: #0077B6; color: white; padding: 40px; text-align: center; }
+        .header h1 { margin: 0; }
+        .content { padding: 30px; line-height: 1.6; color: #333; }
+        .button-container { text-align: center; margin: 30px 0; }
+        .button { background-color: #0077B6; color: white !important; padding: 15px 25px; text-decoration: none; border-radius: 5px; font-weight: bold; }
+        .footer { background-color: #f4f7f6; color: #888; padding: 20px; text-align: center; font-size: 0.8em; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>¡Bienvenido a Documevi!</h1>
+        </div>
+        <div class="content">
+            <p>Hola, <strong>{{nombre_usuario}}</strong>,</p>
+            <p>Has sido invitado a unirte al Sistema de Gestión Documental. Para completar tu registro y crear tu contraseña, por favor haz clic en el siguiente botón:</p>
+            <div class="button-container">
+                <a href="{{inviteURL}}" class="button">Crear mi Contraseña</a>
+            </div>
+            <p>Si el botón no funciona, puedes copiar y pegar el siguiente enlace en tu navegador:</p>
+            <p><a href="{{inviteURL}}">{{inviteURL}}</a></p>
+            <p>Si no esperabas esta invitación, por favor ignora este correo.</p>
+        </div>
+        <div class="footer">
+            <p>&copy; 2025 IMEVI SAS. Todos los derechos reservados.</p>
+        </div>
+    </div>
+</body>
+</html>
+        `;
+
+        // Reemplazamos los marcadores de posición con los datos reales
+        const finalHtml = htmlBody
+            .replace('{{nombre_usuario}}', nombre_completo)
+            .replace(new RegExp('{{inviteURL}}', 'g'), inviteURL);
+
+        // Enviamos el correo con el parámetro 'html'
+        await sendEmail(email, subject, "Has sido invitado a Documevi.", finalHtml);
 
     res.status(201).json({ msg: 'Invitación enviada con éxito.' });
 

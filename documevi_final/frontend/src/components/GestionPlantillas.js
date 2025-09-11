@@ -84,6 +84,9 @@ const GestionPlantillas = () => {
                 <Link to={`/dashboard/plantillas/${p.id}`}>
                   Administrar Campos
                 </Link>
+                <Link to={`/dashboard/plantillas/${p.id}/disenar`} style={{ marginLeft: '15px' }}>
+                  Diseñar
+                </Link>
               </td>
             </tr>
           ))}

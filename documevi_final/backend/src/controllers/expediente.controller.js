@@ -229,97 +229,102 @@ exports.updateExpedienteCustomData = async (req, res) => {
     connection.release();
   }
 };
-
 exports.createDocumentoFromPlantilla = async (req, res) => {
-    const { id: id_expediente } = req.params;
-    const { id_plantilla, datos_rellenados, id_serie, id_subserie, id_oficina_productora } = req.body;
-    const id_usuario_radicador = req.user.id;
+    const { id: id_expediente } = req.params;
+    const { id_plantilla, datos_rellenados, id_serie, id_subserie, id_oficina_productora } = req.body;
+    const id_usuario_radicador = req.user.id;
 
-    if (!id_plantilla || !datos_rellenados || !id_serie || !id_subserie) {
-        return res.status(400).json({ msg: 'Faltan datos para generar el documento.' });
-    }
+    if (!id_plantilla || !datos_rellenados) {
+        return res.status(400).json({ msg: 'Faltan datos para generar el documento.' });
+    }
 
-    const connection = await pool.getConnection();
-    try {
-        await connection.beginTransaction();
+    const connection = await pool.getConnection();
+    try {
+        await connection.beginTransaction();
 
-        const [plantillaRows] = await connection.query('SELECT nombre, diseño_json FROM plantillas WHERE id = ?', [id_plantilla]);
+        const [plantillaRows] = await connection.query('SELECT nombre, diseño_json FROM plantillas WHERE id = ?', [id_plantilla]);
+        if (plantillaRows.length === 0) {
+            await connection.rollback();
+            return res.status(404).json({ msg: 'Plantilla no encontrada.' });
+        }
 
-        if (plantillaRows.length === 0) {
-            await connection.rollback();
-            return res.status(404).json({ msg: 'Plantilla no encontrada.' });
-        }
+        const nombrePlantilla = plantillaRows[0].nombre;
+        const diseno = JSON.parse(plantillaRows[0].diseño_json || '[]');
 
-        const nombrePlantilla = plantillaRows[0].nombre;
-        const diseño = JSON.parse(plantillaRows[0].diseño_json || '{}');
+        const asunto = `${nombrePlantilla} - Generado desde plantilla`;
+        const radicado = await generarRadicado();
+        
+        // --- INICIO: Nueva Lógica de Creación de PDF ---
+        const pdfDoc = await PDFDocument.create();
+        const page = pdfDoc.addPage();
+        const { width, height } = page.getSize();
+        const helveticaFont = await pdfDoc.embedFont(StandardFonts.Helvetica);
 
-        const asunto = `${nombrePlantilla} - Creado desde plantilla`;
-        const radicado = await generarRadicado();
-        
-        const pdfDoc = await PDFDocument.create();
-        const page = pdfDoc.addPage();
+        // Función recursiva para dibujar componentes y sus hijos
+        const drawComponents = (components) => {
+            for (const component of components) {
+                // Si el componente tiene texto y es una variable (contiene {{...}})
+                if (component.type === 'text' && component.content && component.content.includes('{{')) {
+                    const style = component.style || {};
+                    const variableName = component.content.replace(/{{|}}/g, '').trim();
+                    const valor = datos_rellenados[variableName] || ''; // Busca el valor en los datos llenados
 
-        const helveticaFont = await pdfDoc.embedFont(StandardFonts.Helvetica);
-        const helveticaBoldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
-        const fontMap = {
-            'Helvetica': helveticaFont,
-            'Helvetica-Bold': helveticaBoldFont,
-        };
-        
-        if (diseño.titulo) {
-            page.drawText(diseño.titulo.texto, {
-                x: diseño.titulo.x,
-                y: diseño.titulo.y,
-                size: diseño.titulo.fontSize,
-                font: fontMap[diseño.titulo.font] || helveticaBoldFont,
-                color: rgb(0, 0, 0),
-            });
-        }
-        
-        if (diseño.placeholders) {
-            for (const placeholder of diseño.placeholders) {
-                const valor = datos_rellenados[placeholder.campo];
-                
-                if (valor) {
-                    page.drawText(String(valor), {
-                        x: placeholder.x,
-                        y: placeholder.y,
-                        size: placeholder.fontSize,
-                        font: fontMap[placeholder.font] || helveticaFont,
-                        color: rgb(0, 0, 0),
-                    });
-                }
-            }
-        }
+                    // Extrae la posición y el tamaño de la fuente del diseño
+                    const x = parseInt(style.left) || 50;
+                    const y = parseInt(style.top) || height - 50;
+                    const fontSize = parseInt(style['font-size']) || 12;
 
-        const pdfBytes = await pdfDoc.save();
-        
-        const fileName = `${radicado}.pdf`;
-        const filePath = path.join('uploads', fileName);
-        await fs.writeFile(filePath, pdfBytes);
+                    // Dibuja el texto en el PDF
+                    // Nota: pdf-lib mide 'y' desde abajo, GrapesJS desde arriba, por eso se resta de 'height'
+                    page.drawText(String(valor), {
+                        x: x,
+                        y: height - y - fontSize, // Conversión de coordenadas
+                        size: fontSize,
+                        font: helveticaFont,
+                        color: rgb(0, 0, 0),
+                    });
+                }
 
-        const [docResult] = await connection.query(
-            `INSERT INTO documentos (radicado, asunto, id_oficina_productora, id_serie, id_subserie, remitente_nombre, id_usuario_radicador, path_archivo, nombre_archivo_original)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-            [radicado, asunto, id_oficina_productora, id_serie, id_subserie, 'Generado Internamente', id_usuario_radicador, filePath, fileName]
-        );
-        const newDocumentId = docResult.insertId;
+                // Si el componente tiene hijos (como una celda o columna), llamamos a la función de nuevo
+                if (component.components && component.components.length > 0) {
+                    drawComponents(component.components);
+                }
+            }
+        };
 
-        const [folioRows] = await connection.query('SELECT MAX(orden_foliado) as max_folio FROM expediente_documentos WHERE id_expediente = ?', [id_expediente]);
-        const nuevoFolio = (folioRows[0].max_folio || 0) + 1;
-        await connection.query(
-            'INSERT INTO expediente_documentos (id_expediente, id_documento, orden_foliado) VALUES (?, ?, ?)',
-            [id_expediente, newDocumentId, nuevoFolio]
-        );
-        
-        await connection.commit();
-        res.status(201).json({ msg: 'Documento PDF generado desde plantilla y añadido al expediente con éxito.' });
+        // Inicia el proceso de dibujado con los componentes del diseño
+        drawComponents(diseno);
+        
+        // --- FIN: Nueva Lógica de Creación de PDF ---
 
-    } catch (error) {
-        await connection.rollback();
-        console.error("Error al generar documento desde plantilla:", error);
-        res.status(500).json({ msg: 'Error en el servidor' });
-    } finally {
-        connection.release();
-    }
+        const pdfBytes = await pdfDoc.save();
+        const fileName = `${radicado}.pdf`;
+        const filePath = path.join('uploads', fileName);
+        await fs.writeFile(filePath, pdfBytes);
+
+        // El resto del código para guardar el documento en la base de datos no cambia...
+        const [docResult] = await connection.query(
+            `INSERT INTO documentos (radicado, asunto, id_oficina_productora, id_serie, id_subserie, remitente_nombre, id_usuario_radicador, path_archivo, nombre_archivo_original)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [radicado, asunto, id_oficina_productora, id_serie, id_subserie, 'Generado Internamente', id_usuario_radicador, filePath, fileName]
+        );
+        const newDocumentId = docResult.insertId;
+
+        const [folioRows] = await connection.query('SELECT MAX(orden_foliado) as max_folio FROM expediente_documentos WHERE id_expediente = ?', [id_expediente]);
+        const nuevoFolio = (folioRows[0].max_folio || 0) + 1;
+        await connection.query(
+            'INSERT INTO expediente_documentos (id_expediente, id_documento, orden_foliado) VALUES (?, ?, ?)',
+            [id_expediente, newDocumentId, nuevoFolio]
+        );
+        
+        await connection.commit();
+        res.status(201).json({ msg: 'Documento PDF generado y añadido al expediente con éxito.', newDocumentId });
+
+    } catch (error) {
+        await connection.rollback();
+        console.error("Error al generar documento desde plantilla:", error);
+        res.status(500).json({ msg: 'Error en el servidor' });
+    } finally {
+        if (connection) connection.release();
+    }
 };

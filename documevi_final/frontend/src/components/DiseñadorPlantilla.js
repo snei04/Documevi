@@ -13,6 +13,7 @@ const DiseñadorPlantilla = () => {
     const [plantilla, setPlantilla] = useState(null);
     const [variables, setVariables] = useState([]);
 
+    // Este useEffect se encarga de buscar los datos iniciales
     useEffect(() => {
         const fetchInitialData = async () => {
             if (!plantillaId) return;
@@ -30,11 +31,14 @@ const DiseñadorPlantilla = () => {
         fetchInitialData();
     }, [plantillaId]);
 
+    // Este es TU useEffect, el corazón del componente, que crea y actualiza el editor
     useEffect(() => {
+        // Solo se ejecuta si la plantilla ya se cargó y el div del editor está listo
         if (!plantilla || !editorContainerRef.current) {
             return;
         }
 
+        // Si ya hay un editor, lo destruimos para empezar de cero
         if (editorInstance.current) {
             editorInstance.current.destroy();
         }
@@ -59,20 +63,31 @@ const DiseñadorPlantilla = () => {
                     buttons: [{ id: 'save-db', className: 'gjs-btn-prim', label: 'Guardar Diseño', command: 'save-to-db' }],
                 }],
             },
-            commands: {
-                add: {
-                    'save-to-db': {
-                        run(editor) {
-                            const disenoJSON = transformarParaBackend(editor.getComponents());
-                            axios.post(`/plantillas/${plantillaId}/diseno`, disenoJSON)
-                                .then(res => alert('¡Diseño guardado!'))
-                                .catch(err => alert('Error al guardar.'));
-                        }
-                    }
-                }
+        });
+
+        // Añadimos el comando de guardado DESPUÉS de inicializar
+        editor.Commands.add('save-to-db', {
+            run(editor) {
+                const disenoJSON = editor.getComponents().toJSON();
+                axios.post(`/plantillas/${plantillaId}/diseno`, disenoJSON)
+                    .then(res => alert('¡Diseño guardado!'))
+                    .catch(err => alert('Error al guardar.'));
             }
         });
 
+        // Cargamos el diseño guardado, si existe
+        if (plantilla.diseño_json) {
+            try {
+                const disenoGuardado = JSON.parse(plantilla.diseño_json);
+                if (disenoGuardado && disenoGuardado.length) {
+                    editor.setComponents(disenoGuardado);
+                }
+            } catch (e) { 
+                console.error("Error al cargar diseño guardado:", e); 
+            }
+        }
+
+        // Cargamos los bloques de variables
         const bm = editor.BlockManager;
         variables.forEach(variable => {
             bm.add(`variable-${variable.id}`, {
@@ -91,21 +106,6 @@ const DiseñadorPlantilla = () => {
 
     }, [plantilla, variables, plantillaId]);
 
-    const transformarParaBackend = (components) => {
-        const placeholders = [];
-        components.each(component => {
-            const style = component.getStyle();
-            if (component.getId()) {
-                placeholders.push({
-                    campo: component.getId(),
-                    x: parseInt(style.left) || 0,
-                    y: parseInt(style.top) || 0,
-                    fontSize: parseInt(style['font-size']) || 12,
-                });
-            }
-        });
-        return { placeholders };
-    };
 
     if (!plantilla) {
         return <div>Cargando diseñador...</div>;

@@ -13,16 +13,18 @@ exports.getAllPlantillas = async (req, res) => {
 
 // Crear una nueva plantilla
 exports.createPlantilla = async (req, res) => {
-  const { nombre, descripcion } = req.body;
-  if (!nombre) {
-    return res.status(400).json({ msg: 'El nombre de la plantilla es obligatorio.' });
-  }
-  try {
-    const [result] = await pool.query(
-      'INSERT INTO plantillas (nombre, descripcion) VALUES (?, ?)',
-      [nombre, descripcion]
-    );
-    res.status(201).json({ id: result.insertId, ...req.body });
+  const { nombre, descripcion, id_oficina_productora, id_serie, id_subserie } = req.body;
+
+  if (!nombre || !id_oficina_productora || !id_serie || !id_subserie) {
+    return res.status(400).json({ msg: 'Todos los campos son obligatorios: nombre, oficina, serie y subserie.' });
+  }
+
+  try {
+    const [result] = await pool.query(
+      'INSERT INTO plantillas (nombre, descripcion, id_oficina_productora, id_serie, id_subserie) VALUES (?, ?, ?, ?, ?)',
+      [nombre, descripcion, id_oficina_productora, id_serie, id_subserie]
+    );
+    res.status(201).json({ id: result.insertId, ...req.body });
   } catch (error) {
     if (error.code === 'ER_DUP_ENTRY') {
       return res.status(400).json({ msg: 'Ya existe una plantilla con ese nombre.' });
@@ -125,26 +127,25 @@ exports.getVariablesDisponibles = async (req, res) => {
 };
 
 exports.updateDisenoPlantilla = async (req, res) => {
-    const { id } = req.params; // El ID de la plantilla
-    const disenoJSON = req.body; // El objeto JSON que viene del editor
+    const { id } = req.params;
+    // El cuerpo de la petición (req.body) es ahora directamente el objeto del diseño
+    const disenoData = req.body; 
 
-    if (!disenoJSON) {
+    if (!disenoData || Object.keys(disenoData).length === 0) {
         return res.status(400).json({ msg: 'No se proporcionó un diseño.' });
     }
-
     try {
-        // Convertimos el objeto JSON a un string para guardarlo en la columna TEXT
-        const disenoString = JSON.stringify(disenoJSON);
-
-        // Actualizamos la plantilla en la base de datos
-        await pool.query(
+        const disenoString = JSON.stringify(disenoData);
+        const [result] = await pool.query(
             'UPDATE plantillas SET diseño_json = ? WHERE id = ?',
             [disenoString, id]
         );
-
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ msg: 'No se encontró la plantilla con ese ID.' });
+        }
         res.json({ msg: 'Diseño de la plantilla guardado con éxito.' });
     } catch (error) {
-        console.error("Error al guardar diseño:", error);
-        res.status(500).json({ msg: 'Error en el servidor al guardar el diseño', error: error.message });
+        console.error("Error al guardar diseño en la BD:", error);
+        res.status(500).json({ msg: 'Error en el servidor', error: error.message });
     }
 };

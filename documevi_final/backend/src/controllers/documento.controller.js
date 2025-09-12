@@ -1,9 +1,10 @@
 const pool = require('../config/db');
-const fs = require('fs');
+const fs = require('fs/promises');
 const crypto = require('crypto');
 const pdfParse = require('pdf-parse');
 const Tesseract = require('tesseract.js');
-
+const path = require('path');
+const { PDFDocument, rgb, StandardFonts } = require('pdf-lib');
 const { generarRadicado } = require('../utils/radicado.util');
 
 // 👇 ASEGÚRATE DE QUE ESTA FUNCIÓN ESTÉ EXPORTADA
@@ -205,5 +206,73 @@ exports.firmarDocumento = async (req, res) => {
     } catch (error) {
         console.error("Error al firmar el documento:", error);
         res.status(500).json({ msg: 'Error en el servidor', error: error.message });
+    }
+};
+exports.createDocumentoFromPlantillaSinExpediente = async (req, res) => {
+    const { id_plantilla, datos_rellenados, id_serie, id_subserie, id_oficina_productora } = req.body;
+    const id_usuario_radicador = req.user.id;
+
+    if (!id_plantilla || !datos_rellenados) {
+        return res.status(400).json({ msg: 'Faltan datos para generar el documento.' });
+    }
+
+    const connection = await pool.getConnection();
+    try {
+        await connection.beginTransaction();
+
+        const [plantillaRows] = await connection.query('SELECT nombre, diseño_json FROM plantillas WHERE id = ?', [id_plantilla]);
+        if (plantillaRows.length === 0) {
+            await connection.rollback();
+            return res.status(404).json({ msg: 'Plantilla no encontrada.' });
+        }
+
+        const nombrePlantilla = plantillaRows[0].nombre;
+        const diseno = JSON.parse(plantillaRows[0].diseño_json || '[]');
+        const asunto = `${nombrePlantilla} - Generado desde plantilla`;
+        const radicado = await generarRadicado();
+        
+        const pdfDoc = await PDFDocument.create();
+        const page = pdfDoc.addPage();
+        const { height } = page.getSize();
+        const helveticaFont = await pdfDoc.embedFont(StandardFonts.Helvetica);
+
+        const drawComponents = (components) => {
+            for (const component of components) {
+                if (component.type === 'text' && component.content && component.content.includes('{{')) {
+                    const style = component.style || {};
+                    const variableName = component.content.replace(/{{|}}/g, '').trim();
+                    const valor = datos_rellenados[variableName] || '';
+                    const x = parseInt(style.left) || 50;
+                    const y = parseInt(style.top) || height - 50;
+                    const fontSize = parseInt(style['font-size']) || 12;
+                    page.drawText(String(valor), { x, y: height - y - fontSize, size: fontSize, font: helveticaFont, color: rgb(0, 0, 0) });
+                }
+                if (component.components && component.components.length > 0) {
+                    drawComponents(component.components);
+                }
+            }
+        };
+        drawComponents(diseno);
+
+        const pdfBytes = await pdfDoc.save();
+        const fileName = `${radicado}.pdf`;
+        const filePath = path.join('uploads', fileName);
+        await fs.writeFile(filePath, pdfBytes);
+
+        const [docResult] = await connection.query(
+            `INSERT INTO documentos (radicado, asunto, id_oficina_productora, id_serie, id_subserie, remitente_nombre, id_usuario_radicador, path_archivo, nombre_archivo_original)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [radicado, asunto, id_oficina_productora, id_serie, id_subserie, 'Generado Internamente', id_usuario_radicador, filePath, fileName]
+        );
+        
+        await connection.commit();
+        res.status(201).json({ msg: 'Documento generado con éxito.', radicado, id: docResult.insertId });
+
+    } catch (error) {
+        await connection.rollback();
+        console.error("Error al generar documento desde plantilla:", error);
+        res.status(500).json({ msg: 'Error en el servidor' });
+    } finally {
+        if (connection) connection.release();
     }
 };

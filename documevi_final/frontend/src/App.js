@@ -38,6 +38,7 @@ import PlantillaDetalle from './components/PlantillaDetalle';
 import DiseñadorPlantilla from './components/DiseñadorPlantilla';
 import GestionEliminacion from './components/GestionEliminacion';
 import MisPrestamos from './components/MisPrestamos';
+
 // 3. Importamos el CSS
 import './App.css';
 

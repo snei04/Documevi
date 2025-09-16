@@ -30,34 +30,47 @@ exports.getAllExpedientes = async (req, res) => {
 
 // Crear un nuevo expediente
 exports.createExpediente = async (req, res) => {
-  const {
-    nombre_expediente,
-    id_serie,
-    id_subserie,
-    descriptor_1,
-    descriptor_2
-  } = req.body;
-  const id_usuario_responsable = req.user.id;
+  const {
+    nombre_expediente,
+    id_serie,
+    id_subserie,
+    descriptor_1,
+    descriptor_2
+  } = req.body;
+  const id_usuario_responsable = req.user.id;
 
-  if (!nombre_expediente || !id_serie || !id_subserie) {
-    return res.status(400).json({ msg: 'Nombre, serie y subserie son obligatorios.' });
-  }
+  if (!nombre_expediente || !id_serie || !id_subserie) {
+    return res.status(400).json({ msg: 'Nombre, serie y subserie son obligatorios.' });
+  }
 
-  try {
-    const [result] = await pool.query(
-      `INSERT INTO expedientes (nombre_expediente, id_serie, id_subserie, descriptor_1, descriptor_2, id_usuario_responsable)
-       VALUES (?, ?, ?, ?, ?, ?)`,
-      [nombre_expediente, id_serie, id_subserie, descriptor_1, descriptor_2, id_usuario_responsable]
-    );
-    res.status(201).json({
-      id: result.insertId,
-      ...req.body,
-      id_usuario_responsable
-    });
-  } catch (error) {
-    console.error("Error al crear expediente:", error);
-    res.status(500).json({ msg: 'Error en el servidor', error: error.message });
-  }
+  try {
+    // Definimos la consulta en una variable
+    const sqlQuery = `
+        INSERT INTO expedientes (
+            nombre_expediente, id_serie, id_subserie, 
+            descriptor_1, descriptor_2, id_usuario_responsable
+        ) VALUES (?, ?, ?, ?, ?, ?)
+    `;
+
+    // Usamos .trim() para limpiar la consulta antes de ejecutarla
+    const [result] = await pool.query(sqlQuery.trim(), [
+      nombre_expediente, 
+      id_serie, 
+      id_subserie, 
+      descriptor_1, 
+      descriptor_2, 
+      id_usuario_responsable
+    ]);
+
+    res.status(201).json({
+      id: result.insertId,
+      ...req.body,
+      id_usuario_responsable
+    });
+  } catch (error) {
+    console.error("Error al crear expediente:", error);
+    res.status(500).json({ msg: 'Error en el servidor', error: error.message });
+  }
 };
 
 exports.getExpedienteById = async (req, res) => {
@@ -249,33 +262,29 @@ exports.createDocumentoFromPlantilla = async (req, res) => {
         }
 
         const nombrePlantilla = plantillaRows[0].nombre;
-        const diseno = JSON.parse(plantillaRows[0].diseño_json || '[]');
+        const disenoProyecto = JSON.parse(plantillaRows[0].diseño_json || '{}');
+        const disenoComponentes = disenoProyecto.components || [];
 
         const asunto = `${nombrePlantilla} - Generado desde plantilla`;
         const radicado = await generarRadicado();
         
-        // --- INICIO: Nueva Lógica de Creación de PDF ---
         const pdfDoc = await PDFDocument.create();
         const page = pdfDoc.addPage();
-        const { width, height } = page.getSize();
+        const { height } = page.getSize();
         const helveticaFont = await pdfDoc.embedFont(StandardFonts.Helvetica);
 
-        // Función recursiva para dibujar componentes y sus hijos
+        // Función recursiva para dibujar los componentes del diseño
         const drawComponents = (components) => {
             for (const component of components) {
-                // Si el componente tiene texto y es una variable (contiene {{...}})
-                if (component.type === 'text' && component.content && component.content.includes('{{')) {
+                // Si el componente es una de tus variables (identificada por su ID)
+                if (component.attributes && component.attributes.id && datos_rellenados[component.attributes.id]) {
                     const style = component.style || {};
-                    const variableName = component.content.replace(/{{|}}/g, '').trim();
-                    const valor = datos_rellenados[variableName] || ''; // Busca el valor en los datos llenados
-
-                    // Extrae la posición y el tamaño de la fuente del diseño
+                    const valor = datos_rellenados[component.attributes.id];
+                    
                     const x = parseInt(style.left) || 50;
                     const y = parseInt(style.top) || height - 50;
                     const fontSize = parseInt(style['font-size']) || 12;
 
-                    // Dibuja el texto en el PDF
-                    // Nota: pdf-lib mide 'y' desde abajo, GrapesJS desde arriba, por eso se resta de 'height'
                     page.drawText(String(valor), {
                         x: x,
                         y: height - y - fontSize, // Conversión de coordenadas
@@ -285,24 +294,20 @@ exports.createDocumentoFromPlantilla = async (req, res) => {
                     });
                 }
 
-                // Si el componente tiene hijos (como una celda o columna), llamamos a la función de nuevo
+                // Si el componente tiene hijos (como una celda), procesamos los hijos
                 if (component.components && component.components.length > 0) {
                     drawComponents(component.components);
                 }
             }
         };
-
-        // Inicia el proceso de dibujado con los componentes del diseño
-        drawComponents(diseno);
         
-        // --- FIN: Nueva Lógica de Creación de PDF ---
+        drawComponents(disenoComponentes);
 
         const pdfBytes = await pdfDoc.save();
         const fileName = `${radicado}.pdf`;
         const filePath = path.join('uploads', fileName);
         await fs.writeFile(filePath, pdfBytes);
 
-        // El resto del código para guardar el documento en la base de datos no cambia...
         const [docResult] = await connection.query(
             `INSERT INTO documentos (radicado, asunto, id_oficina_productora, id_serie, id_subserie, remitente_nombre, id_usuario_radicador, path_archivo, nombre_archivo_original)
              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
@@ -310,6 +315,7 @@ exports.createDocumentoFromPlantilla = async (req, res) => {
         );
         const newDocumentId = docResult.insertId;
 
+        // Añadimos el nuevo documento al índice del expediente
         const [folioRows] = await connection.query('SELECT MAX(orden_foliado) as max_folio FROM expediente_documentos WHERE id_expediente = ?', [id_expediente]);
         const nuevoFolio = (folioRows[0].max_folio || 0) + 1;
         await connection.query(
@@ -318,12 +324,12 @@ exports.createDocumentoFromPlantilla = async (req, res) => {
         );
         
         await connection.commit();
-        res.status(201).json({ msg: 'Documento PDF generado y añadido al expediente con éxito.', newDocumentId });
+        res.status(201).json({ msg: 'Documento PDF generado y añadido al expediente con éxito.' });
 
     } catch (error) {
         await connection.rollback();
         console.error("Error al generar documento desde plantilla:", error);
-        res.status(500).json({ msg: 'Error en el servidor' });
+        res.status(500).json({ msg: 'Error en el servidor', error: error.message });
     } finally {
         if (connection) connection.release();
     }

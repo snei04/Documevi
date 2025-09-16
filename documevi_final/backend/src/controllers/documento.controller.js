@@ -208,6 +208,7 @@ exports.firmarDocumento = async (req, res) => {
         res.status(500).json({ msg: 'Error en el servidor', error: error.message });
     }
 };
+
 exports.createDocumentoFromPlantillaSinExpediente = async (req, res) => {
     const { id_plantilla, datos_rellenados, id_serie, id_subserie, id_oficina_productora } = req.body;
     const id_usuario_radicador = req.user.id;
@@ -227,7 +228,9 @@ exports.createDocumentoFromPlantillaSinExpediente = async (req, res) => {
         }
 
         const nombrePlantilla = plantillaRows[0].nombre;
-        const diseno = JSON.parse(plantillaRows[0].diseño_json || '[]');
+        const disenoProyecto = JSON.parse(plantillaRows[0].diseño_json || '{}');
+        const disenoComponentes = disenoProyecto.components || [];
+
         const asunto = `${nombrePlantilla} - Generado desde plantilla`;
         const radicado = await generarRadicado();
         
@@ -238,21 +241,33 @@ exports.createDocumentoFromPlantillaSinExpediente = async (req, res) => {
 
         const drawComponents = (components) => {
             for (const component of components) {
+                // ✅ LÓGICA CORREGIDA: Buscamos texto que contenga '{{...}}'
                 if (component.type === 'text' && component.content && component.content.includes('{{')) {
                     const style = component.style || {};
                     const variableName = component.content.replace(/{{|}}/g, '').trim();
                     const valor = datos_rellenados[variableName] || '';
-                    const x = parseInt(style.left) || 50;
-                    const y = parseInt(style.top) || height - 50;
+                    
+                    const x = parseInt(style.left) || 0;
+                    const y = parseInt(style.top) || 0;
                     const fontSize = parseInt(style['font-size']) || 12;
-                    page.drawText(String(valor), { x, y: height - y - fontSize, size: fontSize, font: helveticaFont, color: rgb(0, 0, 0) });
+
+                    page.drawText(String(valor), {
+                        x: x,
+                        y: height - y - fontSize, // Conversión de coordenadas
+                        size: fontSize,
+                        font: helveticaFont,
+                        color: rgb(0, 0, 0),
+                    });
                 }
+
+                // Procesamos los componentes hijos (para las celdas)
                 if (component.components && component.components.length > 0) {
                     drawComponents(component.components);
                 }
             }
         };
-        drawComponents(diseno);
+        
+        drawComponents(disenoComponentes);
 
         const pdfBytes = await pdfDoc.save();
         const fileName = `${radicado}.pdf`;

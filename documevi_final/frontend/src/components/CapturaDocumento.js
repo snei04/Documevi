@@ -54,7 +54,7 @@ const CapturaDocumento = () => {
         };
         fetchInitialData();
     }, []);
-
+    
     // --- MANEJADORES PARA MODO PLANTILLA ---
     const handleTemplateChange = async (e) => {
         const id = e.target.value;
@@ -77,10 +77,11 @@ const CapturaDocumento = () => {
     const handleSubmitPlantilla = async (e) => {
         e.preventDefault();
         if (!plantillaSeleccionada) return toast.error("Por favor, selecciona una plantilla.");
+
         const payload = {
             id_plantilla: plantillaSeleccionada.id,
             datos_rellenados: datosPlantilla,
-            id_serie: plantillaSeleccionada.id_serie,
+            id_serie: plantillaSeleccionada.id_serie, 
             id_subserie: plantillaSeleccionada.id_subserie,
             id_oficina_productora: plantillaSeleccionada.id_oficina_productora,
         };
@@ -184,7 +185,7 @@ const CapturaDocumento = () => {
                                 <option value="Físico">Físico</option>
                             </select>
                         </div>
-                        <textarea name="asunto" placeholder="Asunto o descripción del documento..." value={formData.asunto} onChange={handleChange} required style={{width: '100%', minHeight: '80px'}} />
+                        <textarea name="asunto" placeholder="Asunto o descripción del documento..." value={formData.asunto} onChange={handleChange} required style={{width: '100%', minHeight: '80px', padding: '8px', border: '1px solid #ccc', borderRadius: '6px'}} />
                     </div>
 
                     <div className="content-box">
@@ -236,7 +237,7 @@ const CapturaDocumento = () => {
                         ) : (
                             <div>
                                 <label>Ubicación Física del Documento *</label><br/>
-                                <input type="text" name="ubicacion_fisica" placeholder="Ej: Estante A, Caja 3, Carpeta 5" value={formData.ubicacion_fisica} onChange={handleChange} style={{width: '100%'}}/>
+                                <input type="text" name="ubicacion_fisica" placeholder="Ej: Estante A, Caja 3, Carpeta 5" value={formData.ubicacion_fisica} onChange={handleChange} style={{width: '100%', padding: '8px', border: '1px solid #ccc', borderRadius: '6px'}}/>
                             </div>
                         )}
                     </div>
@@ -257,7 +258,7 @@ const CapturaDocumento = () => {
                         {camposPlantilla.map(campo => (
                             <div key={campo.id} style={{ margin: '10px 0' }}>
                                 <label>{campo.nombre_campo}:</label><br/>
-                                <input type={campo.tipo_campo === 'fecha' ? 'date' : 'text'} name={campo.nombre_campo} onChange={handleDatosPlantillaChange} required style={{ width: '100%' }} />
+                                <input type={campo.tipo_campo === 'fecha' ? 'date' : campo.tipo_campo === 'numero' ? 'number' : 'text'} name={campo.nombre_campo} onChange={handleDatosPlantillaChange} required style={{ width: '100%' }} />
                             </div>
                         ))}
                         {plantillaSeleccionada && (

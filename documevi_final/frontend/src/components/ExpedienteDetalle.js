@@ -215,7 +215,14 @@ const ExpedienteDetalle = () => {
                             {selectedPlantilla.campos.sort((a, b) => a.orden - b.orden).map(campo => (
                                 <div key={campo.id} style={{marginBottom: '10px'}}>
                                     <label>{campo.nombre_campo}:
-                                        <input type={campo.tipo_campo} name={campo.nombre_campo} value={plantillaData[campo.nombre_campo] || ''} onChange={handlePlantillaDataChange} required style={{marginLeft: '10px', width: '300px'}}/>
+                                        <input 
+    type={campo.tipo_campo === 'fecha' ? 'date' : campo.tipo_campo === 'numero' ? 'number' : 'text'} 
+    name={campo.nombre_campo} 
+    value={plantillaData[campo.nombre_campo] || ''} 
+    onChange={handlePlantillaDataChange} 
+    required 
+    style={{marginLeft: '10px', width: '300px'}}
+/>
                                     </label>
                                 </div>
                             ))}

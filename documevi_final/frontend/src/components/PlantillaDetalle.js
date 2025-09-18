@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
-// 👇 LA CORRECCIÓN ESTÁ EN ESTA LÍNEA 👇
 import { useParams } from 'react-router-dom';
 import api from '../api/axios';
 import { toast } from 'react-toastify';
 import './Dashboard.css';
 
+// Componente para gestionar los detalles de una plantilla y sus campos
 const PlantillaDetalle = () => {
     const { id } = useParams();
     const [plantilla, setPlantilla] = useState(null);
@@ -14,7 +14,7 @@ const PlantillaDetalle = () => {
         tipo_campo: 'texto',
         orden: ''
     });
-
+//funcion para obtener los datos de la plantilla
     const fetchPlantillaData = useCallback(async () => {
         try {
             const res = await api.get(`/plantillas/${id}`);
@@ -32,7 +32,7 @@ const PlantillaDetalle = () => {
     const handleChange = (e) => {
         setNewCampo({ ...newCampo, [e.target.name]: e.target.value });
     };
-
+//funcion para manejar el envio del formulario
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
@@ -46,7 +46,7 @@ const PlantillaDetalle = () => {
     };
 
     if (!plantilla) return <div>Cargando plantilla...</div>;
-
+//estructura del componente
     return (
         <div>
             <div className="page-header">

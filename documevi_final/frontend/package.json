@@ -5,6 +5,8 @@
   "dependencies": {
     "@azure/msal-browser": "^4.18.0",
     "@azure/msal-react": "^3.0.16",
+    "@grapesjs/studio-sdk": "^1.0.56",
+    "@grapesjs/studio-sdk-plugins": "^1.0.28",
     "@microsoft/microsoft-graph-client": "^3.0.7",
     "@testing-library/dom": "^10.4.0",
     "@testing-library/jest-dom": "^6.6.3",

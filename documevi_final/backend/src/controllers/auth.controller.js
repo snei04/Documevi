@@ -2,7 +2,8 @@ const { validationResult } = require('express-validator');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const pool = require('../config/db');
-const { sendEmail } = require('../services/email.service');
+const crypto = require('crypto');
+const sendEmail = require('../services/email.service');
 
 
 /**
@@ -178,3 +179,96 @@ exports.setPassword = async (req, res) => {
   }
 };
 
+exports.forgotPassword = async (req, res) => {
+    const { email } = req.body;
+    if (!email) {
+        return res.status(400).json({ msg: 'Por favor, ingrese un correo electrónico.' });
+    }
+    try {
+        const [users] = await pool.query('SELECT * FROM usuarios WHERE email = ?', [email]);
+        if (users.length === 0) {
+            return res.json({ msg: 'Si el correo existe, se ha enviado un enlace.' });
+        }
+
+        const user = users[0];
+        const resetToken = crypto.randomBytes(20).toString('hex');
+        const passwordResetToken = crypto.createHash('sha256').update(resetToken).digest('hex');
+        const passwordResetExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutos
+
+        await pool.query(
+            'UPDATE usuarios SET password_reset_token = ?, password_reset_expires = ? WHERE email = ?',
+            [passwordResetToken, passwordResetExpires, email]
+        );
+
+        const resetUrl = `http://localhost:3000/reset-password/${resetToken}`;
+        
+        // Versión en texto plano (para respaldo)
+        const textMessage = `Hola ${user.nombre_completo},\n\nPara restablecer tu contraseña, haz clic en el siguiente enlace (válido por 10 minutos):\n\n${resetUrl}\n\nSi no solicitaste este cambio, puedes ignorar este correo.`;
+
+        // Versión en HTML con el botón
+        const htmlMessage = `
+            <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: auto; border: 1px solid #ddd; padding: 20px;">
+                <h2 style="color: #0056b3;">Recuperación de Contraseña</h2>
+                <p>Hola ${user.nombre_completo},</p>
+                <p>Recibimos una solicitud para restablecer la contraseña de tu cuenta. Para continuar, haz clic en el botón de abajo. El enlace es válido por 10 minutos.</p>
+                <a href="${resetUrl}" style="display: inline-block; padding: 12px 25px; margin: 20px 0; font-size: 16px; color: #ffffff; background-color: #007bff; text-decoration: none; border-radius: 5px;">
+                    Restablecer Contraseña
+                </a>
+                <p style="font-size: 12px; color: #888;">Si no solicitaste este cambio, puedes ignorar este correo de forma segura.</p>
+            </div>
+        `;
+        
+        // ✅ Asegúrate de pasar AMBAS propiedades: text y html
+        await sendEmail({
+            to: email,
+            subject: 'Restablecimiento de Contraseña - Documevi',
+            text: textMessage,
+            html: htmlMessage, 
+        });
+
+        res.json({ msg: 'Si el correo existe en nuestro sistema, se ha enviado un enlace de recuperación.' });
+    } catch (error) {
+        console.error("Error en forgotPassword:", error);
+        res.status(500).json({ msg: 'Error en el servidor.' });
+    }
+};
+
+// ✅ AÑADE ESTA FUNCIÓN para aplicar la nueva contraseña
+exports.resetPassword = async (req, res) => {
+    const { token } = req.params;
+    const { password } = req.body;
+
+    // Hashear el token que viene del usuario para compararlo con el de la BD
+    const hashedToken = crypto
+        .createHash('sha256')
+        .update(token)
+        .digest('hex');
+
+    try {
+        const [users] = await pool.query(
+            'SELECT * FROM usuarios WHERE password_reset_token = ? AND password_reset_expires > ?',
+            [hashedToken, new Date()]
+        );
+
+        if (users.length === 0) {
+            return res.status(400).json({ msg: 'El token es inválido o ha expirado.' });
+        }
+
+        const user = users[0];
+
+        // Hashear la nueva contraseña
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(password, salt);
+
+        // Actualizar la contraseña y limpiar los campos de reseteo
+        await pool.query(
+            'UPDATE usuarios SET password = ?, password_reset_token = NULL, password_reset_expires = NULL WHERE id = ?',
+            [hashedPassword, user.id]
+        );
+
+        res.json({ msg: 'Contraseña actualizada con éxito.' });
+    } catch (error) {
+        console.error("Error en resetPassword:", error);
+        res.status(500).json({ msg: 'Error en el servidor.' });
+    }
+};

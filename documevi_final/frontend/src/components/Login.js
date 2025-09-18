@@ -6,6 +6,7 @@ import logoCircular from '../assets/logo-circular.png';
 import Loader from './Loader'; // Importamos el componente de la animación
 import TermsModal from './TermsModal';
 import './Login.css';      // Importamos el CSS para el formulario y el overlay
+import { Link } from 'react-router-dom';
 
 const Login = () => {
     const [formData, setFormData] = useState({ documento: '', password: '' });
@@ -85,6 +86,9 @@ const Login = () => {
                 <button type="submit" className="login-button" disabled={isLoading}>
                     Ingresar
                 </button>
+                <div style={{ marginTop: '1rem', textAlign: 'center' }}>
+    <Link to="/forgot-password">¿Olvidó su contraseña?</Link>
+</div>
             </form>
             <div className="terms-link-container" style={{ marginTop: '20px', fontSize: '0.8rem' }}>
                 <p>Al ingresar, aceptas nuestros 

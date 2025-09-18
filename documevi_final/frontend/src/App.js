@@ -38,6 +38,8 @@ import PlantillaDetalle from './components/PlantillaDetalle';
 import DiseñadorPlantilla from './components/DiseñadorPlantilla';
 import GestionEliminacion from './components/GestionEliminacion';
 import MisPrestamos from './components/MisPrestamos';
+import ForgotPassword from './components/ForgotPassword';
+import ResetPassword from './components/ResetPassword';
 
 // 3. Importamos el CSS
 import './App.css';
@@ -76,6 +78,8 @@ function App() {
                 </div>
               </>
           } />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+<Route path="/reset-password/:token" element={<ResetPassword />} />
           <Route path="/set-password/:token" element={<SetPassword />} />
           <Route 
           path="/dashboard" 
@@ -113,6 +117,7 @@ function App() {
           <Route path="roles/:id_rol/permisos" element={<GestionPermisos />} />
           <Route path="estadisticas" element={<Estadisticas />} />  
           <Route path="visor-onedrive" element={<OneDriveViewer />} />    
+          
         </Route>
           <Route path="/" element={<Navigate to="/dashboard" />} />
         </Routes>

@@ -1,33 +1,30 @@
 const nodemailer = require('nodemailer');
 
-// 1. Configurar el "transporter" con el servicio y las credenciales
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  },
-  tls: {
-    rejectUnauthorized: false // Necesario para envíos locales
-  }
-});
+const sendEmail = async (options) => {
+    const transporter = nodemailer.createTransport({
+        host: process.env.EMAIL_HOST,
+        port: process.env.EMAIL_PORT,
+        secure: true, // true para puerto 465 (Gmail), false para otros
+        auth: {
+            user: process.env.EMAIL_USER,
+            pass: process.env.EMAIL_PASS,
+        },
+    });
 
-// 2. Crear una función reutilizable para enviar correos
-const sendEmail = async (to, subject, text, html) => {
-  const mailOptions = {
-    from: `"Documevi Notificaciones" <${process.env.EMAIL_USER}>`,
-    to: to,       // A quién se le envía
-    subject: subject, // Asunto del correo
-    text: text,     // Cuerpo del correo en texto plano
-    html: html      // Cuerpo del correo en HTML (opcional)
-  };
+    const mailOptions = {
+        from: '"Documevi" <tucorreo@gmail.com>', // El remitente
+        to: options.to,
+        subject: options.subject,
+        text: options.text,
+        html: options.html, // ✅ Asegúrate de que esta línea esté aquí
+    };
 
-  try {
-    await transporter.sendMail(mailOptions);
-    console.log(`Correo enviado a: ${to}`);
-  } catch (error) {
-    console.error(`Error al enviar correo a ${to}:`, error);
-  }
+    try {
+        await transporter.sendMail(mailOptions);
+    } catch (error) {
+        console.error(`Error al enviar correo a ${options.to}:`, error);
+        throw new Error('No se pudo enviar el correo de recuperación.');
+    }
 };
 
-module.exports = { sendEmail };
+module.exports = sendEmail;

@@ -91,3 +91,83 @@
   z-index: 10;
   border-radius: 1.5rem; /* Mantiene los bordes redondeados del login */
 }
+
+.auth-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  background-color: #f4f7f9;
+  font-family: 'Arial', sans-serif;
+}
+
+.auth-box {
+  background: #ffffff;
+  padding: 40px;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  max-width: 400px;
+  text-align: center;
+}
+
+.auth-box h2 {
+  margin-top: 0;
+  margin-bottom: 10px;
+  color: #333;
+}
+
+.auth-box p {
+  margin-bottom: 25px;
+  color: #666;
+  font-size: 15px;
+}
+
+.auth-box input[type="email"],
+.auth-box input[type="password"] {
+  width: 100%;
+  padding: 12px 15px;
+  margin-bottom: 15px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  box-sizing: border-box; /* Asegura que el padding no afecte el ancho total */
+  font-size: 16px;
+}
+
+.auth-box input[type="email"]:focus,
+.auth-box input[type="password"]:focus {
+  outline: none;
+  border-color: #007bff;
+  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+}
+
+.auth-box button {
+  width: 100%;
+  padding: 12px;
+  background-color: #007bff;
+  border: none;
+  border-radius: 4px;
+  color: white;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.auth-box button:hover {
+  background-color: #0056b3;
+}
+
+.auth-link {
+  margin-top: 20px;
+}
+
+.auth-link a {
+  color: #007bff;
+  text-decoration: none;
+  font-size: 14px;
+}
+
+.auth-link a:hover {
+  text-decoration: underline;
+}

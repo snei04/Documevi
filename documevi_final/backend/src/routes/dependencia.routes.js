@@ -1,19 +1,32 @@
-// Archivo: backend/src/routes/dependencia.routes.js
 const { Router } = require('express');
-const { getAllDependencias, createDependencia } = require('../controllers/dependencia.controller');
+
+// 1. Importamos el controlador completo en una sola variable para mayor claridad
+const dependenciaController = require('../controllers/dependencia.controller');
+
+// Importamos los middlewares
 const authMiddleware = require('../middleware/auth.middleware');
 const authorizePermission = require('../middleware/authorizePermission');
 
 const router = Router();
 
-// GET /api/dependencias - Permitido para Administradores (1) y Operadores (2)
-router.get('/', [authMiddleware], getAllDependencias); 
+// --- Definición de Rutas ---
 
-// POST /api/dependencias - Permitido solo para Administradores (1)
-router.post('/', [authMiddleware, authorizePermission('gestionar_parametros_trd')], createDependencia);
+// Todas las rutas a partir de aquí requerirán que el usuario esté autenticado
+router.use(authMiddleware);
 
-// Aquí añadiríamos las rutas de Actualizar (PUT) y Eliminar (DELETE), también solo para administradores.
-// router.put('/:id', [authMiddleware, authorizeRoles(1)], updateDependencia);
-// router.delete('/:id', [authMiddleware, authorizeRoles(1)], deleteDependencia);
+// GET /api/dependencias - Obtener todas las dependencias
+router.get('/', dependenciaController.getAllDependencias); 
+
+// POST /api/dependencias - Crear una nueva dependencia
+// Requiere el permiso 'gestionar_parametros_trd'
+router.post('/', authorizePermission('gestionar_parametros_trd'), dependenciaController.createDependencia);
+
+// PUT /api/dependencias/:id - Actualizar una dependencia
+// ✅ SE AÑADIÓ SEGURIDAD: Requiere el permiso 'gestionar_parametros_trd'
+router.put('/:id', authorizePermission('gestionar_parametros_trd'), dependenciaController.updateDependencia);
+
+// PATCH /api/dependencias/:id/toggle-status - Cambiar el estado (activo/inactivo)
+// ✅ SE AÑADIÓ SEGURIDAD: Requiere el permiso 'gestionar_parametros_trd'
+router.patch('/:id/toggle-status', authorizePermission('gestionar_parametros_trd'), dependenciaController.toggleDependenciaStatus);
 
 module.exports = router;

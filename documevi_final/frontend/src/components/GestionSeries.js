@@ -1,112 +1,216 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
+import { useOutletContext } from 'react-router-dom';
 import api from '../api/axios';
 import { toast } from 'react-toastify';
-import './Dashboard.css'; // Asegúrate de que el CSS esté importado
+import Modal from 'react-modal';
+import './Dashboard.css';
+
+// Configuración del modal para accesibilidad
+Modal.setAppElement('#root');
 
 const GestionSeries = () => {
-    const [series, setSeries] = useState([]);
-    const [oficinas, setOficinas] = useState([]);
-    const [formData, setFormData] = useState({
-        id_oficina_productora: '',
+    // --- 1. ESTADOS DEL COMPONENTE ---
+
+    // Obtiene los datos y las funciones de refresco del contexto del Outlet
+    const { oficinas, series, refreshSeries } = useOutletContext();
+    
+    // Estados para el modal de CREACIÓN
+    const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+    const [newSerie, setNewSerie] = useState({
         codigo_serie: '',
-        nombre_serie: ''
+        nombre_serie: '',
+        id_oficina_productora: '',
+        requiere_subserie: true // Por defecto, marcado como que sí requiere
     });
-    const [error, setError] = useState('');
 
-    useEffect(() => {
-        const fetchData = async () => {
-            try {
-                const [resSeries, resOficinas] = await Promise.all([
-                    api.get('/series'),
-                    api.get('/oficinas')
-                ]);
-                setSeries(resSeries.data);
-                setOficinas(resOficinas.data);
-            } catch (err) {
-                setError('No se pudieron cargar los datos iniciales.');
-            }
-        };
-        fetchData();
-    }, []);
+    // Estados para el modal de EDICIÓN
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [editingSerie, setEditingSerie] = useState(null);
 
-    const handleChange = (e) => {
-        setFormData({ ...formData, [e.target.name]: e.target.value });
+    // --- 2. MANEJADORES DE MODALES ---
+    const openCreateModal = () => {
+        setNewSerie({ codigo_serie: '', nombre_serie: '', id_oficina_productora: '', requiere_subserie: true });
+        setIsCreateModalOpen(true);
+    };
+    const closeCreateModal = () => setIsCreateModalOpen(false);
+
+    const openEditModal = (serie) => {
+        setEditingSerie({ ...serie });
+        setIsEditModalOpen(true);
+    };
+    const closeEditModal = () => setIsEditModalOpen(false);
+
+    // --- 3. LÓGICA DE FORMULARIOS ---
+
+    // Maneja los cambios en los inputs de texto y selectores
+    const handleChange = (e, setter) => {
+        setter(prev => ({ ...prev, [e.target.name]: e.target.value }));
     };
 
-    const handleSubmit = async (e) => {
+    // Manejador especial para el checkbox
+    const handleCheckboxChange = (e, setter) => {
+        setter(prev => ({ ...prev, [e.target.name]: e.target.checked }));
+    };
+    
+    // Envía el formulario para CREAR una nueva serie
+    const handleCreateSubmit = async (e) => {
         e.preventDefault();
-        setError('');
-        if (!formData.id_oficina_productora) {
-            return toast.warn('Debe seleccionar una oficina productora.');
-        }
         try {
-            await api.post('/series', formData);
-            toast.success('Serie creada con éxito!');
-            const resSeries = await api.get('/series');
-            setSeries(resSeries.data);
-            setFormData({ id_oficina_productora: '', codigo_serie: '', nombre_serie: '' });
+            await api.post('/series', newSerie);
+            toast.success('Serie creada con éxito.');
+            closeCreateModal();
+            refreshSeries();
         } catch (err) {
-            setError(err.response?.data?.msg || 'Error al crear la serie');
+            toast.error(err.response?.data?.msg || 'Error al crear la serie.');
+        }
+    };
+    
+    // Envía el formulario para ACTUALIZAR una serie
+    const handleUpdateSubmit = async (e) => {
+        e.preventDefault();
+        try {
+            await api.put(`/series/${editingSerie.id}`, editingSerie);
+            toast.success('Serie actualizada con éxito.');
+            closeEditModal();
+            refreshSeries();
+        } catch (err) {
+            toast.error(err.response?.data?.msg || 'Error al actualizar.');
         }
     };
 
+    // Cambia el estado (activo/inactivo) de una serie
+    const handleToggleStatus = async (id, estadoActual) => {
+        const accion = estadoActual ? 'desactivar' : 'activar';
+        if (window.confirm(`¿Estás seguro de que quieres ${accion} esta serie?`)) {
+            try {
+                await api.patch(`/series/${id}/toggle-status`);
+                toast.success('Estado actualizado.');
+                refreshSeries();
+            } catch (err) {
+                toast.error(err.response?.data?.msg || 'Error al cambiar el estado.');
+            }
+        }
+    };
+
+    // --- 4. RENDERIZADO DEL COMPONENTE ---
     return (
         <div>
             <div className="page-header">
-                <h1>Gestión de Series Documentales (TRD)</h1>
-            </div>
-            
-            <div className="content-box">
-                <h3>Crear Nueva Serie</h3>
-                <form onSubmit={handleSubmit} className="form-grid">
-                    <select name="id_oficina_productora" value={formData.id_oficina_productora} onChange={handleChange} required>
-                        <option value="">-- Seleccione una Oficina Productora --</option>
-                        {oficinas.map(oficina => (
-                            <option key={oficina.id} value={oficina.id}>
-                                {oficina.nombre_oficina}
-                            </option>
-                        ))}
-                    </select>
-                    <input
-                        type="text"
-                        name="codigo_serie"
-                        placeholder="Código de la Serie"
-                        value={formData.codigo_serie}
-                        onChange={handleChange}
-                        required
-                    />
-                    <input
-                        type="text"
-                        name="nombre_serie"
-                        placeholder="Nombre de la Serie"
-                        value={formData.nombre_serie}
-                        onChange={handleChange}
-                        required
-                    />
-                    <button type="submit" className="button button-primary">Crear</button>
-                </form>
-                {error && <p style={{ color: 'red', marginTop: '10px' }}>{error}</p>}
+                <h1>Gestión de Series (TRD)</h1>
+                <button onClick={openCreateModal} className="button button-primary">Crear Nueva Serie</button>
             </div>
 
-            <h3>Series Existentes</h3>
-            <table className="styled-table">
-                <thead>
-                    <tr>
-                        <th>Código</th>
-                        <th>Nombre Serie</th>
-                        <th>Oficina Productora</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {series.map(serie => (
-                        <tr key={serie.id}>
-                            <td>{serie.codigo_serie}</td>
-                            <td>{serie.nombre_serie}</td>
-                            <td>{serie.nombre_oficina}</td>
+            <div className="content-box">
+                <h3>Series Existentes</h3>
+                <table className="styled-table">
+                    <thead>
+                        <tr>
+                            <th>Código</th>
+                            <th>Nombre de la Serie</th>
+                            <th>Oficina Productora</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
                         </tr>
-                    ))}
-                </tbody>
-            </table>
+                    </thead>
+                    <tbody>
+                        {series && series.map(serie => (
+                            <tr key={serie.id} className={!serie.activo ? 'inactive-row' : ''}>
+                                <td>{serie.codigo_serie}</td>
+                                <td>{serie.nombre_serie}</td>
+                                <td>{serie.nombre_oficina}</td>
+                                <td>
+                                    <span className={serie.activo ? 'status-active' : 'status-inactive'}>
+                                        {serie.activo ? 'Activo' : 'Inactivo'}
+                                    </span>
+                                </td>
+                                <td className="action-cell">
+                                    <button onClick={() => openEditModal(serie)} className="button">Editar</button>
+                                    <button onClick={() => handleToggleStatus(serie.id, serie.activo)} className={`button ${serie.activo ? 'button-danger' : 'button-success'}`}>
+                                        {serie.activo ? 'Desactivar' : 'Activar'}
+                                    </button>
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
+
+            {/* --- MODAL PARA CREAR SERIE --- */}
+            <Modal isOpen={isCreateModalOpen} onRequestClose={closeCreateModal} className="modal" overlayClassName="modal-overlay">
+                <h2>Crear Nueva Serie</h2>
+                <form onSubmit={handleCreateSubmit}>
+                    <div className="form-group">
+                        <label>Oficina Productora</label>
+                        <select name="id_oficina_productora" value={newSerie.id_oficina_productora} onChange={(e) => handleChange(e, setNewSerie)} required>
+                            <option value="">-- Seleccione una Oficina --</option>
+                            {oficinas.map(ofi => ofi.activo && <option key={ofi.id} value={ofi.id}>{ofi.nombre_oficina}</option>)}
+                        </select>
+                    </div>
+                    <div className="form-group">
+                        <label>Código de la Serie</label>
+                        <input type="text" name="codigo_serie" value={newSerie.codigo_serie} onChange={(e) => handleChange(e, setNewSerie)} required />
+                    </div>
+                    <div className="form-group">
+                        <label>Nombre de la Serie</label>
+                        <input type="text" name="nombre_serie" value={newSerie.nombre_serie} onChange={(e) => handleChange(e, setNewSerie)} required />
+                    </div>
+                    <div className="form-group">
+                        <label>
+                            <input 
+                                type="checkbox" 
+                                name="requiere_subserie"
+                                checked={newSerie.requiere_subserie}
+                                onChange={(e) => handleCheckboxChange(e, setNewSerie)}
+                                style={{ marginRight: '10px' }}
+                            />
+                            ¿Esta serie requiere subseries?
+                        </label>
+                    </div>
+                    <div className="modal-actions">
+                        <button type="submit" className="button button-primary">Crear</button>
+                        <button type="button" onClick={closeCreateModal} className="button">Cancelar</button>
+                    </div>
+                </form>
+            </Modal>
+
+            {/* --- MODAL PARA EDITAR SERIE --- */}
+            <Modal isOpen={isEditModalOpen} onRequestClose={closeEditModal} className="modal" overlayClassName="modal-overlay">
+                <h2>Editar Serie</h2>
+                {editingSerie && (
+                    <form onSubmit={handleUpdateSubmit}>
+                        <div className="form-group">
+                            <label>Oficina Productora</label>
+                            <select name="id_oficina_productora" value={editingSerie.id_oficina_productora} onChange={(e) => handleChange(e, setEditingSerie)} required>
+                                {oficinas.map(ofi => <option key={ofi.id} value={ofi.id}>{ofi.nombre_oficina}</option>)}
+                            </select>
+                        </div>
+                        <div className="form-group">
+                            <label>Código</label>
+                            <input type="text" name="codigo_serie" value={editingSerie.codigo_serie} onChange={(e) => handleChange(e, setEditingSerie)} required />
+                        </div>
+                        <div className="form-group">
+                            <label>Nombre</label>
+                            <input type="text" name="nombre_serie" value={editingSerie.nombre_serie} onChange={(e) => handleChange(e, setEditingSerie)} required />
+                        </div>
+                        <div className="form-group">
+                            <label className='checkbox-label'>
+                                <input 
+                                    type="checkbox" 
+                                    name="requiere_subserie"
+                                    checked={editingSerie.requiere_subserie}
+                                    onChange={(e) => handleCheckboxChange(e, setEditingSerie)}
+                                    style={{ marginRight: '10px' }}
+                                />
+                                ¿Esta serie requiere subseries?
+                            </label>
+                        </div>
+                        <div className="modal-actions">
+                            <button type="submit" className="button button-primary">Guardar Cambios</button>
+                            <button type="button" onClick={closeEditModal} className="button">Cancelar</button>
+                        </div>
+                    </form>
+                )}
+            </Modal>
         </div>
     );
 };

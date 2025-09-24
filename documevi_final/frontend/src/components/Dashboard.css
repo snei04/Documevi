@@ -1,4 +1,8 @@
-/* Contenedor principal del dashboard */
+:root{
+   --primary-color: #0089CF;
+  --secondary-color: #003d7b;
+}
+
 .dashboard-container {
   display: flex;
   flex-direction: column;
@@ -6,9 +10,9 @@
   width: 100vw;
 }
 
-/* Barra superior */
+
 .header {
-  background-color: #0080C9;
+  background-color: var(--primary-color);
   color: white;
   display: flex;
   align-items: center;
@@ -41,16 +45,7 @@
   overflow: hidden; /* Evita el desbordamiento */
 }
 
-/* Barra lateral */
-.sidebar {
-  background-color: #0080C9;
-  color: white;
-  width: 250px;
-  padding: 20px;
-  flex-shrink: 0;
-  overflow-y: auto; /* Permite scroll vertical si es necesario */
-  overflow-x: hidden;
-}
+
 .sidebar.collapsed {
   width: 0;
   padding: 1rem 0;
@@ -75,10 +70,7 @@
   overflow-y: auto; /* Permite scroll si el contenido es largo */
 }
 
-/* Estilos para el menú colapsado */
 
-
-/* Estilo para los links del menú */
 
 /* Estilos para el dashboard de estadísticas */
 .stats-container {
@@ -210,11 +202,11 @@
 }
 
 .button-primary {
-  background-color: #0077B6;
+  background-color: var(--primary-color);
   color: white;
 }
 .button-primary:hover {
-  background-color: #005f8a;
+  background-color: black;
 }
 
 .button-danger {
@@ -302,21 +294,8 @@
   transition: background-color 0.2s;
 }
 
-.button-primary {
-  background-color: #0077B6;
-  color: white;
-}
-.button-primary:hover {
-  background-color: #005f8a;
-}
 
-.button-danger {
-  background-color: #e53e3e;
-  color: white;
-}
-.button-danger:hover {
-  background-color: #c53030;
-}
+
 
 
 
@@ -334,19 +313,7 @@
   background-color: #f7fafc; /* Fondo gris claro */
 }
 
-/* --- BARRA SUPERIOR (HEADER) --- */
-.header {
-  height: 60px;
-  background-color: #0077B6;
-  color: white;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 1.5rem;
-  flex-shrink: 0; /* Evita que el header se encoja */
-  z-index: 10;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-}
+
 
 .header-menu-button {
   background: none;
@@ -387,7 +354,7 @@
 /* --- MENÚ LATERAL (SIDEBAR) --- */
 .sidebar {
   width: 250px;
-  background-color: #0077B6;
+  background-color: var(--primary-color);
   color: white;
   padding: 1rem;
   transition: width 0.3s ease-in-out, padding 0.3s ease-in-out;
@@ -414,11 +381,11 @@
 }
 
 .sidebar-nav a:hover, .menu-title:hover {
-  background-color: #005f8a; /* Azul más oscuro */
+  background-color: var(--secondary-color); /* Azul más oscuro */
 }
 
 .sidebar-nav a.active {
-  background-color: #004c6d; /* Azul aún más oscuro para el activo */
+  background-color: black; /* Azul aún más oscuro para el activo */
 }
 
 .menu-title {
@@ -530,13 +497,14 @@
   margin-bottom: 20px;
 }
 
+
 .form-group label {
   display: block;
   margin-bottom: 8px;
-  font-weight: 600;
-  color: #fff;
-  font-size: 0.9em;
+  font-weight: 500;
+  color: #555;
 }
+
 
 .form-group input {
   width: 100%;
@@ -546,6 +514,11 @@
   font-size: 1em;
   transition: all 0.2s ease-in-out;
   box-sizing: border-box; /* Evita que el padding afecte el ancho */
+}
+
+.form-group input[type="checkbox"] {
+  width: auto;
+  margin-right: 10px;
 }
 
 .form-group input:focus {
@@ -588,3 +561,19 @@
   justify-self: start;
   margin-top: 1rem;
 }
+
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.75);
+  z-index: 1000;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  backdrop-filter: blur(3px);
+}
+

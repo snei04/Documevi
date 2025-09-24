@@ -1,68 +1,110 @@
-// Archivo: backend/src/controllers/permiso.controller.js
 const pool = require('../config/db');
 
-// Obtener todos los permisos disponibles
+// --- GESTIÓN DE PERMISOS INDIVIDUALES ---
+
+// Obtiene todos los permisos, incluyendo la descripción
 exports.getAllPermissions = async (req, res) => {
-  try {
-    const [permissions] = await pool.query('SELECT * FROM permisos ORDER BY nombre_permiso ASC');
-    res.json(permissions);
-  } catch (error) {
-    res.status(500).json({ msg: 'Error en el servidor' });
-  }
+    try {
+        // Modificamos la consulta para que también traiga la descripción
+        const [permissions] = await pool.query('SELECT id, nombre_permiso, descripcion FROM permisos ORDER BY nombre_permiso ASC');
+        res.json(permissions);
+    } catch (error) {
+        res.status(500).json({ msg: 'Error en el servidor' });
+    }
 };
+
+// ✅ NUEVA FUNCIÓN: Crea un nuevo permiso con su descripción
+exports.createPermiso = async (req, res) => {
+    const { nombre_permiso, descripcion } = req.body;
+    if (!nombre_permiso) {
+        return res.status(400).json({ msg: 'El nombre del permiso es obligatorio.' });
+    }
+    try {
+        const [result] = await pool.query(
+            'INSERT INTO permisos (nombre_permiso, descripcion) VALUES (?, ?)',
+            [nombre_permiso, descripcion || null] // Guarda null si la descripción viene vacía
+        );
+        res.status(201).json({ id: result.insertId, ...req.body });
+    } catch (error) {
+        res.status(500).json({ msg: 'Error en el servidor', error: error.message });
+    }
+};
+
+// ✅ NUEVA FUNCIÓN: Edita un permiso existente, incluyendo su descripción
+exports.updatePermiso = async (req, res) => {
+    const { id } = req.params;
+    const { nombre_permiso, descripcion } = req.body;
+
+    if (!nombre_permiso) {
+        return res.status(400).json({ msg: 'El nombre del permiso es obligatorio.' });
+    }
+    try {
+        const [result] = await pool.query(
+            'UPDATE permisos SET nombre_permiso = ?, descripcion = ? WHERE id = ?',
+            [nombre_permiso, descripcion || null, id]
+        );
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ msg: 'Permiso no encontrado.' });
+        }
+        res.json({ msg: 'Permiso actualizado con éxito.' });
+    } catch (error) {
+        res.status(500).json({ msg: 'Error en el servidor', error: error.message });
+    }
+};
+
+
+// --- GESTIÓN DE PERMISOS POR ROL (Tus funciones existentes) ---
 
 // Obtener los permisos de un rol específico
 exports.getRolePermissions = async (req, res) => {
-  const { id_rol } = req.params;
-  try {
-    const [permissions] = await pool.query(
-      `SELECT p.id, p.nombre_permiso 
-       FROM rol_permisos rp 
-       JOIN permisos p ON rp.id_permiso = p.id 
-       WHERE rp.id_rol = ?`,
-      [id_rol]
-    );
-    res.json(permissions.map(p => p.id)); // Devolvemos solo un array de IDs [1, 3, 5]
-  } catch (error) {
-    res.status(500).json({ msg: 'Error en el servidor' });
-  }
+    const { id_rol } = req.params;
+    try {
+        const [permissions] = await pool.query(
+            `SELECT p.id, p.nombre_permiso 
+             FROM rol_permisos rp 
+             JOIN permisos p ON rp.id_permiso = p.id 
+             WHERE rp.id_rol = ?`,
+            [id_rol]
+        );
+        res.json(permissions.map(p => p.id));
+    } catch (error) {
+        res.status(500).json({ msg: 'Error en el servidor' });
+    }
 };
 
 // Actualizar los permisos de un rol
 exports.updateRolePermissions = async (req, res) => {
-  const { id_rol } = req.params;
-  const { permisosIds } = req.body; // Esperamos un array de IDs de permisos [1, 3, 5]
+    const { id_rol } = req.params;
+    const { permisosIds } = req.body;
 
-  if (!Array.isArray(permisosIds)) {
-    return res.status(400).json({ msg: 'Se esperaba un array de IDs de permisos.' });
-  }
-
-  const connection = await pool.getConnection();
-  try {
-    await connection.beginTransaction();
-
-    // 1. Borramos todos los permisos actuales del rol
-    await connection.query('DELETE FROM rol_permisos WHERE id_rol = ?', [id_rol]);
-
-    // 2. Si hay nuevos permisos, los insertamos
-    if (permisosIds.length > 0) {
-      const values = permisosIds.map(id_permiso => [id_rol, id_permiso]);
-      await connection.query('INSERT INTO rol_permisos (id_rol, id_permiso) VALUES ?', [values]);
+    if (!Array.isArray(permisosIds)) {
+        return res.status(400).json({ msg: 'Se esperaba un array de IDs de permisos.' });
     }
 
-    await connection.commit();
-    // 3. Registrar la auditoría
-    await pool.query(
-    'INSERT INTO auditoria (usuario_id, accion, detalles) VALUES (?, ?, ?)',
-    [req.user.id, 'ACTUALIZACION_PERMISOS', `Se modificaron los permisos para el rol con ID: ${id_rol}`]
-);
+    const connection = await pool.getConnection();
+    try {
+        await connection.beginTransaction();
 
-    res.json({ msg: 'Permisos del rol actualizados con éxito.' });
-  } catch (error) {
-    await connection.rollback();
-    console.error("Error al actualizar permisos:", error);
-    res.status(500).json({ msg: 'Error en el servidor' });
-  } finally {
-    connection.release();
-  }
+        await connection.query('DELETE FROM rol_permisos WHERE id_rol = ?', [id_rol]);
+
+        if (permisosIds.length > 0) {
+            const values = permisosIds.map(id_permiso => [id_rol, id_permiso]);
+            await connection.query('INSERT INTO rol_permisos (id_rol, id_permiso) VALUES ?', [values]);
+        }
+
+        await connection.commit();
+        
+        await pool.query(
+            'INSERT INTO auditoria (usuario_id, accion, detalles) VALUES (?, ?, ?)',
+            [req.user.id, 'ACTUALIZACION_PERMISOS', `Se modificaron los permisos para el rol con ID: ${id_rol}`]
+        );
+
+        res.json({ msg: 'Permisos del rol actualizados con éxito.' });
+    } catch (error) {
+        await connection.rollback();
+        console.error("Error al actualizar permisos:", error);
+        res.status(500).json({ msg: 'Error en el servidor' });
+    } finally {
+        connection.release();
+    }
 };

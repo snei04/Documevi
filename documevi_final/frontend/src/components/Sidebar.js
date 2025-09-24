@@ -67,6 +67,7 @@ const Sidebar = ({ isOpen }) => {
                 <li><NavLink to="/dashboard/transferencias">Transferencias</NavLink></li>
                 <li><NavLink to="/dashboard/eliminacion">Eliminación</NavLink></li>
                 <li><NavLink to="/dashboard/roles">Gestión de Roles</NavLink></li>
+                <li><NavLink to="/dashboard/permisos">Maestro de Permisos</NavLink></li>
                 <li><NavLink to="/dashboard/usuarios">Gestión de Usuarios</NavLink></li>
                 <li><NavLink to="/dashboard/auditoria">Auditoría</NavLink></li>
                 <li><NavLink to="/dashboard/reportes-fuid">Reporte FUID</NavLink></li>

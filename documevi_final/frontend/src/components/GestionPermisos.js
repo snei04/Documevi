@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from '../api/axios';
 import { toast } from 'react-toastify';
-import Checkbox from './Checkbox'; // <-- 1. Importar el nuevo componente
+import Checkbox from './Checkbox';
 import './Dashboard.css';
 
 const GestionPermisos = () => {
@@ -35,6 +35,7 @@ const GestionPermisos = () => {
             setIsLoading(false);
         }
     }, [id_rol]);
+
     useEffect(() => { fetchData(); }, [fetchData]);
 
     const handleCheckboxChange = (permissionId) => {
@@ -54,6 +55,7 @@ const GestionPermisos = () => {
             toast.error(err.response?.data?.msg || 'Error al guardar los cambios.');
         }
     };
+
     if (isLoading) return <div>Cargando permisos...</div>;
 
     return (
@@ -67,13 +69,18 @@ const GestionPermisos = () => {
                 <div className="permissions-grid">
                     {allPermissions.map(permission => (
                         <div key={permission.id} className="permission-item">
-                            <label style={{display: 'flex', alignItems: 'center', gap: '10px'}}>
-                                {/* 👇 2. Reemplazamos el input por el nuevo componente Checkbox 👇 */}
+                            <label style={{display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer'}}>
                                 <Checkbox
                                     checked={rolePermissions.includes(permission.id)}
                                     onChange={() => handleCheckboxChange(permission.id)}
                                 />
-                                <span>{permission.nombre_permiso}</span>
+                                {/* ✅ AHORA MOSTRAMOS NOMBRE Y DESCRIPCIÓN */}
+                                <div>
+                                    <span style={{ fontWeight: 'bold' }}>{permission.nombre_permiso}</span>
+                                    <p style={{ margin: 0, fontSize: '0.8em', color: '#666' }}>
+                                        {permission.descripcion || 'Sin descripción'}
+                                    </p>
+                                </div>
                             </label>
                         </div>
                     ))}
@@ -83,6 +90,9 @@ const GestionPermisos = () => {
             <div className="action-bar" style={{justifyContent: 'start'}}>
                 <button onClick={handleSaveChanges} className="button button-primary">
                     Guardar Cambios
+                </button>
+                <button onClick={() => navigate('/dashboard/roles')} className="button">
+                    Cancelar
                 </button>
             </div>
         </div>

@@ -502,7 +502,7 @@
   display: block;
   margin-bottom: 8px;
   font-weight: 500;
-  color: #555;
+  color: white;
 }
 
 
@@ -576,4 +576,6 @@
   align-items: center;
   backdrop-filter: blur(3px);
 }
+
+
 

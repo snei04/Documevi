@@ -3,18 +3,19 @@ const pool = require('../config/db');
 
 // Obtener todas las subseries
 exports.getAllSubseries = async (req, res) => {
-  try {
-    const [rows] = await pool.query(`
-      SELECT ss.*, s.nombre_serie 
-      FROM trd_subseries ss
-      JOIN trd_series s ON ss.id_serie = s.id
-      ORDER BY s.nombre_serie, ss.nombre_subserie ASC
-    `);
-    res.json(rows);
-  } catch (error) {
-    res.status(500).json({ msg: 'Error en el servidor', error: error.message });
-  }
+    try {
+        const [rows] = await pool.query(`
+            SELECT ss.*, s.nombre_serie 
+            FROM trd_subseries ss
+            LEFT JOIN trd_series s ON ss.id_serie = s.id
+            ORDER BY ss.activo DESC, ss.nombre_subserie ASC
+        `);
+        res.json(rows);
+    } catch (error) {
+        res.status(500).json({ msg: 'Error en el servidor', error: error.message });
+    }
 };
+
 
 // Crear una nueva subserie
 exports.createSubserie = async (req, res) => {
@@ -48,4 +49,39 @@ exports.createSubserie = async (req, res) => {
     }
     res.status(500).json({ msg: 'Error en el servidor', error: error.message });
   }
+};
+
+exports.updateSubserie = async (req, res) => {
+    const { id } = req.params;
+    const { nombre_subserie, codigo_subserie, id_serie, retencion_gestion, retencion_central, disposicion_final } = req.body;
+
+    if (!nombre_subserie || !codigo_subserie || !id_serie) {
+        return res.status(400).json({ msg: 'Nombre, código y serie son obligatorios.' });
+    }
+    try {
+        const [result] = await pool.query(
+            'UPDATE trd_subseries SET nombre_subserie = ?, codigo_subserie = ?, id_serie = ?, retencion_gestion = ?, retencion_central = ?, disposicion_final = ? WHERE id = ?',
+            [nombre_subserie, codigo_subserie, id_serie, retencion_gestion, retencion_central, disposicion_final, id]
+        );
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ msg: 'Subserie no encontrada.' });
+        }
+        res.json({ msg: 'Subserie actualizada con éxito.' });
+    } catch (error) {
+        res.status(500).json({ msg: 'Error en el servidor', error: error.message });
+    }
+};
+
+// Activa o desactiva una subserie
+exports.toggleSubserieStatus = async (req, res) => {
+    const { id } = req.params;
+    try {
+        const [result] = await pool.query('UPDATE trd_subseries SET activo = NOT activo WHERE id = ?', [id]);
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ msg: 'Subserie no encontrada.' });
+        }
+        res.json({ msg: 'Estado de la subserie actualizado con éxito.' });
+    } catch (error) {
+        res.status(500).json({ msg: 'Error en el servidor', error: error.message });
+    }
 };

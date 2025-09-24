@@ -40,6 +40,7 @@ import GestionEliminacion from './components/GestionEliminacion';
 import MisPrestamos from './components/MisPrestamos';
 import ForgotPassword from './components/ForgotPassword';
 import ResetPassword from './components/ResetPassword';
+import GestionarPermisosMaestro from './components/GestionarPermisosMaestro';
 
 // 3. Importamos el CSS
 import './App.css';
@@ -115,6 +116,7 @@ function App() {
           <Route path="eliminacion" element={<GestionEliminacion />} /> 
           <Route path="roles" element={<GestionRoles />} />
           <Route path="roles/:id_rol/permisos" element={<GestionPermisos />} />
+          <Route path="permisos" element={<GestionarPermisosMaestro />} />
           <Route path="estadisticas" element={<Estadisticas />} />  
           <Route path="visor-onedrive" element={<OneDriveViewer />} />    
           

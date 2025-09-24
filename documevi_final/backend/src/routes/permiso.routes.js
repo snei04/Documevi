@@ -1,20 +1,19 @@
-// Archivo: backend/src/routes/permiso.routes.js
+// En src/routes/permiso.routes.js
 const { Router } = require('express');
-const { getAllPermissions, getRolePermissions, updateRolePermissions } = require('../controllers/permiso.controller');
+const permisoController = require('../controllers/permiso.controller');
 const authMiddleware = require('../middleware/auth.middleware');
-const authorizeRoles = require('../middleware/authorizeRoles');
+const authorizePermission = require('../middleware/authorizePermission');
 
 const router = Router();
+router.use(authMiddleware);
 
-// Todas estas rutas son solo para administradores
-router.use(authMiddleware, authorizeRoles(1));
+// Rutas para la gestión de permisos individuales
+router.get('/', permisoController.getAllPermissions);
+router.post('/', authorizePermission('gestionar_roles_permisos'), permisoController.createPermiso);
+router.put('/:id', authorizePermission('gestionar_roles_permisos'), permisoController.updatePermiso);
 
-// Obtener la lista de todos los permisos disponibles
-router.get('/', getAllPermissions);
-
-// Obtener y actualizar los permisos de un rol específico
-router.route('/rol/:id_rol')
-  .get(getRolePermissions)
-  .put(updateRolePermissions);
+// Rutas para la asignación de permisos a roles
+router.get('/rol/:id_rol', permisoController.getRolePermissions);
+router.put('/rol/:id_rol', authorizePermission('gestionar_roles_permisos'), permisoController.updateRolePermissions);
 
 module.exports = router;

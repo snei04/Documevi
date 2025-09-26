@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import api from '../api/axios';
 import { toast } from 'react-toastify';
 import Modal from 'react-modal';
+import useAuth from '../hooks/useAuth';
 import './Dashboard.css';
 
 Modal.setAppElement('#root');
@@ -9,13 +10,13 @@ Modal.setAppElement('#root');
 const GestionarPermisosMaestro = () => {
     const [permisos, setPermisos] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
-    
-    // Estados para el modal de edición
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingPermiso, setEditingPermiso] = useState(null);
+    const auth = useAuth();
 
-    // Carga inicial de todos los permisos
-    const fetchPermisos = async () => {
+    // ✅ 1. Definimos fetchPermisos aquí, al nivel principal del componente.
+    // Usamos useCallback para que la función no se recree en cada renderizado.
+    const fetchPermisos = useCallback(async () => {
         setIsLoading(true);
         try {
             const res = await api.get('/permisos');
@@ -25,11 +26,12 @@ const GestionarPermisosMaestro = () => {
         } finally {
             setIsLoading(false);
         }
-    };
+    }, []); // El array vacío significa que la función en sí no cambiará.
 
+    // El useEffect ahora solo llama a la función que ya existe.
     useEffect(() => {
         fetchPermisos();
-    }, []);
+    }, [fetchPermisos]);
 
     // --- MANEJADORES ---
     const openEditModal = (permiso) => {
@@ -41,21 +43,20 @@ const GestionarPermisosMaestro = () => {
         setIsModalOpen(false);
         setEditingPermiso(null);
     };
-    
+
     const handleChange = (e) => {
         setEditingPermiso(prev => ({ ...prev, [e.target.name]: e.target.value }));
     };
 
-    // La función ahora solo se encarga de ACTUALIZAR
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (!editingPermiso) return;
-        
+
         try {
             await api.put(`/permisos/${editingPermiso.id}`, editingPermiso);
             toast.success(`Permiso actualizado con éxito.`);
             closeModal();
-            fetchPermisos(); // Recarga la lista
+            fetchPermisos(); 
         } catch (err) {
             toast.error(err.response?.data?.msg || "Error al guardar el permiso.");
         }
@@ -67,7 +68,6 @@ const GestionarPermisosMaestro = () => {
         <div>
             <div className="page-header">
                 <h1>Gestión de Permisos del Sistema</h1>
-                {/* Se eliminó el botón de "Crear Nuevo Permiso" */}
             </div>
             <div className="content-box">
                 <h3>Permisos Existentes</h3>
@@ -76,7 +76,7 @@ const GestionarPermisosMaestro = () => {
                         <tr>
                             <th>Nombre del Permiso</th>
                             <th>Descripción</th>
-                            <th>Acciones</th>
+                            {auth.hasPermission('gestionar_roles_permisos') && <th>Acciones</th>}
                         </tr>
                     </thead>
                     <tbody>
@@ -84,38 +84,36 @@ const GestionarPermisosMaestro = () => {
                             <tr key={p.id}>
                                 <td><code>{p.nombre_permiso}</code></td>
                                 <td>{p.descripcion || 'Sin descripción'}</td>
-                                <td className="action-cell">
-                                    <button onClick={() => openEditModal(p)} className="button">Editar Descripción</button>
-                                </td>
+                                {auth.hasPermission('gestionar_roles_permisos') && (
+                                    <td className="action-cell">
+                                        <button onClick={() => openEditModal(p)} className="button">Editar Descripción</button>
+                                    </td>
+                                )}
                             </tr>
                         ))}
                     </tbody>
                 </table>
             </div>
 
-            {/* --- MODAL PARA EDITAR --- */}
             <Modal isOpen={isModalOpen} onRequestClose={closeModal} className="modal" overlayClassName="modal-overlay">
                 <h2>Editar Permiso</h2>
                 <form onSubmit={handleSubmit}>
                     <div className="form-group">
                         <label>Nombre del Permiso (clave)</label>
-                        {/* El nombre del permiso no se puede editar para mantener la integridad del sistema */}
-                        <input 
-                            type="text" 
-                            name="nombre_permiso" 
-                            value={editingPermiso?.nombre_permiso || ''} 
-                            readOnly 
+                        <input
+                            type="text"
+                            value={editingPermiso?.nombre_permiso || ''}
+                            readOnly
                             style={{ backgroundColor: '#f0f0f0' }}
                         />
                     </div>
                     <div className="form-group">
                         <label>Descripción</label>
-                        <textarea 
-                            name="descripcion" 
+                        <textarea
+                            name="descripcion"
                             rows="3"
-                            value={editingPermiso?.descripcion || ''} 
+                            value={editingPermiso?.descripcion || ''}
                             onChange={handleChange}
-                            placeholder="Explica para qué sirve este permiso..."
                         ></textarea>
                     </div>
                     <div className="modal-actions">

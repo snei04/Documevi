@@ -1,4 +1,3 @@
-// Archivo: backend/src/controllers/plantilla.controller.js
 const pool = require('../config/db');
 
 // Obtener todas las plantillas

@@ -53,7 +53,7 @@ const Login = () => {
             <h2 className="login-title">DOCUMEVI</h2>
 
             <form onSubmit={onSubmit} className="login-form">
-                <div className="form-group">
+                <div className="form-group-1">
                     <label htmlFor="documento" className="form-label">Documento de usuario</label>
                     <input
                         type="text"
@@ -65,7 +65,7 @@ const Login = () => {
                         required
                     />
                 </div>
-                <div className="form-group password-wrapper">
+                <div className="form-group-1 password-wrapper">
                     <label htmlFor="password" className="form-label">Contraseña</label>
                     <input
                         type={showPassword ? 'text' : 'password'}

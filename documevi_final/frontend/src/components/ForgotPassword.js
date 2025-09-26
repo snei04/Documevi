@@ -2,11 +2,11 @@ import React, { useState } from 'react';
 import api from '../api/axios';
 import { toast } from 'react-toastify';
 import { Link } from 'react-router-dom';
-import './Login.css'; // Asegúrate de importar el archivo CSS
+import './Login.css';
 
 // Puedes guardar esta imagen en tu carpeta 'src/assets' e importarla,
 // o usar una URL de una imagen que encuentres en internet.
-import emailSentIcon from '../assets/check-email.svg'; // <-- ¡EJEMPLO! Debes tener esta imagen
+import emailSentIcon from '../assets/check-email.svg';
 
 const ForgotPassword = () => {
     const [email, setEmail] = useState('');

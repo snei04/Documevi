@@ -228,6 +228,8 @@ exports.createDocumentoFromPlantillaSinExpediente = async (req, res) => {
         }
 
         const nombrePlantilla = plantillaRows[0].nombre;
+        
+        // ✅ CORRECCIÓN APLICADA AQUÍ
         const disenoProyecto = JSON.parse(plantillaRows[0].diseño_json || '{}');
         const disenoComponentes = disenoProyecto.components || [];
 
@@ -241,7 +243,6 @@ exports.createDocumentoFromPlantillaSinExpediente = async (req, res) => {
 
         const drawComponents = (components) => {
             for (const component of components) {
-                // ✅ LÓGICA CORREGIDA: Buscamos texto que contenga '{{...}}'
                 if (component.type === 'text' && component.content && component.content.includes('{{')) {
                     const style = component.style || {};
                     const variableName = component.content.replace(/{{|}}/g, '').trim();
@@ -253,14 +254,12 @@ exports.createDocumentoFromPlantillaSinExpediente = async (req, res) => {
 
                     page.drawText(String(valor), {
                         x: x,
-                        y: height - y - fontSize, // Conversión de coordenadas
+                        y: height - y - fontSize,
                         size: fontSize,
                         font: helveticaFont,
                         color: rgb(0, 0, 0),
                     });
                 }
-
-                // Procesamos los componentes hijos (para las celdas)
                 if (component.components && component.components.length > 0) {
                     drawComponents(component.components);
                 }

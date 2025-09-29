@@ -243,7 +243,6 @@ exports.updateExpedienteCustomData = async (req, res) => {
   }
 };
 exports.createDocumentoFromPlantilla = async (req, res) => {
-    const { id: id_expediente } = req.params;
     const { id_plantilla, datos_rellenados, id_serie, id_subserie, id_oficina_productora } = req.body;
     const id_usuario_radicador = req.user.id;
 
@@ -262,6 +261,8 @@ exports.createDocumentoFromPlantilla = async (req, res) => {
         }
 
         const nombrePlantilla = plantillaRows[0].nombre;
+        
+        // Parseamos el diseño JSON de la plantilla
         const disenoProyecto = JSON.parse(plantillaRows[0].diseño_json || '{}');
         const disenoComponentes = disenoProyecto.components || [];
 
@@ -273,28 +274,25 @@ exports.createDocumentoFromPlantilla = async (req, res) => {
         const { height } = page.getSize();
         const helveticaFont = await pdfDoc.embedFont(StandardFonts.Helvetica);
 
-        // Función recursiva para dibujar los componentes del diseño
         const drawComponents = (components) => {
             for (const component of components) {
-                // Si el componente es una de tus variables (identificada por su ID)
-                if (component.attributes && component.attributes.id && datos_rellenados[component.attributes.id]) {
+                if (component.type === 'text' && component.content && component.content.includes('{{')) {
                     const style = component.style || {};
-                    const valor = datos_rellenados[component.attributes.id];
+                    const variableName = component.content.replace(/{{|}}/g, '').trim();
+                    const valor = datos_rellenados[variableName] || '';
                     
-                    const x = parseInt(style.left) || 50;
-                    const y = parseInt(style.top) || height - 50;
+                    const x = parseInt(style.left) || 0;
+                    const y = parseInt(style.top) || 0;
                     const fontSize = parseInt(style['font-size']) || 12;
 
                     page.drawText(String(valor), {
                         x: x,
-                        y: height - y - fontSize, // Conversión de coordenadas
+                        y: height - y - fontSize,
                         size: fontSize,
                         font: helveticaFont,
                         color: rgb(0, 0, 0),
                     });
                 }
-
-                // Si el componente tiene hijos (como una celda), procesamos los hijos
                 if (component.components && component.components.length > 0) {
                     drawComponents(component.components);
                 }
@@ -313,23 +311,14 @@ exports.createDocumentoFromPlantilla = async (req, res) => {
              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [radicado, asunto, id_oficina_productora, id_serie, id_subserie, 'Generado Internamente', id_usuario_radicador, filePath, fileName]
         );
-        const newDocumentId = docResult.insertId;
-
-        // Añadimos el nuevo documento al índice del expediente
-        const [folioRows] = await connection.query('SELECT MAX(orden_foliado) as max_folio FROM expediente_documentos WHERE id_expediente = ?', [id_expediente]);
-        const nuevoFolio = (folioRows[0].max_folio || 0) + 1;
-        await connection.query(
-            'INSERT INTO expediente_documentos (id_expediente, id_documento, orden_foliado) VALUES (?, ?, ?)',
-            [id_expediente, newDocumentId, nuevoFolio]
-        );
         
         await connection.commit();
-        res.status(201).json({ msg: 'Documento PDF generado y añadido al expediente con éxito.' });
+        res.status(201).json({ msg: 'Documento generado con éxito.', radicado, id: docResult.insertId });
 
     } catch (error) {
         await connection.rollback();
         console.error("Error al generar documento desde plantilla:", error);
-        res.status(500).json({ msg: 'Error en el servidor', error: error.message });
+        res.status(500).json({ msg: 'Error en el servidor' });
     } finally {
         if (connection) connection.release();
     }

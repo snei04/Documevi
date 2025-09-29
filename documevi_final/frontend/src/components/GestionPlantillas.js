@@ -174,7 +174,7 @@ const GestionPlantillas = () => {
                     </div>
                     <div className="form-group">
                         <label>Subserie</label>
-                        <select name="id_subserie" value={newPlantilla.id_subserie} onChange={handleChange} required>
+                        <select name="id_subserie" value={newPlantilla.id_subserie} onChange={handleChange}>
                             <option value="">-- Seleccione --</option>
                             {filteredSubseries.map(ss => <option key={ss.id} value={ss.id}>{ss.nombre_subserie}</option>)}
                         </select>

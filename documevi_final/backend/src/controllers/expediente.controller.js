@@ -1,6 +1,5 @@
 const pool = require('../config/db');
 const { generarRadicado } = require('../utils/radicado.util');
-// ✅ LÍNEA CORREGIDA
 const { PDFDocument, rgb, StandardFonts } = require('pdf-lib');
 const fs = require('fs/promises');
 const path = require('path');
@@ -73,6 +72,7 @@ exports.createExpediente = async (req, res) => {
   }
 };
 
+// Obtener un expediente por ID con lógica de permisos
 exports.getExpedienteById = async (req, res) => {
   const { id: id_expediente } = req.params;
   const id_usuario_actual = req.user.id;
@@ -126,7 +126,7 @@ exports.getExpedienteById = async (req, res) => {
   }
 };
 
-// Añadir un documento a un expediente (Índice Electrónico)
+// Añadir un documento a un expediente con foliado automático
 exports.addDocumentoToExpediente = async (req, res) => {
   const { id_expediente } = req.params;
   const { id_documento, requiere_firma } = req.body;
@@ -196,6 +196,7 @@ exports.closeExpediente = async (req, res) => {
   }
 };
 
+// Obtener los datos personalizados de un expediente
 exports.getExpedienteCustomData = async (req, res) => {
   const { id } = req.params;
   try {
@@ -242,6 +243,8 @@ exports.updateExpedienteCustomData = async (req, res) => {
     connection.release();
   }
 };
+
+// Crear un documento desde una plantilla y añadirlo a un expediente
 exports.createDocumentoFromPlantilla = async (req, res) => {
     const { id_plantilla, datos_rellenados, id_serie, id_subserie, id_oficina_productora } = req.body;
     const id_usuario_radicador = req.user.id;

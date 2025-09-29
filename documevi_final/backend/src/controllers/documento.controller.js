@@ -7,7 +7,7 @@ const path = require('path');
 const { PDFDocument, rgb, StandardFonts } = require('pdf-lib');
 const { generarRadicado } = require('../utils/radicado.util');
 
-// 👇 ASEGÚRATE DE QUE ESTA FUNCIÓN ESTÉ EXPORTADA
+// Función para obtener todos los documentos
 exports.getAllDocumentos = async (req, res) => {
   try {
     const [rows] = await pool.query('SELECT * FROM documentos ORDER BY fecha_radicado DESC');
@@ -18,6 +18,7 @@ exports.getAllDocumentos = async (req, res) => {
   }
 };
 
+// Función para obtener un documento por su ID
 exports.createDocumento = async (req, res) => {
     const { asunto, tipo_soporte, ubicacion_fisica, id_oficina_productora, id_serie, id_subserie, remitente_nombre, remitente_identificacion, remitente_direccion } = req.body;
     const customDataString = req.body.customData;
@@ -93,6 +94,7 @@ exports.createDocumento = async (req, res) => {
     }
 };
 
+// Función para obtener un documento por su ID
 exports.startWorkflow = async (req, res) => {
     const { id: id_documento } = req.params;
     const { id_workflow } = req.body;
@@ -128,6 +130,7 @@ exports.startWorkflow = async (req, res) => {
     }
 };
 
+// Función para avanzar al siguiente paso del workflow
 exports.advanceWorkflow = async (req, res) => {
     const { id: id_documento } = req.params;
 
@@ -174,6 +177,7 @@ exports.advanceWorkflow = async (req, res) => {
     }
 };
 
+// Función para firmar un documento
 exports.firmarDocumento = async (req, res) => {
     const { id: id_documento } = req.params;
     const { firma_imagen } = req.body;
@@ -209,6 +213,7 @@ exports.firmarDocumento = async (req, res) => {
     }
 };
 
+// Función para crear un documento desde una plantilla sin expediente
 exports.createDocumentoFromPlantillaSinExpediente = async (req, res) => {
     const { id_plantilla, datos_rellenados, id_serie, id_subserie, id_oficina_productora } = req.body;
     const id_usuario_radicador = req.user.id;
@@ -229,7 +234,7 @@ exports.createDocumentoFromPlantillaSinExpediente = async (req, res) => {
 
         const nombrePlantilla = plantillaRows[0].nombre;
         
-        // ✅ CORRECCIÓN APLICADA AQUÍ
+        // Procesar el diseño JSON para generar el PDF
         const disenoProyecto = JSON.parse(plantillaRows[0].diseño_json || '{}');
         const disenoComponentes = disenoProyecto.components || [];
 

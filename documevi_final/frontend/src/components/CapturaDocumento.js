@@ -73,7 +73,9 @@ const CapturaDocumento = () => {
             setCamposPlantilla([]);
         }
     };
+    
     const handleDatosPlantillaChange = (e) => setDatosPlantilla(prev => ({ ...prev, [e.target.name]: e.target.value }));
+    // Enviar datos de la plantilla para generar documento
     const handleSubmitPlantilla = async (e) => {
         e.preventDefault();
         if (!plantillaSeleccionada) return toast.error("Por favor, selecciona una plantilla.");
@@ -108,6 +110,7 @@ const CapturaDocumento = () => {
         setFilteredSubseries([]);
         if (fileInputRef.current) fileInputRef.current.value = "";
     };
+    // Filtrar oficinas, series y subseries según selección
     const handleDependenciaChange = (e) => {
         const depId = e.target.value;
         setFormData({ ...initialFormData, id_dependencia: depId });
@@ -116,6 +119,7 @@ const CapturaDocumento = () => {
         setFilteredSubseries([]);
         setCustomFields([]);
     };
+    // Cargar campos personalizados al cambiar oficina
     const handleOficinaChange = async (e) => {
         const ofiId = e.target.value;
         setFormData(prev => ({ ...prev, id_oficina_productora: ofiId, id_serie: '', id_subserie: '' }));
@@ -131,17 +135,20 @@ const CapturaDocumento = () => {
             }
         }
     };
+    // Filtrar subseries al cambiar serie
     const handleSerieChange = (e) => {
         const serId = e.target.value;
         setFormData(prev => ({ ...prev, id_serie: serId, id_subserie: '' }));
         setFilteredSubseries(subseries.filter(ss => ss.id_serie === parseInt(serId)));
     };
+    // Manejo de cambios en el formulario
     const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
     const handleFileChange = (file) => setArchivo(file);
     const handleCustomDataChange = (e) => {
         const { name, value } = e.target;
         setCustomData(prev => ({ ...prev, [name]: value }));
     };
+    // Enviar formulario de captura manual
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (formData.tipo_soporte === 'Electrónico' && !archivo) {
@@ -164,7 +171,7 @@ const CapturaDocumento = () => {
             toast.error(err.response?.data?.msg || 'Error al radicar.');
         }
     };
-
+// --- RENDERIZADO DEL COMPONENTE ---
     return (
         <div>
             <div className="page-header">

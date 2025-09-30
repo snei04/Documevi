@@ -452,44 +452,105 @@
 /* --- ESTILOS GENERALES PARA LOS MODALES --- */
 
 /* El fondo oscuro y desenfocado detrás del modal */
+/* Estilos para el modal con scroll */
+
+/* Overlay del modal */
 .modal-overlay {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(0, 0, 0, 0.6);
-  z-index: 1000;
+  background-color: rgba(0, 0, 0, 0.75);
   display: flex;
-  justify-content: center;
   align-items: center;
-  backdrop-filter: blur(3px);
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px; /* Espacio alrededor del modal */
 }
 
-/* El contenedor principal del modal (la ventana emergente) */
+/* Contenedor del modal */
 .modal {
-  position: relative;
-  background: #ffffff;
+  background: white;
+  border-radius: 8px;
   padding: 30px;
-  border-radius: 12px;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
-  width: 90%;
-  max-width: 500px;
-  outline: none; /* Quita el borde azul al hacer clic */
-  animation: modal-slide-in 0.3s ease-out;
+  max-width: 600px;
+  width: 100%;
+  max-height: 85vh; /* Altura máxima del 85% del viewport */
+  overflow-y: auto; /* Scroll vertical cuando sea necesario */
+  position: relative;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
-/* --- Estilos para el contenido DENTRO del modal --- */
+/* Personalizar la barra de desplazamiento (Webkit - Chrome, Safari, Edge) */
+.modal::-webkit-scrollbar {
+  width: 8px;
+}
 
-/* Encabezado del modal */
+.modal::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+.modal::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 4px;
+}
+
+.modal::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+/* Para Firefox */
+.modal {
+  scrollbar-width: thin;
+  scrollbar-color: #888 #f1f1f1;
+}
+
+/* Título del modal fijo (opcional) */
 .modal h2 {
   margin-top: 0;
-  margin-bottom: 25px;
+  margin-bottom: 20px;
   padding-bottom: 15px;
-  border-bottom: 1px solid #e0e0e0;
-  color: #333;
-  font-size: 1.5em;
-  font-weight: 600;
+  border-bottom: 2px solid #e0e0e0;
+  position: sticky;
+  top: 0;
+  background: white;
+  z-index: 1;
+}
+
+/* Acciones del modal fijas al final (opcional) */
+.modal-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  margin-top: 25px;
+  padding-top: 20px;
+  border-top: 1px solid #e0e0e0;
+  position: sticky;
+  bottom: 0;
+  background: white;
+  z-index: 1;
+}
+
+/* Ajuste para pantallas pequeñas */
+@media (max-height: 700px) {
+  .modal {
+    max-height: 90vh;
+    padding: 20px;
+  }
+}
+
+@media (max-width: 768px) {
+  .modal {
+    max-height: 95vh;
+    padding: 20px;
+    max-width: 95%;
+  }
+  
+  .modal-overlay {
+    padding: 10px;
+  }
 }
 
 /* Contenedor para cada campo del formulario (label + input) */
@@ -563,19 +624,7 @@
 }
 
 
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.75);
-  z-index: 1000;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  backdrop-filter: blur(3px);
-}
+
 
 
 

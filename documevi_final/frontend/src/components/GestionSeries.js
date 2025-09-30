@@ -20,7 +20,11 @@ const GestionSeries = () => {
         codigo_serie: '',
         nombre_serie: '',
         id_oficina_productora: '',
-        requiere_subserie: true // Por defecto, marcado como que sí requiere
+        requiere_subserie: true,
+        retencion_gestion: '',
+        retencion_central: '',
+        disposicion_final: 'Conservación Total',
+        procedimientos: ''
     });
 
     // Estados para el modal de EDICIÓN
@@ -29,7 +33,16 @@ const GestionSeries = () => {
 
     // --- 2. MANEJADORES DE MODALES ---
     const openCreateModal = () => {
-        setNewSerie({ codigo_serie: '', nombre_serie: '', id_oficina_productora: '', requiere_subserie: true });
+        setNewSerie({ 
+            codigo_serie: '', 
+            nombre_serie: '', 
+            id_oficina_productora: '', 
+            requiere_subserie: true,
+            retencion_gestion: '',
+            retencion_central: '',
+            disposicion_final: 'Conservación Total',
+            procedimientos: ''
+        });
         setIsCreateModalOpen(true);
     };
     const closeCreateModal = () => setIsCreateModalOpen(false);
@@ -49,7 +62,18 @@ const GestionSeries = () => {
 
     // Manejador especial para el checkbox
     const handleCheckboxChange = (e, setter) => {
-        setter(prev => ({ ...prev, [e.target.name]: e.target.checked }));
+        const isChecked = e.target.checked;
+        setter(prev => ({ 
+            ...prev, 
+            [e.target.name]: isChecked,
+            // Si marca que requiere subserie, limpiar los campos de retención
+            ...(isChecked ? {
+                retencion_gestion: '',
+                retencion_central: '',
+                disposicion_final: 'Conservación Total',
+                procedimientos: ''
+            } : {})
+        }));
     };
     
     // Envía el formulario para CREAR una nueva serie
@@ -108,6 +132,8 @@ const GestionSeries = () => {
                             <th>Código</th>
                             <th>Nombre de la Serie</th>
                             <th>Oficina Productora</th>
+                            <th>¿Requiere Subserie?</th>
+                            <th>Retención</th>
                             <th>Estado</th>
                             <th>Acciones</th>
                         </tr>
@@ -118,6 +144,12 @@ const GestionSeries = () => {
                                 <td>{serie.codigo_serie}</td>
                                 <td>{serie.nombre_serie}</td>
                                 <td>{serie.nombre_oficina}</td>
+                                <td>{serie.requiere_subserie ? 'Sí' : 'No'}</td>
+                                <td>
+                                    {!serie.requiere_subserie ? 
+                                        `G: ${serie.retencion_gestion || 'N/A'}a, C: ${serie.retencion_central || 'N/A'}a` 
+                                        : '-'}
+                                </td>
                                 <td>
                                     <span className={serie.activo ? 'status-active' : 'status-inactive'}>
                                         {serie.activo ? 'Activo' : 'Inactivo'}
@@ -166,6 +198,56 @@ const GestionSeries = () => {
                             ¿Esta serie requiere subseries?
                         </label>
                     </div>
+
+                    {/* Campos adicionales si NO requiere subserie */}
+                    {!newSerie.requiere_subserie && (
+                        <>
+                            <div className="form-group">
+                                <label>Retención en Gestión (años)</label>
+                                <input 
+                                    type="number" 
+                                    name="retencion_gestion" 
+                                    value={newSerie.retencion_gestion} 
+                                    onChange={(e) => handleChange(e, setNewSerie)} 
+                                    placeholder="Ej: 5"
+                                    min="0"
+                                />
+                            </div>
+
+                            <div className="form-group">
+                                <label>Retención en Central (años)</label>
+                                <input 
+                                    type="number" 
+                                    name="retencion_central" 
+                                    value={newSerie.retencion_central} 
+                                    onChange={(e) => handleChange(e, setNewSerie)} 
+                                    placeholder="Ej: 10"
+                                    min="0"
+                                />
+                            </div>
+
+                            <div className="form-group">
+                                <label>Disposición Final</label>
+                                <select name="disposicion_final" value={newSerie.disposicion_final} onChange={(e) => handleChange(e, setNewSerie)}>
+                                    <option>Conservación Total</option>
+                                    <option>Eliminación</option>
+                                    <option>Selección</option>
+                                </select>
+                            </div>
+
+                            <div className="form-group">
+                                <label>Procedimientos</label>
+                                <textarea 
+                                    name="procedimientos" 
+                                    value={newSerie.procedimientos} 
+                                    onChange={(e) => handleChange(e, setNewSerie)}
+                                    placeholder="Descripción de procedimientos aplicables..."
+                                    rows="4"
+                                />
+                            </div>
+                        </>
+                    )}
+
                     <div className="modal-actions">
                         <button type="submit" className="button button-primary">Crear</button>
                         <button type="button" onClick={closeCreateModal} className="button">Cancelar</button>
@@ -204,6 +286,57 @@ const GestionSeries = () => {
                                 ¿Esta serie requiere subseries?
                             </label>
                         </div>
+
+                        {/* Campos adicionales si NO requiere subserie */}
+                        {!editingSerie.requiere_subserie && (
+                            <>
+                                <div className="form-group">
+                                    <label>Retención en Gestión (años)</label>
+                                    <input 
+                                        type="number" 
+                                        name="retencion_gestion" 
+                                        value={editingSerie.retencion_gestion || ''} 
+                                        onChange={(e) => handleChange(e, setEditingSerie)}
+                                        min="0"
+                                    />
+                                </div>
+
+                                <div className="form-group">
+                                    <label>Retención en Central (años)</label>
+                                    <input 
+                                        type="number" 
+                                        name="retencion_central" 
+                                        value={editingSerie.retencion_central || ''} 
+                                        onChange={(e) => handleChange(e, setEditingSerie)}
+                                        min="0"
+                                    />
+                                </div>
+
+                                <div className="form-group">
+                                    <label>Disposición Final</label>
+                                    <select 
+                                        name="disposicion_final" 
+                                        value={editingSerie.disposicion_final || 'Conservación Total'} 
+                                        onChange={(e) => handleChange(e, setEditingSerie)}
+                                    >
+                                        <option>Conservación Total</option>
+                                        <option>Eliminación</option>
+                                        <option>Selección</option>
+                                    </select>
+                                </div>
+
+                                <div className="form-group">
+                                    <label>Procedimientos</label>
+                                    <textarea 
+                                        name="procedimientos" 
+                                        value={editingSerie.procedimientos || ''} 
+                                        onChange={(e) => handleChange(e, setEditingSerie)}
+                                        rows="4"
+                                    />
+                                </div>
+                            </>
+                        )}
+
                         <div className="modal-actions">
                             <button type="submit" className="button button-primary">Guardar Cambios</button>
                             <button type="button" onClick={closeEditModal} className="button">Cancelar</button>

@@ -1,5 +1,3 @@
-// Archivo: frontend/src/App.js
-
 import React from 'react';
 // 1. Importamos las herramientas de React Router
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
@@ -80,7 +78,7 @@ function App() {
               </>
           } />
           <Route path="/forgot-password" element={<ForgotPassword />} />
-<Route path="/reset-password/:token" element={<ResetPassword />} />
+          <Route path="/reset-password/:token" element={<ResetPassword />} />
           <Route path="/set-password/:token" element={<SetPassword />} />
           <Route 
           path="/dashboard" 

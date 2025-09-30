@@ -1,7 +1,7 @@
 const pool = require('../config/db');
 const { generarRadicado } = require('../utils/radicado.util');
 const { PDFDocument, rgb, StandardFonts } = require('pdf-lib');
-const fs = require('fs/promises');
+const fs = require('fs');
 const path = require('path');
 
 // Obtener todos los expedientes
@@ -307,7 +307,7 @@ exports.createDocumentoFromPlantilla = async (req, res) => {
         const pdfBytes = await pdfDoc.save();
         const fileName = `${radicado}.pdf`;
         const filePath = path.join('uploads', fileName);
-        await fs.writeFile(filePath, pdfBytes);
+        await fs.promises.writeFile(filePath, pdfBytes);
 
         const [docResult] = await connection.query(
             `INSERT INTO documentos (radicado, asunto, id_oficina_productora, id_serie, id_subserie, remitente_nombre, id_usuario_radicador, path_archivo, nombre_archivo_original)

@@ -15,7 +15,7 @@ const DashboardLayout = () => {
     const [oficinas, setOficinas] = useState([]);
     const [series, setSeries] = useState([]);
     const [subseries, setSubseries] = useState([]);
-    // Puedes añadir más estados aquí a medida que los necesites (ej. plantillas, usuarios, etc.)
+    
 
     const toggleSidebar = () => {
         setSidebarOpen(!isSidebarOpen);

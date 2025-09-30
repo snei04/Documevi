@@ -13,7 +13,7 @@ exports.getAuditLog = async (req, res) => {
     `;
     const params = [];
 
-    // Si se proporcionan fechas, las añadimos a la consulta
+  // Si se proporcionan ambas fechas, añadimos la cláusula WHERE
     if (startDate && endDate) {
       query += ` WHERE DATE(a.fecha) BETWEEN ? AND ?`;
       params.push(startDate, endDate);

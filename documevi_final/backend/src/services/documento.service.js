@@ -4,7 +4,7 @@
  */
 
 const pool = require('../config/db');
-const fs = require('fs/promises'); // Usamos la versión de promesas de fs
+const fs = require('fs/promises');
 const crypto = require('crypto');
 const path = require('path');
 const puppeteer = require('puppeteer');

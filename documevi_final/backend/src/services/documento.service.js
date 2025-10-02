@@ -96,54 +96,46 @@ exports.crearNuevoDocumento = async (data, file, id_usuario_radicador) => {
  * @param {number} id_usuario_radicador - ID del usuario.
  * @returns {Promise<object>} El documento generado.
  */
-exports.generarDocumentoDesdePlantilla = async (data, id_usuario_radicador) => {
-    const { id_plantilla, datos_rellenados, id_serie, id_subserie, id_oficina_productora } = data;
-    
-    const connection = await pool.getConnection();
-    try {
-        await connection.beginTransaction();
+exports.generarDocumentoDesdePlantilla = async (data, id_usuario_radicador, connection = pool) => {
+    const { id_plantilla, datos_rellenados, id_serie, id_subserie } = data;
 
-        const [plantillas] = await connection.query('SELECT * FROM plantillas WHERE id = ?', [id_plantilla]);
-        if (plantillas.length === 0) {
-            throw new Error('Plantilla no encontrada.');
-        }
-
-        const plantilla = plantillas[0];
-        const diseno = JSON.parse(plantilla.diseño_json || '{}');
-        let html = diseno.html || '';
-        const css = diseno.css || '';
-        
-        for (const key in datos_rellenados) {
-            html = html.replace(new RegExp(`{{${key}}}`, 'g'), datos_rellenados[key]);
-        }
-
-        const radicado = await generarRadicado();
-        const asunto = `${plantilla.nombre} - Generado desde plantilla`;
-        const fileName = `${radicado}.pdf`;
-        const filePath = path.join(process.env.UPLOADS_DIR || 'uploads', fileName);
-
-        const browser = await puppeteer.launch({ args: ['--no-sandbox', '--disable-setuid-sandbox'] });
-        const page = await browser.newPage();
-        await page.setContent(`<!DOCTYPE html><html><head><style>${css}</style></head><body>${html}</body></html>`, { waitUntil: 'networkidle0' });
-        const pdfBuffer = await page.pdf({ format: 'A4', printBackground: true });
-        await browser.close();
-        
-        await fs.writeFile(filePath, pdfBuffer);
-
-        const [docResult] = await connection.query(
-            `INSERT INTO documentos (radicado, asunto, id_oficina_productora, id_serie, id_subserie, remitente_nombre, id_usuario_radicador, path_archivo, nombre_archivo_original, tipo_soporte) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'Electrónico')`,
-            [radicado, asunto, id_oficina_productora, id_serie, id_subserie, 'Generado Internamente', id_usuario_radicador, filePath, fileName]
-        );
-        
-        await connection.commit();
-        return { msg: 'Documento generado con éxito.', radicado, id: docResult.insertId };
-
-    } catch (error) {
-        await connection.rollback();
-        throw error;
-    } finally {
-        if (connection) connection.release();
+    const [plantillas] = await connection.query('SELECT nombre, diseño_json FROM plantillas WHERE id = ?', [id_plantilla]);
+    if (plantillas.length === 0) {
+        throw new CustomError('Plantilla no encontrada.', 404);
     }
+
+    // Find id_oficina_productora from the database
+    const [series] = await connection.query('SELECT id_oficina_productora FROM trd_series WHERE id = ?', [id_serie]);
+    if (series.length === 0) {
+        throw new CustomError('La Serie especificada no existe.', 400);
+    }
+    const id_oficina_productora = series[0].id_oficina_productora;
+
+    // ... (Puppeteer PDF generation logic remains the same)
+    const { nombre, diseño_json } = plantillas[0];
+    const diseno = JSON.parse(diseño_json || '{}');
+    let html = diseno.html || '';
+    const css = diseno.css || '';
+    for (const key in datos_rellenados) {
+        html = html.replace(new RegExp(`{{${key}}}`, 'g'), datos_rellenados[key]);
+    }
+    const radicado = await generarRadicado();
+    const asunto = `${nombre} - Generado desde plantilla`;
+    const fileName = `${radicado}.pdf`;
+    const filePath = path.join(process.env.UPLOADS_DIR || 'uploads', fileName);
+    const browser = await puppeteer.launch({ args: ['--no-sandbox', '--disable-setuid-sandbox'] });
+    const page = await browser.newPage();
+    await page.setContent(`<!DOCTYPE html><html><head><style>${css}</style></head><body>${html}</body></html>`);
+    const pdfBytes = await page.pdf({ format: 'A4', printBackground: true });
+    await browser.close();
+    await fs.writeFile(filePath, pdfBytes);
+
+    const [docResult] = await connection.query(
+        `INSERT INTO documentos (radicado, asunto, id_oficina_productora, id_serie, id_subserie, remitente_nombre, id_usuario_radicador, path_archivo, nombre_archivo_original, tipo_soporte) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'Electrónico')`,
+        [radicado, asunto, id_oficina_productora, id_serie, id_subserie, 'Generado Internamente', id_usuario_radicador, filePath, fileName]
+    );
+
+    return { msg: 'Documento generado con éxito.', radicado, id: docResult.insertId };
 };
 
 /**

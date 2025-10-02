@@ -2,12 +2,35 @@ const pool = require('../config/db');
 
 // Obtener todas las plantillas
 exports.getAllPlantillas = async (req, res) => {
-  try {
-    const [rows] = await pool.query('SELECT * FROM plantillas ORDER BY nombre ASC');
-    res.json(rows);
-  } catch (error) {
-    res.status(500).json({ msg: 'Error en el servidor', error: error.message });
-  }
+    try {
+        const query = `
+            SELECT 
+                p.*,
+                COALESCE(
+                    (SELECT 
+                        JSON_ARRAYAGG(
+                            JSON_OBJECT(
+                                'id', pc.id,
+                                'nombre_campo', pc.nombre_campo,
+                                'tipo_campo', pc.tipo_campo,
+                                'orden', pc.orden
+                            )
+                        )
+                    FROM plantilla_campos pc
+                    WHERE pc.id_plantilla = p.id),
+                    JSON_ARRAY()
+                ) AS campos
+            FROM 
+                plantillas p
+            ORDER BY 
+                p.nombre ASC;
+        `;
+        const [rows] = await pool.query(query);
+        res.json(rows);
+    } catch (error) {
+        console.error("Error al obtener plantillas con campos:", error);
+        res.status(500).json({ msg: 'Error en el servidor', error: error.message });
+    }
 };
 
 // Crear una nueva plantilla

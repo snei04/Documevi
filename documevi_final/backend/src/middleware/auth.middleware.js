@@ -1,4 +1,3 @@
-// Archivo: backend/src/middleware/auth.middleware.js
 const jwt = require('jsonwebtoken');
 
 module.exports = function(req, res, next) {

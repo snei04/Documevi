@@ -1,40 +1,47 @@
-const { Router } = require('express');
+const express = require('express');
 const { 
-  getAllExpedientes, 
-  createExpediente,
-  getExpedienteById,          
-  addDocumentoToExpediente,
-  closeExpediente,
-  getExpedienteCustomData,
-  updateExpedienteCustomData,
-  createDocumentoFromPlantilla  
+    getAllExpedientes, 
+    createExpediente,
+    getExpedienteById,         
+    addDocumentoToExpediente,
+    closeExpediente,
+    getExpedienteCustomData,
+    updateExpedienteCustomData,
+    
+    createDocumentoFromPlantillaInExpediente 
 } = require('../controllers/expediente.controller');
-const authMiddleware = require('../middleware/auth.middleware');
+
+const protect = require('../middleware/auth.middleware');
 const authorizePermission = require('../middleware/authorizePermission');
 
-const router = Router();
+const router = express.Router();
 
-router.use(authMiddleware);
 
-// Rutas para la colección de expedientes
+router.use(protect);
+
+
 router.route('/')
-  .get(getAllExpedientes)
-  .post(createExpediente);
+    .get(getAllExpedientes)
+    .post(authorizePermission('crear_expedientes'), createExpediente);
 
-// Ruta para un expediente específico por ID
+
 router.route('/:id')
-  .get(getExpedienteById);
-
-// Ruta para añadir documentos a un expediente
-router.route('/:id_expediente/documentos')
-  .post(addDocumentoToExpediente);
+    .get(getExpedienteById);
 
 router.route('/:id/cerrar')
-  .put(closeExpediente);
+    .put(authorizePermission('cerrar_expedientes'), closeExpediente);
 
-  router.route('/:id/custom-data')
-  .get(getExpedienteCustomData)
-  .put(authorizePermission('gestionar_expedientes'), updateExpedienteCustomData);
-  router.post('/:id/documentos-desde-plantilla', authorizePermission('gestionar_expedientes'), createDocumentoFromPlantilla);
+
+router.route('/:id_expediente/documentos')
+    .post(authorizePermission('gestionar_expedientes'), addDocumentoToExpediente);
+
+
+router.route('/:id/documentos-desde-plantilla')
+    .post(authorizePermission('gestionar_expedientes'), createDocumentoFromPlantillaInExpediente);
+
+
+router.route('/:id/custom-data')
+    .get(getExpedienteCustomData)
+    .put(authorizePermission('gestionar_expedientes'), updateExpedienteCustomData);
 
 module.exports = router;

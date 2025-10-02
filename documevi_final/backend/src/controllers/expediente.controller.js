@@ -264,10 +264,12 @@ exports.createDocumentoFromPlantilla = async (req, res) => {
         }
 
         const nombrePlantilla = plantillaRows[0].nombre;
-        
-        // Parseamos el diseño JSON de la plantilla
+        // ✅ INICIO DE LA CORRECCIÓN
+        // Parseamos el objeto del proyecto completo (que incluye 'components', 'styles', etc.)
         const disenoProyecto = JSON.parse(plantillaRows[0].diseño_json || '{}');
-        const disenoComponentes = disenoProyecto.components || [];
+        // Extraemos solo el array de componentes para dibujarlo
+        const disenoComponentes = disenoProyecto.components || []; 
+        // ✅ FIN DE LA CORRECCIÓN
 
         const asunto = `${nombrePlantilla} - Generado desde plantilla`;
         const radicado = await generarRadicado();
@@ -277,25 +279,29 @@ exports.createDocumentoFromPlantilla = async (req, res) => {
         const { height } = page.getSize();
         const helveticaFont = await pdfDoc.embedFont(StandardFonts.Helvetica);
 
+        // Función recursiva mejorada para dibujar los componentes
         const drawComponents = (components) => {
             for (const component of components) {
-                if (component.type === 'text' && component.content && component.content.includes('{{')) {
+                // Buscamos componentes que tengan un ID que coincida con los datos a rellenar
+                if (component.attributes && component.attributes.id && datos_rellenados[component.attributes.id]) {
                     const style = component.style || {};
-                    const variableName = component.content.replace(/{{|}}/g, '').trim();
-                    const valor = datos_rellenados[variableName] || '';
+                    const valor = datos_rellenados[component.attributes.id];
                     
-                    const x = parseInt(style.left) || 0;
-                    const y = parseInt(style.top) || 0;
+                    const x = parseInt(style.left) || 50; // Posición X
+                    const y = parseInt(style.top) || height - 50; // Posición Y
                     const fontSize = parseInt(style['font-size']) || 12;
 
+                    // Dibuja el texto en el PDF convirtiendo las coordenadas
                     page.drawText(String(valor), {
                         x: x,
-                        y: height - y - fontSize,
+                        y: height - y - fontSize, // GrapesJS mide 'y' desde arriba, pdf-lib desde abajo
                         size: fontSize,
                         font: helveticaFont,
                         color: rgb(0, 0, 0),
                     });
                 }
+
+                // Si el componente tiene hijos (como una celda), procesamos los hijos recursivamente
                 if (component.components && component.components.length > 0) {
                     drawComponents(component.components);
                 }
@@ -307,7 +313,7 @@ exports.createDocumentoFromPlantilla = async (req, res) => {
         const pdfBytes = await pdfDoc.save();
         const fileName = `${radicado}.pdf`;
         const filePath = path.join('uploads', fileName);
-        await fs.promises.writeFile(filePath, pdfBytes);
+        await fs.writeFile(filePath, pdfBytes);
 
         const [docResult] = await connection.query(
             `INSERT INTO documentos (radicado, asunto, id_oficina_productora, id_serie, id_subserie, remitente_nombre, id_usuario_radicador, path_archivo, nombre_archivo_original)

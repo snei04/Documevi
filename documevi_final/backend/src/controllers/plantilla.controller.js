@@ -127,24 +127,33 @@ exports.getVariablesDisponibles = async (req, res) => {
 
 exports.updateDisenoPlantilla = async (req, res) => {
     const { id } = req.params;
-    // El cuerpo de la petición (req.body) es ahora directamente el objeto del diseño
     const disenoData = req.body; 
 
     if (!disenoData || Object.keys(disenoData).length === 0) {
         return res.status(400).json({ msg: 'No se proporcionó un diseño.' });
     }
+    
     try {
+        console.log('💾 Guardando diseño para plantilla:', id);
+        console.log('📊 Estructura recibida:', Object.keys(disenoData));
+        console.log('🧩 Components count:', disenoData.components?.length || 0);
+        
         const disenoString = JSON.stringify(disenoData);
         const [result] = await pool.query(
             'UPDATE plantillas SET diseño_json = ? WHERE id = ?',
             [disenoString, id]
         );
+        
         if (result.affectedRows === 0) {
             return res.status(404).json({ msg: 'No se encontró la plantilla con ese ID.' });
         }
-        res.json({ msg: 'Diseño de la plantilla guardado con éxito.' });
+        
+        res.json({ 
+            msg: 'Diseño de la plantilla guardado con éxito.',
+            components_saved: disenoData.components?.length || 0
+        });
     } catch (error) {
-        console.error("Error al guardar diseño en la BD:", error);
+        console.error("❌ Error al guardar diseño en la BD:", error);
         res.status(500).json({ msg: 'Error en el servidor', error: error.message });
     }
 };

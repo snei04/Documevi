@@ -1,0 +1,118 @@
+/* Contenedor principal y estados */
+.diseñador-container {
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.diseñador-estado-container {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: 80vh;
+    gap: 12px;
+}
+
+.diseñador-estado-titulo {
+    font-size: 20px;
+}
+
+.diseñador-estado-titulo.error {
+    color: #d32f2f;
+    font-weight: bold;
+}
+
+.diseñador-estado-subtitulo {
+    font-size: 13px;
+    color: #666;
+}
+
+.diseñador-retry-button {
+    padding: 14px 28px;
+    background-color: #1976d2;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 15px;
+    font-weight: bold;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    transition: background-color 0.3s;
+    margin-top: 10px;
+}
+
+.diseñador-retry-button:hover {
+    background-color: #1565c0;
+}
+
+
+/* Cabecera del diseñador */
+.diseñador-header {
+    padding: 20px 24px;
+    border-bottom: 2px solid #e0e0e0;
+    background-color: #f8f9fa;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+}
+
+.diseñador-header h2 {
+    margin: 0;
+    color: #1976d2;
+    font-size: 22px;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.diseñador-header-info {
+    font-size: 13px;
+    color: #555;
+    margin-top: 8px;
+    display: flex;
+    gap: 20px;
+}
+
+/* Paneles de GrapesJS */
+.panel__basic-actions {
+    padding: 8px 24px;
+    background-color: #fff;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.editor-main-area {
+    display: flex;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+}
+
+#blocks {
+    width: 280px;
+    border-right: 2px solid #e0e0e0;
+    overflow-y: auto;
+    background-color: #fafafa;
+    padding: 10px;
+}
+
+.editor-canvas-wrapper {
+    flex: 1;
+    position: relative;
+    background-color: #ffffff;
+    overflow: hidden;
+}
+
+/* Estilos para las variables en el canvas */
+.variable-placeholder {
+    padding: 8px 16px;
+    border: 2px dashed #007bff;
+    background: #e3f2fd;
+    display: inline-block;
+    margin: 4px;
+    border-radius: 6px;
+    font-weight: bold;
+    color: #1976d2;
+    cursor: move;
+    user-select: none; /* Evita que el texto sea seleccionable */
+}

@@ -265,7 +265,10 @@ const CapturaDocumento = () => {
                         {camposPlantilla.map(campo => (
                             <div key={campo.id} style={{ margin: '10px 0' }}>
                                 <label>{campo.nombre_campo}:</label><br/>
-                                <input type={campo.tipo_campo === 'fecha' ? 'date' : campo.tipo_campo === 'numero' ? 'number' : 'text'} name={campo.nombre_campo} onChange={handleDatosPlantillaChange} required style={{ width: '100%' }} />
+                                <input type={campo.tipo_campo === 'fecha' ? 'date' : campo.tipo_campo === 'numero' ? 'number' : 'text'} 
+                                name={campo.nombre_campo} 
+                                onChange={handleDatosPlantillaChange} required 
+                                style={{ width: '100%' }} />
                             </div>
                         ))}
                         {plantillaSeleccionada && (

@@ -16,7 +16,7 @@ const sendEmail = async (options) => {
         to: options.to,
         subject: options.subject,
         text: options.text,
-        html: options.html, // ✅ Asegúrate de que esta línea esté aquí
+        html: options.html,
     };
 
     try {

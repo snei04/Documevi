@@ -2,6 +2,10 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from '../api/axios';
 import { toast } from 'react-toastify';
+
+// 1. Importamos el guardián de permisos
+import PermissionGuard from '../components/auth/PermissionGuard';
+
 import Checkbox from './Checkbox';
 import './Dashboard.css';
 
@@ -22,7 +26,11 @@ const GestionPermisos = () => {
             ]);
             
             setAllPermissions(resAllPerms.data);
-            setRolePermissions(resRolePerms.data);
+
+            // ✅ MEJORA: Nos aseguramos de que el estado solo contenga los IDs,
+            // incluso si la API devuelve objetos completos.
+            // Asumimos que la API devuelve [{id_permiso: 1}, {id_permiso: 2}] o similar.
+            setRolePermissions(resRolePerms.data.map(p => p.id_permiso || p.id));
             
             const currentRole = resRoles.data.find(r => r.id === parseInt(id_rol));
             if (currentRole) {
@@ -48,6 +56,7 @@ const GestionPermisos = () => {
 
     const handleSaveChanges = async () => {
         try {
+            // El backend espera un objeto con la clave "permisosIds"
             await api.put(`/permisos/rol/${id_rol}`, { permisosIds: rolePermissions });
             toast.success('Permisos actualizados con éxito.');
             navigate('/dashboard/roles');
@@ -74,7 +83,6 @@ const GestionPermisos = () => {
                                     checked={rolePermissions.includes(permission.id)}
                                     onChange={() => handleCheckboxChange(permission.id)}
                                 />
-                                {/* ✅ AHORA MOSTRAMOS NOMBRE Y DESCRIPCIÓN */}
                                 <div>
                                     <span style={{ fontWeight: 'bold' }}>{permission.nombre_permiso}</span>
                                     <p style={{ margin: 0, fontSize: '0.8em', color: '#666' }}>
@@ -88,9 +96,14 @@ const GestionPermisos = () => {
             </div>
             
             <div className="action-bar" style={{justifyContent: 'start'}}>
-                <button onClick={handleSaveChanges} className="button button-primary">
-                    Guardar Cambios
-                </button>
+                {/* 2. AQUÍ LA SEGURIDAD */}
+                {/* El botón solo se renderiza si el usuario tiene el permiso 'gestionar_roles_permisos' */}
+                <PermissionGuard permission="gestionar_roles_permisos">
+                    <button onClick={handleSaveChanges} className="button button-primary">
+                        Guardar Cambios
+                    </button>
+                </PermissionGuard>
+                
                 <button onClick={() => navigate('/dashboard/roles')} className="button">
                     Cancelar
                 </button>

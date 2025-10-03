@@ -1,13 +1,21 @@
-import React from 'react';
-// 1. Importamos las herramientas de React Router
+import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+
+// --- IMPORTACIONES DE SEGURIDAD Y CONTEXTO ---
+import { PermissionsProvider, usePermissionsContext } from './context/PermissionsContext';
+import ProtectedRoute from './components/auth/ProtectedRoute';
+
+// --- IMPORTACIONES VISUALES Y DE ESTILOS ---
+import logoImevi from './assets/logo-imevi.png';
+import './App.css';
+
+// --- IMPORTACIÓN DE COMPONENTES DE PÁGINA ---
+import Login from './components/Login';
 import DashboardLayout from './components/DashboardLayout';
 import DashboardHome from './components/DashboardHome';
 import Search from './components/Search';
-
-// 2. Importamos los componentes que actuarán como "páginas"
-import Login from './components/Login';
-import logoImevi from './assets/logo-imevi.png';
 import GestionDependencias from './components/GestionDependencias';
 import GestionOficinas from './components/GestionOficinas';
 import GestionSeries from './components/GestionSeries';
@@ -24,8 +32,6 @@ import ReporteFUID from './components/ReporteFUID';
 import SetPassword from './components/SetPassword';
 import GestionAuditoria from './components/GestionAuditoria';
 import Estadisticas from './components/Estadisticas';
-import { ToastContainer } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
 import GestionRoles from './components/GestionRoles';
 import OneDriveViewer from './components/OneDriveViewer';
 import GestionTransferencias from './components/GestionTransferencias';
@@ -39,91 +45,128 @@ import MisPrestamos from './components/MisPrestamos';
 import ForgotPassword from './components/ForgotPassword';
 import ResetPassword from './components/ResetPassword';
 import GestionarPermisosMaestro from './components/GestionarPermisosMaestro';
+import api from './api/axios';
 
-// 3. Importamos el CSS
-import './App.css';
+// --- COMPONENTES AUXILIARES ---
+const UnauthorizedPage = () => (
+    <div style={{ padding: '2rem', textAlign: 'center' }}>
+        <h1>🚫 Acceso Denigado</h1>
+        <p>No tienes los permisos necesarios para ver esta página.</p>
+    </div>
+);
 
-// 4. Creamos un componente especial para proteger nuestras rutas
-const ProtectedRoute = ({ children }) => {
-  const token = localStorage.getItem('token');
-  // Si no hay token, redirige al login. Si lo hay, muestra la página solicitada.
-  return token ? children : <Navigate to="/login" />;
+const AppContent = () => {
+    const { loadPermissions } = usePermissionsContext();
+    const token = localStorage.getItem('token');
+
+    useEffect(() => {
+        if (token) {
+            api.get('/usuarios/perfil')
+                .then(response => {
+                    loadPermissions(response.data.permissions); 
+                })
+                .catch(error => {
+                    console.error("Error al cargar perfil de usuario, token inválido o expirado.", error);
+                    localStorage.removeItem('token'); 
+                    loadPermissions([]); // Asegúrate de limpiar los permisos si el token falla
+                });
+        } else {
+            loadPermissions([]);
+        }
+    }, [token, loadPermissions]);
+
+    return (
+        <div className="App">
+            <Routes>
+                {/* --- RUTA DE LOGIN CON DISEÑO ORIGINAL --- */}
+                <Route path="/login" element={
+                    <>
+                        <img src={logoImevi} alt="Logo IMEVI" className="top-left-logo" />
+                        <div className="content-center">
+                            <Login />
+                        </div>
+                    </>
+                } />
+                
+                {/* --- OTRAS RUTAS PÚBLICAS --- */}
+                <Route path="/forgot-password" element={<ForgotPassword />} />
+                <Route path="/reset-password/:token" element={<ResetPassword />} />
+                <Route path="/set-password/:token" element={<SetPassword />} />
+                <Route path="/unauthorized" element={<UnauthorizedPage />} />
+
+                {/* --- RUTAS PROTEGIDAS (DASHBOARD) --- */}
+                <Route element={<ProtectedRoute />}>
+                    <Route path="/dashboard" element={<DashboardLayout />}>
+                        <Route index element={<DashboardHome />} />
+                        <Route path="mis-tareas" element={<MisTareas />} />
+                        <Route path="search" element={<Search />} />
+                        <Route path="mis-prestamos" element={<MisPrestamos />} />
+                        <Route path="visor-onedrive" element={<OneDriveViewer />} />
+
+                        <Route element={<ProtectedRoute permission="gestionar_expedientes" />}>
+                            <Route path="expedientes" element={<GestionExpedientes />} />
+                            <Route path="expedientes/:id" element={<ExpedienteDetalle />} />
+                            <Route path="captura" element={<CapturaDocumento />} />
+                        </Route>
+
+                        <Route element={<ProtectedRoute permission="gestionar_trd" />}>
+                            <Route path="dependencias" element={<GestionDependencias />} />
+                            <Route path="oficinas" element={<GestionOficinas />} />
+                            <Route path="series" element={<GestionSeries />} />
+                            <Route path="subseries" element={<GestionSubseries />} />
+                        </Route>
+
+                        <Route element={<ProtectedRoute permission="ver_panel_administracion" />}>
+                            <Route path="usuarios" element={<GestionUsuarios />} />
+                            <Route path="roles" element={<GestionRoles />} />
+                            <Route path="auditoria" element={<GestionAuditoria />} />
+                            <Route path="permisos" element={<GestionarPermisosMaestro />} />
+                            <Route path="campos-personalizados" element={<GestionCamposPersonalizados />} />
+                            <Route path="plantillas" element={<GestionPlantillas />} />
+                            <Route path="plantillas/:id" element={<PlantillaDetalle />} />
+                            <Route path="plantillas/:id/disenar" element={<DiseñadorPlantilla />} />
+                            <Route path="transferencias" element={<GestionTransferencias />} />
+                            <Route path="eliminacion" element={<GestionEliminacion />} />
+                            <Route path="estadisticas" element={<Estadisticas />} />
+                            <Route path="reportes-fuid" element={<ReporteFUID />} />
+                        </Route>
+
+                        <Route element={<ProtectedRoute permission="gestionar_roles_permisos" />}>
+                            <Route path="roles/:id_rol/permisos" element={<GestionPermisos />} />
+                        </Route>
+                        
+                        <Route path="workflows" element={<GestionWorkflows />} />
+                        <Route path="workflows/:id" element={<WorkflowDetalle />} />
+                        <Route path="prestamos" element={<GestionPrestamos />} />
+                    </Route>
+                </Route>
+
+                <Route path="/" element={<Navigate to="/dashboard" />} />
+            </Routes>
+        </div>
+    );
 };
 
 function App() {
-  return (
-    // 5. Envolvemos todo en el Router
-    <Router>
-      <ToastContainer
-        position="top-right"
-        autoClose={5000}
-        hideProgressBar={false}
-        newestOnTop={false}
-        closeOnClick
-        rtl={false}
-        pauseOnFocusLoss
-        draggable
-        pauseOnHover
-      />
-      <div className="App">
-        {/* 6. Routes define el área donde cambiarán las páginas */}
-        <Routes>
-          {/* Cuando la URL sea /login, se mostrará el componente Login */}
-          <Route path="/login" element={
-            <>
-                <img src={logoImevi} alt="Logo IMEVI" className="top-left-logo" />
-                <div className="content-center">
-                  <Login />
-                </div>
-              </>
-          } />
-          <Route path="/forgot-password" element={<ForgotPassword />} />
-          <Route path="/reset-password/:token" element={<ResetPassword />} />
-          <Route path="/set-password/:token" element={<SetPassword />} />
-          <Route 
-          path="/dashboard" 
-          element={
-            <ProtectedRoute>
-              <DashboardLayout />
-            </ProtectedRoute>
-          }
-        >
-          {/* Rutas anidadas que se mostrarán dentro de DashboardLayout */}
-          <Route index element={<DashboardHome />} /> 
-          <Route path="mis-tareas" element={<MisTareas />} />
-          <Route path="search" element={<Search />} />
-          <Route path="captura" element={<CapturaDocumento />} />
-          <Route path="dependencias" element={<GestionDependencias />} />
-          <Route path="oficinas" element={<GestionOficinas />} />
-          <Route path="series" element={<GestionSeries />} />
-          <Route path="subseries" element={<GestionSubseries />} />
-          <Route path="expedientes" element={<GestionExpedientes />} />
-          <Route path="workflows" element={<GestionWorkflows />} />
-          <Route path="expedientes/:id" element={<ExpedienteDetalle />} />
-          <Route path="workflows/:id" element={<WorkflowDetalle />} />
-          <Route path="prestamos" element={<GestionPrestamos />} />
-          <Route path="mis-prestamos" element={<MisPrestamos />} /> 
-          <Route path="usuarios" element={<GestionUsuarios />} />
-          <Route path="reportes-fuid" element={<ReporteFUID />} />
-          <Route path="auditoria" element={<GestionAuditoria />} />
-          <Route path="campos-personalizados" element={<GestionCamposPersonalizados />} />
-          <Route path="plantillas" element={<GestionPlantillas />} />
-          <Route path="plantillas/:id" element={<PlantillaDetalle />} />
-          <Route path="plantillas/:id/disenar" element={<DiseñadorPlantilla />} />
-          <Route path="transferencias" element={<GestionTransferencias />} />
-          <Route path="eliminacion" element={<GestionEliminacion />} /> 
-          <Route path="roles" element={<GestionRoles />} />
-          <Route path="roles/:id_rol/permisos" element={<GestionPermisos />} />
-          <Route path="permisos" element={<GestionarPermisosMaestro />} />
-          <Route path="estadisticas" element={<Estadisticas />} />  
-          <Route path="visor-onedrive" element={<OneDriveViewer />} />    
-          
-        </Route>
-          <Route path="/" element={<Navigate to="/dashboard" />} />
-        </Routes>
-      </div>
-    </Router>
-  );
+    return (
+        <Router>
+            <PermissionsProvider>
+                {/* Contenedor de notificaciones global */}
+                <ToastContainer
+                    position="top-right"
+                    autoClose={5000}
+                    hideProgressBar={false}
+                    newestOnTop={false}
+                    closeOnClick
+                    rtl={false}
+                    pauseOnFocusLoss
+                    draggable
+                    pauseOnHover
+                />
+                <AppContent />
+            </PermissionsProvider>
+        </Router>
+    );
 }
 
 export default App;

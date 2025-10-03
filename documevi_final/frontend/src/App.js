@@ -56,24 +56,38 @@ const UnauthorizedPage = () => (
 );
 
 const AppContent = () => {
-    const { loadPermissions } = usePermissionsContext();
+    // --- 👇 CAMBIO AQUÍ: Obtenemos 'setLoading' del contexto ---
+    const { loadPermissions, setLoading } = usePermissionsContext();
     const token = localStorage.getItem('token');
 
     useEffect(() => {
-        if (token) {
-            api.get('/usuarios/perfil')
-                .then(response => {
+        const verifySession = async () => {
+            if (token) {
+                // --- 👇 CAMBIO CRÍTICO ---
+                // Si hay un token, forzamos el estado de carga a 'true'.
+                // Esto hará que ProtectedRoute muestre "Verificando sesión..." y espere.
+                setLoading(true); 
+                try {
+                    const response = await api.get('/usuarios/perfil');
+                    // Si la API responde, cargamos los permisos.
+                    // 'loadPermissions' pondrá 'loading' en 'false' automáticamente.
                     loadPermissions(response.data.permissions); 
-                })
-                .catch(error => {
+                } catch (error) {
                     console.error("Error al cargar perfil de usuario, token inválido o expirado.", error);
-                    localStorage.removeItem('token'); 
-                    loadPermissions([]); // Asegúrate de limpiar los permisos si el token falla
-                });
-        } else {
-            loadPermissions([]);
-        }
-    }, [token, loadPermissions]);
+                    localStorage.removeItem('token');
+                    // Si hay un error, también llamamos a 'loadPermissions' para limpiar
+                    // el estado y poner 'loading' en 'false'.
+                    loadPermissions([]);
+                }
+            } else {
+                // Si no hay token, no hay sesión que cargar.
+                loadPermissions([]);
+            }
+        };
+
+        verifySession();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [token]);
 
     return (
         <div className="App">
@@ -109,14 +123,14 @@ const AppContent = () => {
                             <Route path="captura" element={<CapturaDocumento />} />
                         </Route>
 
-                        <Route element={<ProtectedRoute permission="gestionar_trd" />}>
+                         <Route element={<ProtectedRoute permission="gestionar_parametros_trd" />}>
                             <Route path="dependencias" element={<GestionDependencias />} />
                             <Route path="oficinas" element={<GestionOficinas />} />
                             <Route path="series" element={<GestionSeries />} />
                             <Route path="subseries" element={<GestionSubseries />} />
                         </Route>
 
-                        <Route element={<ProtectedRoute permission="ver_panel_administracion" />}>
+                         <Route element={<ProtectedRoute permission="gestionar_usuarios" />}>
                             <Route path="usuarios" element={<GestionUsuarios />} />
                             <Route path="roles" element={<GestionRoles />} />
                             <Route path="auditoria" element={<GestionAuditoria />} />

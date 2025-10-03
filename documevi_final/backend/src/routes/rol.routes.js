@@ -1,19 +1,23 @@
 const { Router } = require('express');
 const { getAllRoles, createRole, updateRole, deleteRole } = require('../controllers/rol.controller');
 const authMiddleware = require('../middleware/auth.middleware');
-const authorizeRoles = require('../middleware/authorizeRoles');
+
+// 1. Importamos el middleware de permisos que hemos estado usando
+const authorizePermission = require('../middleware/authorizePermission');
 
 const router = Router();
 
-// Todas las rutas de roles son solo para administradores
-router.use(authMiddleware, authorizeRoles(1));
+// 2. Aplicamos la autenticación (saber quién es el usuario) a todas las rutas del archivo
+router.use(authMiddleware);
 
+// 3. Aplicamos la autorización (saber qué puede hacer) a cada ruta específica
+//    Usamos el permiso que ya existe en tu base de datos.
 router.route('/')
-  .get(getAllRoles)
-  .post(createRole);
+  .get(authorizePermission('gestionar_roles_permisos'), getAllRoles)
+  .post(authorizePermission('gestionar_roles_permisos'), createRole);
 
 router.route('/:id')
-  .put(updateRole)
-  .delete(deleteRole);
+  .put(authorizePermission('gestionar_roles_permisos'), updateRole)
+  .delete(authorizePermission('gestionar_roles_permisos'), deleteRole);
 
 module.exports = router;

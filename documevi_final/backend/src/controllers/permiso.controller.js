@@ -91,15 +91,19 @@ exports.updateRolePermissions = async (req, res) => {
             const values = permisosIds.map(id_permiso => [id_rol, id_permiso]);
             await connection.query('INSERT INTO rol_permisos (id_rol, id_permiso) VALUES ?', [values]);
         }
-
-        await connection.commit();
         
-        await pool.query(
+        // --- ✅ MEJORA: El registro de auditoría ahora es parte de la transacción ---
+        // Se ejecuta antes del commit y usa 'connection'
+        await connection.query(
             'INSERT INTO auditoria (usuario_id, accion, detalles) VALUES (?, ?, ?)',
             [req.user.id, 'ACTUALIZACION_PERMISOS', `Se modificaron los permisos para el rol con ID: ${id_rol}`]
         );
 
+        // Ahora el commit guarda AMBAS operaciones (permisos y auditoría) juntas.
+        await connection.commit();
+        
         res.json({ msg: 'Permisos del rol actualizados con éxito.' });
+
     } catch (error) {
         await connection.rollback();
         console.error("Error al actualizar permisos:", error);

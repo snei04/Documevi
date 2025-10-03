@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import axios from 'axios';
+import api from '../api/axios'; // Se usa la instancia configurada de Axios
 import { useNavigate, Link } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import logoCircular from '../assets/logo-circular.png';
@@ -26,13 +26,18 @@ const Login = () => {
         setIsLoading(true);
 
         try {
-            const apiCall = axios.post('http://localhost:4000/api/auth/login', { documento, password });
+            // --- ✅ LÍNEA CORREGIDA ---
+            // Se usa 'api' y una ruta relativa.
+            const apiCall = api.post('/auth/login', { documento, password });
+            
+            // Se mantiene el timer para mejorar la experiencia de usuario con el Loader
             const timer = new Promise(resolve => setTimeout(resolve, 3000));
             const [apiResponse] = await Promise.all([apiCall, timer]);
 
             localStorage.setItem('token', apiResponse.data.token);
             toast.success('¡Inicio de sesión exitoso!');
-            navigate('/dashboard');
+            navigate('/dashboard', { replace: true });
+
         } catch (err) {
             const errorMsg = err.response?.data?.msg || 'Error al iniciar sesión.';
             toast.error(errorMsg);

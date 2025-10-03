@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import api from '../api/axios';
 import { toast } from 'react-toastify';
-import './Login.css'; // Reutilizamos los estilos del login
+import './Login.css';
 
 const SetPassword = () => {
     const { token } = useParams();
@@ -22,10 +22,12 @@ const SetPassword = () => {
         setError('');
         setSuccess('');
         try {
-            const res = await axios.post('http://localhost:4000/api/auth/set-password', {
+            
+            const res = await api.post('/auth/set-password', {
                 token: token,
                 password: password
             });
+
             setSuccess(res.data.msg);
             toast.success(res.data.msg + " Serás redirigido en 3 segundos.");
             

@@ -10,6 +10,7 @@ import IndiceDocumentos from './expediente/IndiceDocumentos';
 import AccionesProductor from './expediente/AccionesProductor';
 import VistaRestringida from './expediente/VistaRestringida';
 import FirmaModal from './expediente/FirmaModal';
+import PermissionGuard from './auth/PermissionGuard';
 
 // Estilos
 import './Dashboard.css';
@@ -103,7 +104,9 @@ const ExpedienteDetalle = () => {
             
             <div className="action-bar">
                 {expediente.vista === 'productor' && expediente.estado === 'En trámite' && (
+                    <PermissionGuard permission="cerrar_expedientes">
                     <button onClick={handleCloseExpediente} className="button button-danger">Cerrar Expediente</button>
+                    </PermissionGuard>
                 )}
             </div>
 

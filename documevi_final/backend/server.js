@@ -34,14 +34,23 @@ const eliminacionRoutes = require('./src/routes/eliminacion.routes.js');
 const app = express();
 
 // --- Middlewares Esenciales ---
+
+// ✅ CONFIGURACIÓN DE CORS CORREGIDA
 const corsOptions = {
-  origin: '*', // Para desarrollo. En producción, deberías usar 'http://tusitio.com'
+  // Se especifica el origen del frontend para mayor seguridad
+  origin: 'http://localhost:3000', 
   methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
-  allowedHeaders: ['Content-Type', 'x-auth-token'] // <-- La parte más importante
+  // Se permite explícitamente el encabezado 'Authorization'
+  allowedHeaders: ['Content-Type', 'Authorization'] 
 };
 app.use(cors(corsOptions));
+// --- FIN DE LA CONFIGURACIÓN DE CORS ---
+
+
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
+
+
 // --- Rutas de la API ---
 // Ruta de prueba para saber si el servidor funciona
 app.get('/api', (req, res) => {
@@ -71,6 +80,8 @@ app.use('/api/permisos', permisoRoutes);
 app.use('/api/campos-personalizados', campoRoutes);
 app.use('/api/plantillas', plantillaRoutes);
 app.use('/api/eliminacion', eliminacionRoutes);
+
+
 // --- Iniciar el Servidor ---
 const PORT = process.env.PORT || 4000;
 app.listen(PORT, () => {

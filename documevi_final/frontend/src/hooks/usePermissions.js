@@ -10,17 +10,19 @@ export const usePermissions = () => {
    * @returns {boolean} - True si tiene el permiso, false en caso contrario.
    */
   const hasPermission = (requiredPermission) => {
-    if (loading || !Array.isArray(permissions)) {
+    if (loading || !Array.isArray(permissions) || permissions.length === 0) {
       return false;
     }
 
-    // Si no se especifica un permiso, verificamos si el usuario tiene CUALQUIER permiso (está logueado y su sesión es válida)
     if (!requiredPermission) {
         return permissions.length > 0;
     }
 
-    // Verifica si el string del permiso requerido está incluido en el array de permisos del usuario.
-    return permissions.includes(requiredPermission);
+    // --- ✅ CORRECCIÓN APLICADA AQUÍ ---
+    // En lugar de usar 'includes', usamos 'some' para poder iterar
+    // y 'trim()' para limpiar los espacios en blanco de ambos lados antes de comparar.
+    // Esto hace que la comparación sea a prueba de errores por espacios extra.
+    return permissions.some(p => p.trim() === requiredPermission.trim());
   };
 
   return { hasPermission, isLoading: loading };

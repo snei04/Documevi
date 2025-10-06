@@ -6,6 +6,8 @@ const authorizePermission = require('../middleware/authorizePermission');
 
 const router = Router();
 router.use(authMiddleware);
+// Ruta para obtener el árbol de permisos
+router.get('/tree', permisoController.getPermissionsTree);
 
 // Rutas para la gestión de permisos individuales
 router.get('/', permisoController.getAllPermissions);

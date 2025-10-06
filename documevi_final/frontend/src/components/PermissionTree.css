@@ -1,0 +1,130 @@
+/* En: src/components/PermissionTree.css */
+
+:root {
+    --pt-font-family: system-ui, -apple-system, sans-serif;
+    --pt-bg-color: #fff;
+    --pt-text-color: #2c3e50;
+    --pt-border-color: #dfe4ea;
+    --pt-hover-bg: #f8f9fa;
+    --pt-primary-color: #3498db;
+    --pt-icon-color: #7f8c8d;
+    --pt-spacing: 8px;
+    --pt-radius: 4px;
+}
+
+.permission-tree {
+    font-family: var(--pt-font-family);
+    color: var(--pt-text-color);
+    background: var(--pt-bg-color);
+    border: 1px solid var(--pt-border-color);
+    border-radius: var(--pt-radius);
+    padding: calc(var(--pt-spacing) * 2);
+    font-size: 14px;
+}
+
+.permission-tree__search {
+    width: 100%;
+    box-sizing: border-box;
+    padding: var(--pt-spacing);
+    border: 1px solid var(--pt-border-color);
+    border-radius: var(--pt-radius);
+    margin-bottom: calc(var(--pt-spacing) * 2);
+}
+
+.permission-tree__list, .permission-tree__children-list {
+    list-style: none;
+    padding-left: 0;
+    margin: 0;
+}
+
+.permission-tree__node-content {
+    display: flex;
+    align-items: center;
+    padding: var(--pt-spacing);
+    border-radius: var(--pt-radius);
+    transition: background-color 0.2s ease;
+    cursor: pointer;
+}
+
+.permission-tree__node-content:hover {
+    background-color: var(--pt-hover-bg);
+}
+
+.permission-tree__toggle {
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-family: monospace;
+    font-weight: bold;
+    color: var(--pt-icon-color);
+    user-select: none;
+}
+.permission-tree__toggle:hover {
+    color: var(--pt-text-color);
+}
+
+.permission-tree__icon {
+    margin: 0 var(--pt-spacing);
+}
+
+.permission-tree__name {
+    font-weight: 500;
+}
+
+.permission-tree__action-label {
+    display: flex;
+    align-items: center;
+    gap: var(--pt-spacing);
+    cursor: pointer;
+    user-select: none;
+}
+
+/* Checkbox personalizado */
+.permission-tree__checkbox {
+    width: 16px;
+    height: 16px;
+    border: 2px solid var(--pt-border-color);
+    border-radius: var(--pt-radius);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.permission-tree__action-label:hover .permission-tree__checkbox {
+    border-color: var(--pt-primary-color);
+}
+
+.permission-tree__checkbox[data-state="checked"] {
+    background-color: var(--pt-primary-color);
+    border-color: var(--pt-primary-color);
+}
+.permission-tree__checkbox[data-state="checked"]::before {
+    content: '✔';
+    color: white;
+    font-size: 12px;
+}
+
+.permission-tree__checkbox[data-state="indeterminate"] {
+    border-color: var(--pt-primary-color);
+}
+.permission-tree__checkbox[data-state="indeterminate"]::before {
+    content: '';
+    width: 8px;
+    height: 2px;
+    background-color: var(--pt-primary-color);
+}
+
+/* Animación de despliegue */
+.permission-tree__children-list {
+    overflow: hidden;
+    max-height: 0;
+    transition: max-height 0.3s ease-out;
+}
+
+.permission-tree__node--expanded > .permission-tree__children-list {
+    max-height: 1000px;
+}

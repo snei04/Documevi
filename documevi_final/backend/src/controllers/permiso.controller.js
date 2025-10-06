@@ -13,7 +13,7 @@ exports.getAllPermissions = async (req, res) => {
     }
 };
 
-// ✅ NUEVA FUNCIÓN: Crea un nuevo permiso con su descripción
+// Crea un nuevo permiso con su descripción
 exports.createPermiso = async (req, res) => {
     const { nombre_permiso, descripcion } = req.body;
     if (!nombre_permiso) {
@@ -30,7 +30,7 @@ exports.createPermiso = async (req, res) => {
     }
 };
 
-// ✅ NUEVA FUNCIÓN: Edita un permiso existente, incluyendo su descripción
+// Edita un permiso existente, incluyendo su descripción
 exports.updatePermiso = async (req, res) => {
     const { id } = req.params;
     const { nombre_permiso, descripcion } = req.body;
@@ -92,14 +92,11 @@ exports.updateRolePermissions = async (req, res) => {
             await connection.query('INSERT INTO rol_permisos (id_rol, id_permiso) VALUES ?', [values]);
         }
         
-        // --- ✅ MEJORA: El registro de auditoría ahora es parte de la transacción ---
-        // Se ejecuta antes del commit y usa 'connection'
         await connection.query(
             'INSERT INTO auditoria (usuario_id, accion, detalles) VALUES (?, ?, ?)',
             [req.user.id, 'ACTUALIZACION_PERMISOS', `Se modificaron los permisos para el rol con ID: ${id_rol}`]
         );
 
-        // Ahora el commit guarda AMBAS operaciones (permisos y auditoría) juntas.
         await connection.commit();
         
         res.json({ msg: 'Permisos del rol actualizados con éxito.' });
@@ -110,5 +107,48 @@ exports.updateRolePermissions = async (req, res) => {
         res.status(500).json({ msg: 'Error en el servidor' });
     } finally {
         connection.release();
+    }
+};
+
+
+// --- ✅ FUNCIÓN AÑADIDA PARA LA NUEVA INTERFAZ DE ÁRBOL ---
+exports.getPermissionsTree = async (req, res) => {
+    try {
+        const [permisos] = await pool.query('SELECT id, nombre_permiso, descripcion, grupo FROM permisos ORDER BY grupo, nombre_permiso');
+
+        const grupos = permisos.reduce((acc, permiso) => {
+            const grupo = permiso.grupo || 'General';
+            
+            if (!acc[grupo]) {
+                acc[grupo] = {
+                    id: grupo.toLowerCase().replace(/ /g, '_'),
+                    name: grupo,
+                    icon: '📁',
+                    expanded: false,
+                    children: [],
+                };
+            }
+
+            acc[grupo].children.push({
+                id: permiso.id,
+                name: permiso.nombre_permiso,
+                icon: '📄',
+                permissions: { enabled: false }
+            });
+
+            return acc;
+        }, {});
+
+        const treeStructure = {
+            id: 'root',
+            name: 'Sistema Documental',
+            children: Object.values(grupos)
+        };
+
+        res.json(treeStructure);
+
+    } catch (error) {
+        console.error("Error al construir el árbol de permisos:", error);
+        res.status(500).json({ msg: 'Error en el servidor' });
     }
 };

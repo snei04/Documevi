@@ -1,14 +1,16 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import api from '../api/axios';
 import { toast } from 'react-toastify';
-import './Dashboard.css'; // Asegúrate de que el CSS esté importado
+import './Dashboard.css';
 
+// Componente para gestionar la eliminación de expedientes
 const GestionEliminacion = () => {
   const [elegibles, setElegibles] = useState([]);
   const [selectedIds, setSelectedIds] = useState([]);
   const [motivo, setMotivo] = useState('');
   const [isLoading, setIsLoading] = useState(true);
 
+  // Función para cargar los expedientes elegibles para eliminación
   const fetchElegibles = useCallback(async () => {
     setIsLoading(true);
     try {
@@ -21,6 +23,7 @@ const GestionEliminacion = () => {
     }
   }, []);
 
+  // Cargar los expedientes elegibles al montar el componente
   useEffect(() => {
     fetchElegibles();
   }, [fetchElegibles]);
@@ -31,6 +34,7 @@ const GestionEliminacion = () => {
     );
   };
 
+  // Función para manejar la eliminación de los expedientes seleccionados
   const handleEliminar = async () => {
     if (selectedIds.length === 0) {
       return toast.warn('Por favor, seleccione al menos un expediente para eliminar.');

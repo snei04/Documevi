@@ -1,31 +1,44 @@
-import { useState, useMemo, useCallback } from 'react';
+
+import { useState, useEffect, useMemo, useCallback } from 'react';
 
 export const usePermissionTree = (initialData, initialRolePerms) => {
-    const [tree, setTree] = useState(() => {
-        // Si no hay datos iniciales, devuelve un árbol vacío.
-        if (!initialData) return { children: [] };
+    // 1. El estado ahora se inicializa vacío.
+    const [tree, setTree] = useState({ children: [] });
+    const [searchTerm, setSearchTerm] = useState('');
 
-        // Copiamos los datos para no modificar el estado original.
+    // 2. Usamos useEffect para reaccionar cuando los datos de la API lleguen.
+    useEffect(() => {
+        // Solo procedemos si tenemos todos los datos necesarios.
+        if (!initialData || !initialRolePerms) {
+            return;
+        }
+
         const dataWithInitialState = JSON.parse(JSON.stringify(initialData));
 
         // Marcamos los checkboxes correspondientes a los permisos que el rol ya tiene.
         if (dataWithInitialState.children) {
             dataWithInitialState.children.forEach(group => {
                 if (group.children) {
-                    group.children.forEach(perm => {
-                        if (initialRolePerms.includes(perm.id)) {
-                            perm.permissions.enabled = true;
+                    group.children.forEach(module => {
+                        for (const action in module.permissions) {
+                            const permId = module.permissions[action].id;
+                            if (initialRolePerms.includes(permId)) {
+                                module.permissions[action].enabled = true;
+                            }
                         }
                     });
                 }
             });
         }
-        return dataWithInitialState;
-    });
+        
+        // 3. Actualizamos el estado del árbol con los datos procesados.
+        setTree(dataWithInitialState);
 
-    const [searchTerm, setSearchTerm] = useState('');
+    }, [initialData, initialRolePerms]); // Este efecto se ejecuta solo cuando los datos iniciales cambian.
 
-    // Función para expandir/colapsar un grupo
+
+    // --- El resto de las funciones de interacción ---
+
     const handleToggle = useCallback((nodeId) => {
         setTree(prevTree => {
             const newTree = JSON.parse(JSON.stringify(prevTree));
@@ -44,47 +57,62 @@ export const usePermissionTree = (initialData, initialRolePerms) => {
         });
     }, []);
 
-    // Función para marcar/desmarcar un permiso individual
-    const handlePermissionChange = useCallback((permissionId) => {
+    const handlePermissionChange = useCallback((moduleId, action) => {
         setTree(prevTree => {
             const newTree = JSON.parse(JSON.stringify(prevTree));
             const findAndChange = (nodes) => {
-                 for (const node of nodes) {
-                    if (node.id === permissionId) {
-                        node.permissions.enabled = !node.permissions.enabled;
+                for (const node of nodes) {
+                    if (node.id === moduleId) {
+                        node.permissions[action].enabled = !node.permissions[action].enabled;
                         return true;
                     }
                     if (node.children && findAndChange(node.children)) return true;
                 }
                 return false;
             };
-            findAndChange(newTree.children);
+            newTree.children.some(group => findAndChange(group.children));
             return newTree;
         });
     }, []);
 
-    // Función para marcar/desmarcar un grupo entero
-    const handleGroupChange = useCallback((groupId) => {
+    const handleModuleChange = useCallback((moduleId) => {
         setTree(prevTree => {
             const newTree = JSON.parse(JSON.stringify(prevTree));
-            const groupNode = newTree.children.find(g => g.id === groupId);
-            if (groupNode && groupNode.children) {
-                // Si no todos están marcados, los marcamos todos. Si ya todos están marcados, los desmarcamos.
-                const areAllChecked = groupNode.children.every(p => p.permissions.enabled);
-                groupNode.children.forEach(p => p.permissions.enabled = !areAllChecked);
+            let moduleNode = null;
+            
+            const findModule = (nodes) => {
+                for (const node of nodes) {
+                    if (node.id === moduleId) {
+                        moduleNode = node;
+                        return true;
+                    }
+                    if (node.children && findModule(node.children)) return true;
+                }
+                return false;
+            };
+            newTree.children.some(group => findModule(group.children));
+
+            if (moduleNode) {
+                const areAllEnabled = Object.values(moduleNode.permissions).every(p => p.enabled);
+                for (const action in moduleNode.permissions) {
+                    moduleNode.permissions[action].enabled = !areAllEnabled;
+                }
             }
             return newTree;
         });
     }, []);
 
-    // Función para obtener los IDs de los permisos seleccionados
     const getSelectedPermissionIds = useCallback(() => {
         const selectedIds = [];
         const collect = (nodes) => {
             if (!nodes) return;
             nodes.forEach(node => {
-                if (node.permissions && node.permissions.enabled) {
-                    selectedIds.push(node.id);
+                if (node.permissions) {
+                    for (const action in node.permissions) {
+                        if (node.permissions[action].enabled) {
+                            selectedIds.push(node.permissions[action].id);
+                        }
+                    }
                 }
                 if (node.children) {
                     collect(node.children);
@@ -95,31 +123,24 @@ export const usePermissionTree = (initialData, initialRolePerms) => {
         return selectedIds;
     }, [tree]);
 
-    // Lógica para filtrar el árbol según la búsqueda
     const filteredTree = useMemo(() => {
         if (!searchTerm) return tree;
         const newTree = JSON.parse(JSON.stringify(tree));
-        
+        const term = searchTerm.toLowerCase();
+
         newTree.children = newTree.children.map(group => {
-            // Si el nombre del grupo coincide, lo mostramos
-            if (group.name.toLowerCase().includes(searchTerm.toLowerCase())) {
-                group.expanded = true; // Auto-expande el grupo
-                return group;
-            }
-            // Si no, filtramos sus hijos para ver si alguno coincide
             if (group.children) {
-                group.children = group.children.filter(perm => 
-                    perm.name.toLowerCase().includes(searchTerm.toLowerCase())
+                group.children = group.children.filter(module => 
+                    module.name.toLowerCase().includes(term) ||
+                    Object.keys(module.permissions).some(action => action.toLowerCase().includes(term))
                 );
             }
-            // Si después de filtrar, el grupo tiene hijos visibles, lo mostramos
-            if (group.children && group.children.length > 0) {
-                 group.expanded = true;
-                 return group;
+            if (group.name.toLowerCase().includes(term) || (group.children && group.children.length > 0)) {
+                group.expanded = true;
+                return group;
             }
             return null;
-        }).filter(Boolean); // Limpiamos los grupos que quedaron nulos
-        
+        }).filter(Boolean);
         return newTree;
     }, [tree, searchTerm]);
 
@@ -128,7 +149,7 @@ export const usePermissionTree = (initialData, initialRolePerms) => {
         setSearchTerm, 
         handleToggle, 
         handlePermissionChange, 
-        handleGroupChange, 
+        handleModuleChange,
         getSelectedPermissionIds 
     };
 };

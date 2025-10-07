@@ -3,22 +3,24 @@ import { useParams, useNavigate } from 'react-router-dom';
 import api from '../api/axios';
 import { toast } from 'react-toastify';
 import PermissionGuard from './auth/PermissionGuard';
-import { usePermissionTree } from '../hooks/usePermissionTree'; // El nuevo hook
-import './PermissionTree.css'; // Los nuevos estilos
+import { usePermissionTree } from '../hooks/usePermissionTree';
+import './PermissionTree.css';
 
-// Componente recursivo para renderizar los nodos del árbol
-const PermissionNode = ({ node, level = 0, onToggle, onPermissionChange, onGroupChange }) => {
+// --- COMPONENTE INTERNO RECURSIVO ---
+// Se encarga de dibujar cada "fila" del árbol.
+const PermissionNode = ({ node, level = 0, onToggle, onPermissionChange, onModuleChange }) => {
     
-    // Calcula si el checkbox de un grupo debe estar marcado, indeterminado o desmarcado
-    const groupCheckState = useMemo(() => {
-        if (!node.children || node.children.length === 0) return 'unchecked';
-        const permissions = node.children.map(c => c.permissions.enabled);
-        if (permissions.every(p => p)) return 'checked';
-        if (permissions.some(p => p)) return 'indeterminate';
+    // Calcula el estado del checkbox de un MÓDULO (ej. 'Dependencias')
+    const moduleCheckState = useMemo(() => {
+        if (!node.permissions) return 'unchecked';
+        const actions = Object.values(node.permissions).map(p => p.enabled);
+        if (actions.length === 0) return 'unchecked';
+        if (actions.every(p => p)) return 'checked';
+        if (actions.some(p => p)) return 'indeterminate';
         return 'unchecked';
-    }, [node.children]);
+    }, [node.permissions]);
 
-    // Renderiza un NODO DE GRUPO (ej. 'Expedientes')
+    // Renderiza un NODO DE GRUPO (Nivel 0, ej. 'Parametrización')
     if (level === 0) {
         return (
             <li className={`permission-tree__node permission-tree__node--${node.expanded ? 'expanded' : 'collapsed'}`}>
@@ -26,51 +28,53 @@ const PermissionNode = ({ node, level = 0, onToggle, onPermissionChange, onGroup
                     <span className="permission-tree__toggle">{node.expanded ? '[-]' : '[+]'}</span>
                     <span className="permission-tree__icon">{node.icon}</span>
                     <span className="permission-tree__name">{node.name}</span>
-                    <label className="permission-tree__action-label" style={{ marginLeft: 'auto' }} onClick={(e) => { e.stopPropagation(); onGroupChange(node.id) }}>
-                        <span className="permission-tree__checkbox" data-state={groupCheckState}></span>
-                        <strong>(Marcar Todo)</strong>
-                    </label>
                 </div>
                 {node.children && (
                     <ul className="permission-tree__children-list">
-                        {node.children.map(child => <PermissionNode key={child.id} node={child} level={level + 1} {...{ onToggle, onPermissionChange, onGroupChange }} />)}
+                        {node.children.map(child => <PermissionNode key={child.id} node={child} level={level + 1} {...{ onToggle, onPermissionChange, onModuleChange }} />)}
                     </ul>
                 )}
             </li>
         );
     }
 
-    // Renderiza un NODO DE PERMISO (ej. 'crear_expedientes')
+    // Renderiza un NODO DE MÓDULO (Nivel 1, ej. 'Dependencias', 'Oficinas')
     return (
         <li>
             <div className="permission-tree__node-content" style={{ paddingLeft: `calc(var(--pt-spacing) * 4 * ${level})` }}>
                 <span className="permission-tree__icon">{node.icon}</span>
-                <label className="permission-tree__action-label" onClick={() => onPermissionChange(node.id)}>
-                    <span className="permission-tree__checkbox" data-state={node.permissions.enabled ? 'checked' : 'unchecked'}></span>
+                <label className="permission-tree__action-label" onClick={() => onModuleChange(node.id)} title={`Marcar/Desmarcar todo en ${node.name}`}>
+                    <span className="permission-tree__checkbox" data-state={moduleCheckState}></span>
                     <span className="permission-tree__name">{node.name}</span>
                 </label>
+            </div>
+            <div className="permission-tree__module-actions">
+                {Object.entries(node.permissions).map(([action, { id, enabled, descripcion }]) => (
+                    <label key={id} className="permission-tree__action-label" onClick={() => onPermissionChange(node.id, action)} title={descripcion || action}>
+                        <span className="permission-tree__checkbox" data-state={enabled ? 'checked' : 'unchecked'}></span>
+                        <span>{action}</span>
+                    </label>
+                ))}
             </div>
         </li>
     );
 };
 
-// Componente Principal que exportamos
+
+// --- COMPONENTE PRINCIPAL (CARGA DE DATOS) ---
 const GestionPermisos = () => {
     const { id_rol } = useParams();
-    const navigate = useNavigate();
     
-    // Estados para cargar los datos iniciales
     const [initialData, setInitialData] = useState(null);
     const [initialRolePerms, setInitialRolePerms] = useState(null);
     const [roleName, setRoleName] = useState('');
     const [isLoading, setIsLoading] = useState(true);
 
-    // Carga de datos
     useEffect(() => {
         const loadData = async () => {
             try {
                 const [resTree, resRolePerms, resRoles] = await Promise.all([
-                    api.get('/permisos/tree'), // Llamamos al nuevo endpoint del árbol
+                    api.get('/permisos/tree'),
                     api.get(`/permisos/rol/${id_rol}`),
                     api.get('/roles')
                 ]);
@@ -90,7 +94,6 @@ const GestionPermisos = () => {
         loadData();
     }, [id_rol]);
     
-    // Si los datos iniciales no han cargado, mostramos un loader
     if (isLoading || !initialData || !initialRolePerms) {
         return <div>Cargando permisos...</div>;
     }
@@ -98,13 +101,14 @@ const GestionPermisos = () => {
     return <PermissionTreeEditor initialData={initialData} initialRolePerms={initialRolePerms} roleName={roleName} />;
 };
 
-// Componente interno para separar la lógica de carga de la lógica del árbol
+
+// --- COMPONENTE EDITOR (MANEJO DE LA UI) ---
 const PermissionTreeEditor = ({ initialData, initialRolePerms, roleName }) => {
     const { id_rol } = useParams();
     const navigate = useNavigate();
 
     const { 
-        tree, setSearchTerm, handleToggle, handlePermissionChange, handleGroupChange, getSelectedPermissionIds 
+        tree, setSearchTerm, handleToggle, handlePermissionChange, handleModuleChange, getSelectedPermissionIds 
     } = usePermissionTree(initialData, initialRolePerms);
     
     const handleSaveChanges = async () => {
@@ -138,14 +142,14 @@ const PermissionTreeEditor = ({ initialData, initialRolePerms, roleName }) => {
                             node={node}
                             onToggle={handleToggle}
                             onPermissionChange={handlePermissionChange}
-                            onGroupChange={handleGroupChange}
+                            onModuleChange={handleModuleChange}
                         />
                     ))}
                 </ul>
             </div>
             
             <div className="action-bar" style={{justifyContent: 'start', marginTop: '20px'}}>
-                <PermissionGuard permission="gestionar_roles_permisos">
+                <PermissionGuard permission="roles_editar">
                     <button onClick={handleSaveChanges} className="button button-primary">
                         Guardar Cambios
                     </button>

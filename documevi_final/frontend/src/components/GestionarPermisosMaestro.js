@@ -14,7 +14,7 @@ const GestionarPermisosMaestro = () => {
     const [editingPermiso, setEditingPermiso] = useState(null);
     const auth = useAuth();
 
-    // ✅ 1. Definimos fetchPermisos aquí, al nivel principal del componente.
+
     // Usamos useCallback para que la función no se recree en cada renderizado.
     const fetchPermisos = useCallback(async () => {
         setIsLoading(true);

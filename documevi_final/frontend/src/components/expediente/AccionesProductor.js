@@ -118,6 +118,7 @@ const AccionesProductor = ({ state, expediente, onDataChange }) => {
             )}
 
             {/* Formulario para generar documento desde plantilla */}
+            {expediente.estado === 'En trámite' && state.plantillas && state.plantillas.length > 0 && (
             <div className="content-box">
                 <h3>Generar Documento desde Plantilla</h3>
                 <select onChange={(e) => handleSelectPlantilla(e.target.value)} style={{ marginBottom: '15px' }} value={selectedPlantilla?.id || ''}>
@@ -125,7 +126,7 @@ const AccionesProductor = ({ state, expediente, onDataChange }) => {
                     {state.plantillas.map(p => <option key={p.id} value={p.id}>{p.nombre}</option>)}
                 </select>
                 
-                {/* ✅ CORRECCIÓN: Verifica que .campos sea un array antes de usar .sort() */}
+                {/* Renderizado dinámico de campos según la plantilla seleccionada */}
                 {selectedPlantilla && Array.isArray(selectedPlantilla.campos) && (
                     <form onSubmit={handleGenerateDocument}>
                         {selectedPlantilla.campos.sort((a, b) => a.orden - b.orden).map(campo => (
@@ -146,7 +147,8 @@ const AccionesProductor = ({ state, expediente, onDataChange }) => {
                     </form>
                 )}
             </div>
-
+            )}
+            
             {/* Formulario de metadatos personalizados */}
             {state.customFields && state.customFields.length > 0 && (
                 <div className="content-box">

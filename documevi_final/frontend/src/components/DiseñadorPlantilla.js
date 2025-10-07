@@ -4,7 +4,7 @@ import api from '../api/axios';
 import { toast } from 'react-toastify';
 import { useGrapesJSEditor } from '../hooks/useGrapesJSEditor';
 import { CargandoDiseñador, ErrorDiseñador } from './DiseñadorUI';
-import './DiseñadorPlantilla.css'; // Importa los estilos
+import './DiseñadorPlantilla.css';
 
 const DiseñadorPlantilla = () => {
     const { id: plantillaId } = useParams();

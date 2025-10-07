@@ -12,7 +12,7 @@ import VistaRestringida from './expediente/VistaRestringida';
 import FirmaModal from './expediente/FirmaModal';
 import PermissionGuard from './auth/PermissionGuard';
 
-// Estilos
+
 import './Dashboard.css';
 
 const ExpedienteDetalle = () => {

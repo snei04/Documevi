@@ -35,7 +35,6 @@ const app = express();
 
 // --- Middlewares Esenciales ---
 
-// ✅ CONFIGURACIÓN DE CORS CORREGIDA
 const corsOptions = {
   // Se especifica el origen del frontend para mayor seguridad
   origin: 'http://localhost:3000', 

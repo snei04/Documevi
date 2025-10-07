@@ -8,9 +8,7 @@ api.interceptors.request.use(
   config => {
     const token = localStorage.getItem('token');
     if (token) {
-      // --- ✅ CAMBIO CRÍTICO AQUÍ ---
-      // Cambiamos 'x-auth-token' por el estándar 'Authorization'
-      // y añadimos el prefijo 'Bearer '.
+      // Si hay un token, lo añadimos a los encabezados de la solicitud
       config.headers['Authorization'] = `Bearer ${token}`;
     }
     return config;

@@ -50,22 +50,21 @@ import api from './api/axios';
 // --- COMPONENTES AUXILIARES ---
 const UnauthorizedPage = () => (
     <div style={{ padding: '2rem', textAlign: 'center' }}>
-        <h1>🚫 Acceso Denigado</h1>
+        <h1>Acceso Denigado</h1>
         <p>No tienes los permisos necesarios para ver esta página.</p>
     </div>
 );
 
 const AppContent = () => {
-    // --- 👇 CAMBIO AQUÍ: Obtenemos 'setLoading' del contexto ---
+    // Accedemos al contexto de permisos
     const { loadPermissions, setLoading } = usePermissionsContext();
     const token = localStorage.getItem('token');
 
     useEffect(() => {
         const verifySession = async () => {
             if (token) {
-                // --- 👇 CAMBIO CRÍTICO ---
-                // Si hay un token, forzamos el estado de carga a 'true'.
-                // Esto hará que ProtectedRoute muestre "Verificando sesión..." y espere.
+                
+                // Si hay token, intentamos verificar la sesión y cargar permisos
                 setLoading(true); 
                 try {
                     const response = await api.get('/usuarios/perfil');

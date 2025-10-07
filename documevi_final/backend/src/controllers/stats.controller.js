@@ -1,4 +1,3 @@
-// Archivo: backend/src/controllers/stats.controller.js
 const pool = require('../config/db');
 
 // Obtener estadísticas generales para el dashboard

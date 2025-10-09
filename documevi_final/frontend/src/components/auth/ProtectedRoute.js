@@ -1,10 +1,16 @@
 import React from 'react';
-// 1. Importamos 'useOutletContext' para poder recibir los datos
 import { Navigate, Outlet, useOutletContext } from 'react-router-dom';
 import { usePermissions } from '../../hooks/usePermissions';
 
 const ProtectedRoute = ({ permission }) => {
-    // 2. Leemos cualquier contexto que nos haya enviado el Outlet padre (el de DashboardLayout)
+    // 1. Obtenemos el 'contexto' del Outlet padre (DashboardLayout)
+    //    para pasarlo a los hijos.
+    // 2. Usamos el hook usePermissions para verificar permisos.
+    //    Si no tiene permiso, redirigimos a "No Autorizado".
+    //    Si no está logueado, redirigimos a "Login".
+    //    Si todo está bien, renderizamos el Outlet (componente hijo).
+    
+    // Obtenemos el contexto del Outlet padre (DashboardLayout)
     const context = useOutletContext();
     
     const { hasPermission, isLoading } = usePermissions();
@@ -24,9 +30,7 @@ const ProtectedRoute = ({ permission }) => {
     if (!permission && !hasPermission()) {
         return <Navigate to="/login" replace />;
     }
-
-    // 3. Devolvemos el Outlet, PERO AHORA le pasamos el 'contexto' que recibimos
-    //    a los componentes hijos (como GestionDependencias).
+    // Si todo está bien, renderizamos el componente hijo con el contexto.
     return <Outlet context={context} />;
 };
 

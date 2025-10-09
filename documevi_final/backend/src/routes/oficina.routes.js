@@ -14,11 +14,11 @@ const router = Router();
 router.use(authMiddleware);
 
 // Define las rutas
-router.get('/', getAllOficinas);
-router.post('/', authorizePermission('gestionar_parametros_trd'), createOficina);
+router.get('/', authorizePermission('oficinas_ver'), getAllOficinas);
+router.post('/', authorizePermission('oficinas_crear'), createOficina);
 
 // Nuevas rutas para editar y cambiar estado
-router.put('/:id', authorizePermission('gestionar_parametros_trd'), updateOficina);
-router.patch('/:id/toggle-status', authorizePermission('gestionar_parametros_trd'), toggleOficinaStatus);
+router.put('/:id', authorizePermission('oficinas_editar'), updateOficina);
+router.patch('/:id/toggle-status', authorizePermission('oficinas_inactivar'), toggleOficinaStatus);
 
 module.exports = router;

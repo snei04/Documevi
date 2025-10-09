@@ -1,5 +1,3 @@
-// Archivo: backend/src/middleware/authorizePermission.js
-
 const authorizePermission = (requiredPermission) => {
   return (req, res, next) => {
     // El middleware de autenticación ya debe haber puesto req.user

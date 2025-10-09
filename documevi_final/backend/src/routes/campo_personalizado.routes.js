@@ -4,11 +4,11 @@ const authMiddleware = require('../middleware/auth.middleware');
 const authorizePermission = require('../middleware/authorizePermission');
 
 const router = Router();
-// Asumimos que gestionar campos personalizados es parte de la TRD
-router.use(authMiddleware, authorizePermission('gestionar_parametros_trd'));
+// Protegemos todas las rutas con autenticación
+router.use(authMiddleware);
 
 router.route('/oficina/:id_oficina')
-    .get(getCamposPorOficina)
-    .post(createCampo);
+    .get(authorizePermission('campos_ver'), getCamposPorOficina)
+    .post(authorizePermission('campos_crear'), createCampo);
 
 module.exports = router;

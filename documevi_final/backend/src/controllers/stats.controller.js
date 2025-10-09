@@ -29,6 +29,7 @@ exports.getDashboardStats = async (req, res) => {
   }
 };
 
+// Obtener número de documentos por oficina productora
 exports.getDocsPorOficina = async (req, res) => {
   try {
     const [rows] = await pool.query(`

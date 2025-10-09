@@ -12,7 +12,7 @@ const sendEmail = async (options) => {
     });
 
     const mailOptions = {
-        from: '"Documevi" <tucorreo@gmail.com>', // El remitente
+        from: '"Documevi" <notificacion_app@imeviapp.com.co>', // El remitente
         to: options.to,
         subject: options.subject,
         text: options.text,

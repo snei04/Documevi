@@ -93,7 +93,7 @@ exports.approvePrestamo = async (req, res) => {
 
         await connection.commit();
 
-        // 👇 INICIO: REGISTRO DE AUDITORÍA PARA LA APROBACIÓN 👇
+        // --- REGISTRO DE AUDITORÍA ---
         await pool.query(
             'INSERT INTO auditoria (usuario_id, accion, detalles) VALUES (?, ?, ?)',
             [req.user.id, 'APROBACION_PRESTAMO', `Se aprobó el préstamo con ID: ${id}`]
@@ -225,8 +225,7 @@ exports.requestProrroga = async (req, res) => {
             return res.status(404).json({ msg: 'Préstamo no encontrado o no apto para prórroga.' });
         }
 
-        // Actualizamos el estado a 'Prorroga Solicitada' (o un estado similar que definas)
-        // Por simplicidad, aquí solo incrementaremos el contador
+        // Incrementamos el contador de prórrogas solicitadas
         await pool.query("UPDATE prestamos SET prorrogas_solicitadas = prorrogas_solicitadas + 1 WHERE id = ?", [id]);
 
         // Aquí podrías enviar un email al administrador notificando la solicitud de prórroga

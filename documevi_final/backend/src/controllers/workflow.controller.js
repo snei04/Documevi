@@ -1,7 +1,4 @@
-// Archivo: backend/src/controllers/workflow.controller.js
 const pool = require('../config/db');
-
-
 
 // Obtener todos los workflows
 exports.getAllWorkflows = async (req, res) => {
@@ -93,6 +90,7 @@ exports.getWorkflowById = async (req, res) => {
   }
 };
 
+// Obtener las tareas asignadas al usuario según su rol
 exports.getMyTasks = async (req, res) => {
   const userRoleId = req.user.rol;
 

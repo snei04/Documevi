@@ -2,11 +2,12 @@
 const { Router } = require('express');
 const { realizarTransferencia } = require('../controllers/transferencia.controller');
 const authMiddleware = require('../middleware/auth.middleware');
-const authorizeRoles = require('../middleware/authorizeRoles');
+const authorizePermission = require('../middleware/authorizePermission');
 
 const router = Router();
+router.use(authMiddleware);
 
-// Esta acción es solo para administradores
-router.post('/', [authMiddleware, authorizeRoles(1)], realizarTransferencia);
+// Rutas para transferencias documentales
+router.post('/', authorizePermission('transferencias_ejecutar'), realizarTransferencia);
 
 module.exports = router;

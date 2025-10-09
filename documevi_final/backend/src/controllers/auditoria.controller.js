@@ -1,4 +1,3 @@
-// Archivo: backend/src/controllers/auditoria.controller.js
 const pool = require('../config/db');
 
 exports.getAuditLog = async (req, res) => {

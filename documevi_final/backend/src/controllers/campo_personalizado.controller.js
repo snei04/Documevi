@@ -7,7 +7,7 @@ exports.getCamposPorOficina = async (req, res) => {
         const [rows] = await pool.query('SELECT * FROM oficina_campos_personalizados WHERE id_oficina = ?', [id_oficina]);
         res.json(rows);
     } catch (error) {
-        // CAMBIO 1: Se añade un console.error para ver errores en el backend.
+        
         console.error("Error al obtener campos personalizados:", error);
         res.status(500).json({ msg: 'Error en el servidor' });
     }

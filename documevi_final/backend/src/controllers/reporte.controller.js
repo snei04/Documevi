@@ -8,6 +8,7 @@ exports.generateFUID = async (req, res) => {
   }
 
   try {
+    // Consulta SQL para obtener los datos necesarios
     const [rows] = await pool.query(`
    SELECT
   exp.id as numero_orden,

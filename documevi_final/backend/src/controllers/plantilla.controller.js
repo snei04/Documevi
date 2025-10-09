@@ -113,6 +113,7 @@ exports.uploadBackgroundImage = async (req, res) => {
     }
 };
 
+// Obtener una plantilla por su ID (sin campos)
 exports.getPlantillaById = async (req, res) => {
     const { id } = req.params;
     try {
@@ -127,6 +128,7 @@ exports.getPlantillaById = async (req, res) => {
     }
 };
 
+// Obtener las variables (campos) disponibles para una plantilla
 exports.getVariablesDisponibles = async (req, res) => {
     // Obtenemos el ID de la plantilla desde los parámetros de la URL
     const { id: id_plantilla } = req.params; 
@@ -148,6 +150,7 @@ exports.getVariablesDisponibles = async (req, res) => {
     }
 };
 
+// Actualizar el diseño JSON de una plantilla
 exports.updateDisenoPlantilla = async (req, res) => {
     const { id } = req.params;
     const disenoData = req.body; 

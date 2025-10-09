@@ -15,18 +15,19 @@ const router = Router();
 router.use(authMiddleware);
 
 // GET /api/dependencias - Obtener todas las dependencias
-router.get('/', dependenciaController.getAllDependencias); 
+// ✅ SE AÑADIÓ SEGURIDAD: Requiere estar autenticado y tener permiso de ver
+router.get('/', authorizePermission('dependencias_ver'), dependenciaController.getAllDependencias); 
 
 // POST /api/dependencias - Crear una nueva dependencia
-// Requiere el permiso 'gestionar_parametros_trd'
-router.post('/', authorizePermission('gestionar_parametros_trd'), dependenciaController.createDependencia);
+// Requiere el permiso 'dependencias_crear'
+router.post('/', authorizePermission('dependencias_crear'), dependenciaController.createDependencia);
 
 // PUT /api/dependencias/:id - Actualizar una dependencia
-// ✅ SE AÑADIÓ SEGURIDAD: Requiere el permiso 'gestionar_parametros_trd'
-router.put('/:id', authorizePermission('gestionar_parametros_trd'), dependenciaController.updateDependencia);
+// ✅ SE AÑADIÓ SEGURIDAD: Requiere el permiso 'dependencias_editar'
+router.put('/:id', authorizePermission('dependencias_editar'), dependenciaController.updateDependencia);
 
 // PATCH /api/dependencias/:id/toggle-status - Cambiar el estado (activo/inactivo)
-// ✅ SE AÑADIÓ SEGURIDAD: Requiere el permiso 'gestionar_parametros_trd'
-router.patch('/:id/toggle-status', authorizePermission('gestionar_parametros_trd'), dependenciaController.toggleDependenciaStatus);
+// ✅ SE AÑADIÓ SEGURIDAD: Requiere el permiso 'dependencias_inactivar'
+router.patch('/:id/toggle-status', authorizePermission('dependencias_inactivar'), dependenciaController.toggleDependenciaStatus);
 
 module.exports = router;

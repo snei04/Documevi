@@ -13,11 +13,11 @@ router.use(authMiddleware);
 // 3. Aplicamos la autorización (saber qué puede hacer) a cada ruta específica
 //    Usamos el permiso que ya existe en tu base de datos.
 router.route('/')
-  .get(authorizePermission('gestionar_roles_permisos'), getAllRoles)
-  .post(authorizePermission('gestionar_roles_permisos'), createRole);
+  .get(authorizePermission('roles_ver'), getAllRoles)
+  .post(authorizePermission('roles_crear'), createRole);
 
 router.route('/:id')
-  .put(authorizePermission('gestionar_roles_permisos'), updateRole)
-  .delete(authorizePermission('gestionar_roles_permisos'), deleteRole);
+  .put(authorizePermission('roles_editar'), updateRole)
+  .delete(authorizePermission('roles_eliminar'), deleteRole);
 
 module.exports = router;

@@ -1,4 +1,3 @@
-// Archivo: backend/src/controllers/transferencia.controller.js
 const pool = require('../config/db');
 
 exports.realizarTransferencia = async (req, res) => {

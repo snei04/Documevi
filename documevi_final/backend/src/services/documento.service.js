@@ -111,7 +111,7 @@ exports.generarDocumentoDesdePlantilla = async (data, id_usuario_radicador, conn
     }
     const id_oficina_productora = series[0].id_oficina_productora;
 
-    // ... (Puppeteer PDF generation logic remains the same)
+    // Reemplazamos los placeholders en el HTML con los datos proporcionados
     const { nombre, diseño_json } = plantillas[0];
     const diseno = JSON.parse(diseño_json || '{}');
     let html = diseno.html || '';

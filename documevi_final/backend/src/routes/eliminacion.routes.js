@@ -4,11 +4,9 @@ const authMiddleware = require('../middleware/auth.middleware');
 const authorizePermission = require('../middleware/authorizePermission');
 
 const router = Router();
+router.use(authMiddleware);
 
-// Asumimos un nuevo permiso 'gestionar_disposicion_final'
-router.use(authMiddleware, authorizePermission('gestionar_disposicion_final'));
-
-router.get('/elegibles', getExpedientesElegibles);
-router.post('/ejecutar', eliminarExpedientes);
+router.get('/elegibles', authorizePermission('eliminacion_ver'), getExpedientesElegibles);
+router.post('/ejecutar', authorizePermission('eliminacion_ejecutar'), eliminarExpedientes);
 
 module.exports = router;

@@ -7,11 +7,15 @@ import { MsalProvider } from '@azure/msal-react';
 import './index.css';
 
 // Configuración de MSAL
+const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+
 const msalConfig = {
   auth: {
-    clientId: '06f83521-c16a-4aab-bcee-f33530a8fa27', // Pega el ID de Cliente que copiaste de Azure
-    authority: 'https://login.microsoftonline.com/common', // Permite cuentas personales y de trabajo
-    redirectUri: 'http://localhost:3000'
+    clientId: '06f83521-c16a-4aab-bcee-f33530a8fa27',
+    authority: 'https://login.microsoftonline.com/common',
+    redirectUri: isLocalhost
+      ? 'http://localhost:3000'
+      : 'https://tu-dominio-produccion.com' // Cambia esto por tu dominio de producción real
   }
 };
 const msalInstance = new PublicClientApplication(msalConfig);

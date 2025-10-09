@@ -4,10 +4,7 @@ const fs = require('fs/promises');
 // Función para encontrar expedientes que se pueden eliminar
 exports.getExpedientesElegibles = async (req, res) => {
     try {
-        // Esta consulta busca expedientes que:
-        // 1. Su disposición final en la TRD sea 'Eliminación'.
-        // 2. Estén en el archivo central.
-        // 3. Haya pasado el tiempo total de retención (gestión + central) desde su cierre.
+        
         const [rows] = await pool.query(`
             SELECT e.id, e.nombre_expediente, s.nombre_serie, ss.nombre_subserie, e.fecha_cierre,
                    (ss.retencion_gestion + ss.retencion_central) as retencion_total

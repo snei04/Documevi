@@ -7,10 +7,17 @@ const documentoService = require('../services/documento.service');
 
 /**
  * Obtiene todos los expedientes con información enriquecida.
+ * Para auditores: solo expedientes cerrados y habilitados
  */
 exports.getAllExpedientes = async (req, res) => {
     try {
-        const [rows] = await pool.query(`
+        // Verificar si el usuario es auditor (tiene permisos limitados)
+        const userPermissions = req.user.permissions || [];
+        const isAuditor = userPermissions.includes('auditoria_ver') && 
+                         !userPermissions.includes('expedientes_crear') && 
+                         !userPermissions.includes('expedientes_editar');
+
+        let query = `
             SELECT 
                 e.*, 
                 s.nombre_serie, 
@@ -20,8 +27,16 @@ exports.getAllExpedientes = async (req, res) => {
             LEFT JOIN trd_series s ON e.id_serie = s.id
             LEFT JOIN trd_subseries ss ON e.id_subserie = ss.id
             LEFT JOIN usuarios u ON e.id_usuario_responsable = u.id
-            ORDER BY e.fecha_apertura DESC
-        `);
+        `;
+
+        // Si es auditor, filtrar solo expedientes cerrados y habilitados
+        if (isAuditor) {
+            query += ` WHERE e.estado = 'cerrado' AND e.activo = 1`;
+        }
+
+        query += ` ORDER BY e.fecha_apertura DESC`;
+
+        const [rows] = await pool.query(query);
         res.json(rows);
     } catch (error) {
         console.error("Error en getAllExpedientes:", error);
@@ -68,6 +83,16 @@ exports.getExpedienteById = async (req, res) => {
         const esProductor = expediente.id_usuario_responsable === id_usuario_actual;
         const tienePermisoEspecial = permisos_usuario.includes('ver_expedientes_cerrados');
         
+        // Verificar si es auditor
+        const isAuditor = permisos_usuario.includes('auditoria_ver') && 
+                         !permisos_usuario.includes('expedientes_crear') && 
+                         !permisos_usuario.includes('expedientes_editar');
+        
+        // Si es auditor, solo puede ver expedientes cerrados y habilitados
+        if (isAuditor && (expediente.estado !== 'cerrado' || expediente.activo !== 1)) {
+            return res.status(403).json({ msg: 'Los auditores solo pueden ver expedientes cerrados y habilitados.' });
+        }
+        
         const sqlDocumentos = `
             SELECT d.*, ed.orden_foliado, ed.fecha_incorporacion, ed.requiere_firma
             FROM expediente_documentos ed
@@ -76,9 +101,13 @@ exports.getExpedienteById = async (req, res) => {
             ORDER BY ed.orden_foliado ASC
         `;
 
-        if (esProductor || tienePermisoEspecial) {
+        if (esProductor || tienePermisoEspecial || isAuditor) {
             const [documentos] = await pool.query(sqlDocumentos, [id_expediente]);
-            return res.json({ ...expediente, documentos: documentos, vista: esProductor ? 'productor' : 'auditor' });
+            let vista = 'auditor';
+            if (esProductor) vista = 'productor';
+            else if (isAuditor) vista = 'auditor_readonly';
+            
+            return res.json({ ...expediente, documentos: documentos, vista: vista });
         }
 
         const [prestamos] = await pool.query(

@@ -1,5 +1,6 @@
 const pool = require('../config/db');
 
+// Obtener todos los roles
 exports.getAllRoles = async (req, res) => {
   try {
     const [rows] = await pool.query('SELECT * FROM roles ORDER BY nombre ASC');

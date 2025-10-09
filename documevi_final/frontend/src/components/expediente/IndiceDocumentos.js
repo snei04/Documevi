@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 
+// Componente para mostrar el índice de documentos del expediente
 const IndiceDocumentos = ({ expediente, workflows, onOpenFile, onSign, onStartWorkflow }) => {
     const [selectedWorkflow, setSelectedWorkflow] = useState('');
     const { documentos, vista } = expediente;
@@ -8,6 +9,9 @@ const IndiceDocumentos = ({ expediente, workflows, onOpenFile, onSign, onStartWo
         e.preventDefault();
         onStartWorkflow(docId, selectedWorkflow);
     };
+
+    // Obtiene la URL base del archivo desde .env o usa localhost por defecto
+    const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:4000';
 
     return (
         <div className="content-box">
@@ -28,8 +32,9 @@ const IndiceDocumentos = ({ expediente, workflows, onOpenFile, onSign, onStartWo
                         <tr key={doc.id}>
                             <td>{doc.orden_foliado}</td>
                             <td>
+                                {/*Genera el documento*/}
                                 {doc.path_archivo ? (
-                                    <button onClick={() => onOpenFile(`http://localhost:4000/${doc.path_archivo}`)} className="link-button">
+                                    <button onClick={() => onOpenFile(`${API_BASE_URL}/${doc.path_archivo}`)} className="link-button">
                                         {doc.radicado}
                                     </button>
                                 ) : doc.radicado}

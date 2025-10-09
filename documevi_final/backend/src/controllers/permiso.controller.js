@@ -102,7 +102,7 @@ exports.getPermissionsTree = async (req, res) => {
     try {
         const [permisos] = await pool.query('SELECT id, nombre_permiso, descripcion, grupo FROM permisos ORDER BY grupo, id');
 
-        // 1. Agrupamos todos los permisos por su 'grupo'
+        // Agrupamos los permisos por 'grupo' (ej: 'Administración', 'Documentos', etc.)
         const grupos = permisos.reduce((acc, permiso) => {
             const grupo = permiso.grupo || 'General';
             if (!acc[grupo]) {
@@ -112,7 +112,7 @@ exports.getPermissionsTree = async (req, res) => {
             return acc;
         }, {});
 
-        // 2. Transformamos cada grupo a la estructura de árbol
+        
         const treeChildren = Object.entries(grupos).map(([nombreGrupo, permisosDelGrupo]) => {
             
             // Dentro de cada grupo, agrupamos por 'módulo' (ej: 'usuarios' de 'usuarios_ver')
@@ -144,7 +144,7 @@ exports.getPermissionsTree = async (req, res) => {
             };
         });
 
-        // 3. Creamos la estructura raíz final
+        // Nodo raíz del árbol
         const treeStructure = {
             id: 'root',
             name: 'Sistema Documental',

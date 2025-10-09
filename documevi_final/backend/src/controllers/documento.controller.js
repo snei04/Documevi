@@ -1,8 +1,3 @@
-/**
- * @fileoverview Controlador para gestionar las peticiones HTTP relacionadas con los documentos.
- * Delega la lógica de negocio a la capa de servicio (documento.service.js).
- */
-
 const documentoService = require('../services/documento.service');
 const pool = require('../config/db');
 

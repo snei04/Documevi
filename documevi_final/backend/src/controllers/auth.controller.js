@@ -200,7 +200,8 @@ exports.forgotPassword = async (req, res) => {
             [passwordResetToken, passwordResetExpires, email]
         );
 
-        const resetUrl = `http://localhost:3000/reset-password/${resetToken}`;
+        const baseUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+        const resetUrl = `${baseUrl}/reset-password/${resetToken}`;
         
         // Versión en texto plano (para respaldo)
         const textMessage = `Hola ${user.nombre_completo},\n\nPara restablecer tu contraseña, haz clic en el siguiente enlace (válido por 10 minutos):\n\n${resetUrl}\n\nSi no solicitaste este cambio, puedes ignorar este correo.`;
@@ -233,7 +234,7 @@ exports.forgotPassword = async (req, res) => {
     }
 };
 
-// ✅ AÑADE ESTA FUNCIÓN para aplicar la nueva contraseña
+
 exports.resetPassword = async (req, res) => {
     const { token } = req.params;
     const { password } = req.body;

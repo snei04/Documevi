@@ -7,11 +7,11 @@ const authorizePermission = require('../middleware/authorizePermission');
 const router = Router();
 router.use(authMiddleware);
 
-router.get('/', serieController.getAllSeries);
-router.post('/', authorizePermission('gestionar_parametros_trd'), serieController.createSerie);
+router.get('/', authorizePermission('series_ver'), serieController.getAllSeries);
+router.post('/', authorizePermission('series_crear'), serieController.createSerie);
 
 // ✅ Rutas para editar y cambiar estado
-router.put('/:id', authorizePermission('gestionar_parametros_trd'), serieController.updateSerie);
-router.patch('/:id/toggle-status', authorizePermission('gestionar_parametros_trd'), serieController.toggleSerieStatus);
+router.put('/:id', authorizePermission('series_editar'), serieController.updateSerie);
+router.patch('/:id/toggle-status', authorizePermission('series_inactivar'), serieController.toggleSerieStatus);
 
 module.exports = router;

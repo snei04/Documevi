@@ -1,10 +1,8 @@
-// Archivo: backend/server.js
-
 const express = require('express');
 const path = require('path');
 const dotenv = require('dotenv');
 const cors = require('cors');
-
+const pool = require('./src/config/db');
 // Cargar variables de entorno del archivo .env
 dotenv.config();
 
@@ -37,7 +35,7 @@ const app = express();
 
 const corsOptions = {
   // Se especifica el origen del frontend para mayor seguridad
-  origin: 'http://localhost:3000', 
+  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
   methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
   // Se permite explícitamente el encabezado 'Authorization'
   allowedHeaders: ['Content-Type', 'Authorization'] 

@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 
+// Componente para vista restringida de expediente
 const VistaRestringida = ({ expediente, onSolicitarPrestamo }) => {
     const [showPrestamoForm, setShowPrestamoForm] = useState(false);
     const [observaciones, setObservaciones] = useState('');
     const [tipoPrestamo, setTipoPrestamo] = useState('Electrónico');
 
+    // Manejar el envío del formulario de solicitud de préstamo
     const handleSubmit = (e) => {
         e.preventDefault();
         onSolicitarPrestamo({ observaciones, tipoPrestamo });
@@ -17,6 +19,7 @@ const VistaRestringida = ({ expediente, onSolicitarPrestamo }) => {
                 <h1>{expediente.nombre_expediente}</h1>
                 <p><strong>Estado:</strong> {expediente.estado}</p>
             </div>
+            {/*Vista de quien no tiene permisos*/}
             <div className="content-box">
                 <h3>Acceso Restringido</h3>
                 <p>No tienes acceso a los documentos de este expediente. Para verlos, debes solicitar un préstamo.</p>

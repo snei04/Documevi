@@ -70,6 +70,11 @@ const MisTareas = () => {
   
   if (isLoading) return <div>Cargando tus tareas...</div>;
 
+  // Detect base URL for archivos
+  const baseFileUrl = process.env.REACT_APP_API_URL
+    ? `${process.env.REACT_APP_API_URL.replace(/\/$/, '')}/`
+    : 'http://localhost:4000/';
+
   return (
     <div>
       <div className="page-header">
@@ -92,7 +97,7 @@ const MisTareas = () => {
             <tr key={tarea.id_seguimiento}>
               <td>
                 {tarea.path_archivo ? (
-                  <button onClick={() => openModal(`http://localhost:4000/${tarea.path_archivo}`)} className="link-button">
+                  <button onClick={() => openModal(`${baseFileUrl}${tarea.path_archivo}`)} className="link-button">
                     {tarea.radicado}
                   </button>
                 ) : (

@@ -20,8 +20,8 @@ router.get('/perfil', authMiddleware, getPerfilUsuario);
 // --- RUTAS QUE REQUIEREN PERMISOS DE ADMINISTRADOR ---
 // Para las siguientes rutas, el usuario no solo debe estar autenticado, 
 // sino que también debe tener el permiso 'gestionar_usuarios'.
-router.get('/', authMiddleware, authorizePermission('gestionar_usuarios'), getAllUsers);
-router.put('/:id', authMiddleware, authorizePermission('gestionar_usuarios'), updateUser);
-router.post('/invite', authMiddleware, authorizePermission('gestionar_usuarios'), inviteUser);
+router.get('/', authMiddleware, authorizePermission('usuarios_ver'), getAllUsers);
+router.put('/:id', authMiddleware, authorizePermission('usuarios_editar'), updateUser);
+router.post('/invite', authMiddleware, authorizePermission('usuarios_invitar'), inviteUser);
 
 module.exports = router;

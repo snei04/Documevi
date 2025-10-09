@@ -3,6 +3,7 @@ import { useOutletContext } from 'react-router-dom';
 import api from '../api/axios';
 import { toast } from 'react-toastify';
 import Modal from 'react-modal';
+import PermissionGuard from './auth/PermissionGuard';
 import './Dashboard.css';
 
 // Configuración del modal para accesibilidad (importante para que no haya errores en la consola)
@@ -119,7 +120,9 @@ const GestionDependencias = () => {
         <div>
             <div className="page-header">
                 <h1>Gestión de Dependencias</h1>
-                <button onClick={openCreateModal} className="button button-primary">Crear Nueva Dependencia</button>
+                <PermissionGuard permission="dependencias_crear">
+                    <button onClick={openCreateModal} className="button button-primary">Crear Nueva Dependencia</button>
+                </PermissionGuard>
             </div>
 
             <div className="content-box">
@@ -144,10 +147,14 @@ const GestionDependencias = () => {
                                     </span>
                                 </td>
                                 <td className="action-cell">
-                                    <button onClick={() => openEditModal(dep)} className="button">Editar</button>
-                                    <button onClick={() => handleToggleStatus(dep.id, dep.activo)} className={`button ${dep.activo ? 'button-danger' : 'button-success'}`}>
-                                        {dep.activo ? 'Desactivar' : 'Activar'}
-                                    </button>
+                                    <PermissionGuard permission="dependencias_editar">
+                                        <button onClick={() => openEditModal(dep)} className="button">Editar</button>
+                                    </PermissionGuard>
+                                    <PermissionGuard permission="dependencias_inactivar">
+                                        <button onClick={() => handleToggleStatus(dep.id, dep.activo)} className={`button ${dep.activo ? 'button-danger' : 'button-success'}`}>
+                                            {dep.activo ? 'Desactivar' : 'Activar'}
+                                        </button>
+                                    </PermissionGuard>
                                 </td>
                             </tr>
                         ))}

@@ -1,4 +1,3 @@
-// Archivo: backend/src/controllers/subserie.controller.js
 const pool = require('../config/db');
 
 // Obtener todas las subseries
@@ -50,7 +49,7 @@ exports.createSubserie = async (req, res) => {
     res.status(500).json({ msg: 'Error en el servidor', error: error.message });
   }
 };
-
+// Actualizar una subserie existente
 exports.updateSubserie = async (req, res) => {
     const { id } = req.params;
     const { nombre_subserie, codigo_subserie, id_serie, retencion_gestion, retencion_central, disposicion_final } = req.body;

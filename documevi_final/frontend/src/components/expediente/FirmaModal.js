@@ -4,7 +4,7 @@ import SignaturePad from 'react-signature-pad-wrapper';
 import { toast } from 'react-toastify';
 
 Modal.setAppElement('#root');
-
+// Modal para capturar la firma del usuario
 const FirmaModal = ({ isOpen, onRequestClose, onSubmit }) => {
     const sigPad = useRef(null);
 
@@ -14,12 +14,15 @@ const FirmaModal = ({ isOpen, onRequestClose, onSubmit }) => {
         if (sigPad.current?.isEmpty()) {
             return toast.warn('Por favor, dibuje su firma.');
         }
+        // Obtener la imagen de la firma en formato base64
         const firma_imagen = sigPad.current.toDataURL('image/png');
         onSubmit(firma_imagen);
     };
 
     return (
+        
         <Modal 
+        
             isOpen={isOpen} 
             onRequestClose={onRequestClose} 
             contentLabel="Firmar Documento"

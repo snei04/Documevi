@@ -1,4 +1,3 @@
-// En src/controllers/serie.controller.js
 const pool = require('../config/db');
 
 // Obtiene todas las series y las ordena por estado

@@ -21,27 +21,27 @@ router.use(protect);
 
 
 router.route('/')
-    .get(getAllExpedientes)
-    .post(authorizePermission('crear_expedientes'), createExpediente);
+    .get(authorizePermission('expedientes_ver'), getAllExpedientes)
+    .post(authorizePermission('expedientes_crear'), createExpediente);
 
 
 router.route('/:id')
-    .get(getExpedienteById);
+    .get(authorizePermission('expedientes_ver'), getExpedienteById);
 
 router.route('/:id/cerrar')
-    .put(authorizePermission('cerrar_expedientes'), closeExpediente);
+    .put(authorizePermission('expedientes_cerrar'), closeExpediente);
 
 
 router.route('/:id_expediente/documentos')
-    .post(authorizePermission('gestionar_expedientes'), addDocumentoToExpediente);
+    .post(authorizePermission('expedientes_agregar_documentos'), addDocumentoToExpediente);
 
 
 router.route('/:id/documentos-desde-plantilla')
-    .post(authorizePermission('gestionar_expedientes'), createDocumentoFromPlantillaInExpediente);
+    .post(authorizePermission('expedientes_agregar_documentos'), createDocumentoFromPlantillaInExpediente);
 
 
 router.route('/:id/custom-data')
-    .get(getExpedienteCustomData)
-    .put(authorizePermission('gestionar_expedientes'), updateExpedienteCustomData);
+    .get(authorizePermission('expedientes_ver'), getExpedienteCustomData)
+    .put(authorizePermission('expedientes_custom_data'), updateExpedienteCustomData);
 
 module.exports = router;

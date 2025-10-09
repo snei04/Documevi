@@ -116,41 +116,88 @@ const AppContent = () => {
                         <Route path="mis-prestamos" element={<MisPrestamos />} />
                         <Route path="visor-onedrive" element={<OneDriveViewer />} />
 
-                        <Route element={<ProtectedRoute permission="gestionar_expedientes" />}>
+                        <Route element={<ProtectedRoute permission="expedientes_ver" />}>
                             <Route path="expedientes" element={<GestionExpedientes />} />
                             <Route path="expedientes/:id" element={<ExpedienteDetalle />} />
+                        </Route>
+                        
+                        <Route element={<ProtectedRoute permission="expedientes_crear" />}>
                             <Route path="captura" element={<CapturaDocumento />} />
                         </Route>
 
-                         <Route element={<ProtectedRoute permission="gestionar_parametros_trd" />}>
+                        <Route element={<ProtectedRoute permission="dependencias_ver" />}>
                             <Route path="dependencias" element={<GestionDependencias />} />
+                        </Route>
+                        
+                        <Route element={<ProtectedRoute permission="oficinas_ver" />}>
                             <Route path="oficinas" element={<GestionOficinas />} />
+                        </Route>
+                        
+                        <Route element={<ProtectedRoute permission="series_ver" />}>
                             <Route path="series" element={<GestionSeries />} />
+                        </Route>
+                        
+                        <Route element={<ProtectedRoute permission="subseries_ver" />}>
                             <Route path="subseries" element={<GestionSubseries />} />
                         </Route>
 
-                         <Route element={<ProtectedRoute permission="gestionar_usuarios" />}>
+                        <Route element={<ProtectedRoute permission="usuarios_ver" />}>
                             <Route path="usuarios" element={<GestionUsuarios />} />
+                        </Route>
+                        
+                        <Route element={<ProtectedRoute permission="roles_ver" />}>
                             <Route path="roles" element={<GestionRoles />} />
+                        </Route>
+                        
+                        <Route element={<ProtectedRoute permission="auditoria_ver" />}>
                             <Route path="auditoria" element={<GestionAuditoria />} />
+                        </Route>
+                        
+                        <Route element={<ProtectedRoute permission="permisos_ver" />}>
                             <Route path="permisos" element={<GestionarPermisosMaestro />} />
+                        </Route>
+                        
+                        <Route element={<ProtectedRoute permission="campos_ver" />}>
                             <Route path="campos-personalizados" element={<GestionCamposPersonalizados />} />
+                        </Route>
+                        
+                        <Route element={<ProtectedRoute permission="plantillas_ver" />}>
                             <Route path="plantillas" element={<GestionPlantillas />} />
                             <Route path="plantillas/:id" element={<PlantillaDetalle />} />
+                        </Route>
+                        
+                        <Route element={<ProtectedRoute permission="plantillas_disenar" />}>
                             <Route path="plantillas/:id/disenar" element={<DiseñadorPlantilla />} />
+                        </Route>
+                        
+                        <Route element={<ProtectedRoute permission="transferencias_ver" />}>
                             <Route path="transferencias" element={<GestionTransferencias />} />
+                        </Route>
+                        
+                        <Route element={<ProtectedRoute permission="eliminacion_ver" />}>
                             <Route path="eliminacion" element={<GestionEliminacion />} />
+                        </Route>
+                        
+                        <Route element={<ProtectedRoute permission="estadisticas_ver" />}>
                             <Route path="estadisticas" element={<Estadisticas />} />
+                        </Route>
+                        
+                        <Route element={<ProtectedRoute permission="reportes_fuid" />}>
                             <Route path="reportes-fuid" element={<ReporteFUID />} />
                         </Route>
 
-                        <Route element={<ProtectedRoute permission="gestionar_roles_permisos" />}>
+                        <Route element={<ProtectedRoute permission="permisos_asignar" />}>
                             <Route path="roles/:id_rol/permisos" element={<GestionPermisos />} />
                         </Route>
                         
-                        <Route path="workflows" element={<GestionWorkflows />} />
-                        <Route path="workflows/:id" element={<WorkflowDetalle />} />
-                        <Route path="prestamos" element={<GestionPrestamos />} />
+                        <Route element={<ProtectedRoute permission="workflows_ver" />}>
+                            <Route path="workflows" element={<GestionWorkflows />} />
+                            <Route path="workflows/:id" element={<WorkflowDetalle />} />
+                        </Route>
+                        
+                        <Route element={<ProtectedRoute permission="prestamos_ver" />}>
+                            <Route path="prestamos" element={<GestionPrestamos />} />
+                        </Route>
                     </Route>
                 </Route>
 

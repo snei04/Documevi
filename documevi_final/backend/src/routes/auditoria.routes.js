@@ -1,4 +1,3 @@
-// Archivo: backend/src/routes/auditoria.routes.js
 const { Router } = require('express');
 const { getAuditLog } = require('../controllers/auditoria.controller');
 const authMiddleware = require('../middleware/auth.middleware');
@@ -6,7 +5,7 @@ const authorizePermission = require('../middleware/authorizePermission');
 
 const router = Router();
 
-// Esta ruta es solo para administradores (rol_id = 1)
-router.get('/', [authMiddleware, authorizePermission('ver_auditoria')], getAuditLog);
+// Ruta para obtener el registro de auditoría
+router.get('/', [authMiddleware, authorizePermission('auditoria_ver')], getAuditLog);
 
 module.exports = router;

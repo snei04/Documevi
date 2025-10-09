@@ -1,6 +1,5 @@
-// Archivo: backend/src/controllers/usuario.controller.js
 const pool = require('../config/db');
-const crypto = require('crypto'); // Módulo nativo de Node.js para generar tokens
+const crypto = require('crypto'); 
 const sendEmail = require('../services/email.service');
 
 // Obtener todos los usuarios
@@ -23,7 +22,7 @@ exports.inviteUser = async (req, res) => {
     const { nombre_completo, email, documento, rol_id } = req.body;
 
     try {
-        // ... (Lógica de creación de usuario y token sin cambios)
+        // Verificamos si el correo o documento ya están registrados
         const [existingUser] = await pool.query('SELECT * FROM usuarios WHERE email = ? OR documento = ?', [email, documento]);
         if (existingUser.length > 0) {
             return res.status(400).json({ msg: 'El correo o documento ya está registrado.' });
@@ -35,14 +34,14 @@ exports.inviteUser = async (req, res) => {
             [nombre_completo, email, documento, rol_id, false, resetToken, passwordResetExpires]
         );
         
-        const inviteURL = `http://localhost:3000/set-password/${resetToken}`;
+        const inviteURL = `${process.env.FRONTEND_URL}/set-password?token=${resetToken}`;
         const subject = 'Invitación para unirte a Documevi';
         const htmlBody = `...`; // Tu plantilla HTML aquí
         const finalHtml = htmlBody
             .replace('{{nombre_usuario}}', nombre_completo)
             .replace(new RegExp('{{inviteURL}}', 'g'), inviteURL);
 
-        // --- ✅ CORRECCIÓN #2 APLICADA AQUÍ ---
+        
         await sendEmail({
             to: email,
             subject: subject,

@@ -20,24 +20,23 @@ const router = Router();
 
 // --- Definición de Rutas ---
 
-// ✅ RUTA PÚBLICA: No lleva ningún middleware de autenticación.
-// Cualquiera puede ver la lista de plantillas.
-router.get('/', getAllPlantillas);
+// ✅ RUTA PROTEGIDA: Requiere autenticación y permiso para ver plantillas
+router.get('/', authMiddleware, authorizePermission('plantillas_ver'), getAllPlantillas);
 
 // ✅ RUTAS PROTEGIDAS: A partir de aquí, todas las rutas requerirán autenticación.
 // Se añade el 'authMiddleware' a cada una de las rutas que necesitan protección.
 
 // Rutas para ver datos específicos (requiere estar logueado)
-router.get('/:id/variables', authMiddleware, getVariablesDisponibles);
-router.get('/:id', authMiddleware, getPlantillaWithCampos);
+router.get('/:id/variables', authMiddleware, authorizePermission('plantillas_ver'), getVariablesDisponibles);
+router.get('/:id', authMiddleware, authorizePermission('plantillas_ver'), getPlantillaWithCampos);
 
 // Rutas para crear y modificar (requiere estar logueado Y tener permisos)
-router.post('/', [authMiddleware, authorizePermission('gestionar_plantillas')], createPlantilla);
-router.post('/:id/campos', [authMiddleware, authorizePermission('gestionar_plantillas')], addCampoToPlantilla);
+router.post('/', [authMiddleware, authorizePermission('plantillas_crear')], createPlantilla);
+router.post('/:id/campos', [authMiddleware, authorizePermission('plantillas_editar')], addCampoToPlantilla);
 
 // Rutas para el diseñador visual (requiere estar logueado)
-router.post('/:id/diseno', authMiddleware, updateDisenoPlantilla);
-router.post('/:id/background', [authMiddleware, upload.single('background')], uploadBackgroundImage);
+router.post('/:id/diseno', authMiddleware, authorizePermission('plantillas_disenar'), updateDisenoPlantilla);
+router.post('/:id/background', [authMiddleware, authorizePermission('plantillas_disenar'), upload.single('background')], uploadBackgroundImage);
 
 
 module.exports = router;

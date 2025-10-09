@@ -8,9 +8,7 @@ const { generarRadicado } = require('../utils/radicado.util');
 const CustomError = require('../utils/CustomError');
 const documentoService = require('./documento.service');
 
-/**
- * Marks an expediente as closed if it is currently 'En trámite'.
- */
+// Crear un nuevo expediente
 exports.cerrarExpediente = async (id_expediente, id_usuario_accion) => {
     return withTransaction(pool, async (connection) => {
         const [expedientes] = await connection.query("SELECT estado FROM expedientes WHERE id = ?", [id_expediente]);
@@ -36,9 +34,7 @@ exports.cerrarExpediente = async (id_expediente, id_usuario_accion) => {
     });
 };
 
-/**
- * Overwrites the custom data for a given expediente.
- */
+// Guardar datos personalizados de un expediente
 exports.guardarDatosPersonalizados = async (id_expediente, customData) => {
     return withTransaction(pool, async (connection) => {
         await connection.query('DELETE FROM expediente_datos_personalizados WHERE id_expediente = ?', [id_expediente]);
@@ -52,10 +48,7 @@ exports.guardarDatosPersonalizados = async (id_expediente, customData) => {
     });
 };
 
-/**
- * Generates a PDF document from a template and saves it.
- */
-
+// Generar un documento desde una plantilla y añadirlo a un expediente
 exports.generarYAnadirDocumentoAExpediente = async (expedienteId, data, id_usuario_radicador) => {
     return withTransaction(pool, async (connection) => {
         

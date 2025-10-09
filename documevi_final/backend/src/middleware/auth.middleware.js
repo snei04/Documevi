@@ -1,6 +1,7 @@
 const jwt = require('jsonwebtoken');
 const pool = require('../config/db');
 
+// Middleware para proteger rutas y verificar tokens JWT
 module.exports = async function(req, res, next) {
     console.log("\n--- 1. Auth Middleware INICIADO ---");
     let token;

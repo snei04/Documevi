@@ -7,9 +7,8 @@ const authMiddleware = require('../middleware/auth.middleware');
 
 const router = Router();
 
-// 2. Se eliminó la lógica de 'sendEmail' de aquí. Esa lógica pertenece al controlador.
 
-// Ruta para registrar un nuevo usuario
+
 router.post(
   '/register',
   [
@@ -19,7 +18,7 @@ router.post(
     check('password', 'La contraseña debe tener al menos 8 caracteres').isLength({ min: 8 }),
     check('rol_id', 'El rol es obligatorio').isInt(),
   ],
-  // 3. Usamos el controlador con el prefijo para más claridad
+  
   authController.registerUser
 );
 

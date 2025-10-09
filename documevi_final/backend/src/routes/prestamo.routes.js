@@ -16,13 +16,13 @@ router.use(authMiddleware);
 
 // Rutas para la colección de préstamos
 router.route('/')
-  .post(createPrestamo)
-  .get(authorizePermission('gestionar_prestamos'), getAllPrestamos);
+  .post(authorizePermission('prestamos_solicitar'), createPrestamo)
+  .get(authorizePermission('prestamos_ver'), getAllPrestamos);
 
 // Rutas para acciones específicas del administrador
-router.put('/:id/approve', authorizePermission('gestionar_prestamos'), approvePrestamo);
-router.put('/:id/return', authorizePermission('gestionar_prestamos'), returnPrestamo);
-router.put('/:id/approve-prorroga', authorizePermission('gestionar_prestamos'), approveProrroga);
+router.put('/:id/approve', authorizePermission('prestamos_aprobar'), approvePrestamo);
+router.put('/:id/return', authorizePermission('prestamos_devolver'), returnPrestamo);
+router.put('/:id/approve-prorroga', authorizePermission('prestamos_prorrogar'), approveProrroga);
 
 
 // Ruta para que un usuario solicite una prórroga

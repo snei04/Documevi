@@ -1,6 +1,7 @@
 // Archivo: backend/src/controllers/search.controller.js
 const pool = require('../config/db');
 
+// Búsqueda global en documentos y expedientes
 exports.search = async (req, res) => {
   const { q } = req.query;
 
@@ -9,6 +10,7 @@ exports.search = async (req, res) => {
   }
 
   try {
+    // 2. Preparamos el término de búsqueda para usarlo con LIKE
     const searchTerm = `%${q}%`;
 
     const [documentosResults, expedientesResults] = await Promise.all([
@@ -22,7 +24,7 @@ exports.search = async (req, res) => {
           [searchTerm]
       )
     ]);
-
+    // 4. Devolvemos los resultados combinados
     res.json({
       documentos: documentosResults[0],
       expedientes: expedientesResults[0]

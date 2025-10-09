@@ -1,7 +1,9 @@
 import axios from 'axios';
 
+// Crear una instancia de axios con la URL base de la API
 const api = axios.create({
-  baseURL: 'http://localhost:4000/api' // La URL base de tu API
+  // Usar la variable de entorno o localhost por defecto
+  baseURL: process.env.REACT_APP_API_URL || 'http://localhost:4000/api',
 });
 
 api.interceptors.request.use(

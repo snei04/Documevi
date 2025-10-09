@@ -20,10 +20,16 @@ export const usePermissionTree = (initialData, initialRolePerms) => {
             dataWithInitialState.children.forEach(group => {
                 if (group.children) {
                     group.children.forEach(module => {
-                        for (const action in module.permissions) {
-                            const permId = module.permissions[action].id;
-                            if (initialRolePerms.includes(permId)) {
-                                module.permissions[action].enabled = true;
+                        if (module.permissions) {
+                            for (const action in module.permissions) {
+                                if (module.permissions[action] && 
+                                    typeof module.permissions[action] === 'object' && 
+                                    module.permissions[action].id) {
+                                    const permId = module.permissions[action].id;
+                                    if (initialRolePerms.includes(permId)) {
+                                        module.permissions[action].enabled = true;
+                                    }
+                                }
                             }
                         }
                     });
@@ -61,16 +67,23 @@ export const usePermissionTree = (initialData, initialRolePerms) => {
         setTree(prevTree => {
             const newTree = JSON.parse(JSON.stringify(prevTree));
             const findAndChange = (nodes) => {
+                if (!nodes) return false;
                 for (const node of nodes) {
                     if (node.id === moduleId) {
-                        node.permissions[action].enabled = !node.permissions[action].enabled;
-                        return true;
+                        // Validar que el permiso existe antes de intentar modificarlo
+                        if (node.permissions && node.permissions[action] && typeof node.permissions[action] === 'object') {
+                            node.permissions[action].enabled = !node.permissions[action].enabled;
+                            return true;
+                        }
+                        return false;
                     }
                     if (node.children && findAndChange(node.children)) return true;
                 }
                 return false;
             };
-            newTree.children.some(group => findAndChange(group.children));
+            if (newTree.children) {
+                newTree.children.some(group => group.children && findAndChange(group.children));
+            }
             return newTree;
         });
     }, []);
@@ -92,10 +105,12 @@ export const usePermissionTree = (initialData, initialRolePerms) => {
             };
             newTree.children.some(group => findModule(group.children));
 
-            if (moduleNode) {
-                const areAllEnabled = Object.values(moduleNode.permissions).every(p => p.enabled);
+            if (moduleNode && moduleNode.permissions) {
+                const areAllEnabled = Object.values(moduleNode.permissions).every(p => p && p.enabled);
                 for (const action in moduleNode.permissions) {
-                    moduleNode.permissions[action].enabled = !areAllEnabled;
+                    if (moduleNode.permissions[action] && typeof moduleNode.permissions[action] === 'object') {
+                        moduleNode.permissions[action].enabled = !areAllEnabled;
+                    }
                 }
             }
             return newTree;
@@ -109,7 +124,10 @@ export const usePermissionTree = (initialData, initialRolePerms) => {
             nodes.forEach(node => {
                 if (node.permissions) {
                     for (const action in node.permissions) {
-                        if (node.permissions[action].enabled) {
+                        if (node.permissions[action] && 
+                            typeof node.permissions[action] === 'object' && 
+                            node.permissions[action].enabled && 
+                            node.permissions[action].id) {
                             selectedIds.push(node.permissions[action].id);
                         }
                     }

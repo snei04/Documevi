@@ -92,7 +92,7 @@ exports.getWorkflowById = async (req, res) => {
 
 // Obtener las tareas asignadas al usuario según su rol
 exports.getMyTasks = async (req, res) => {
-  const userRoleId = req.user.rol;
+  const userRoleId = req.user.rol_id;
 
   try {
     const [tasks] = await pool.query(`

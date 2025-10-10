@@ -21,6 +21,7 @@ router.use(authMiddleware);
 
 // Rutas que solo requieren autenticación (cualquier usuario logueado puede ver)
 router.get('/', authorizePermission('workflows_ver'), getAllWorkflows);
+router.get('/tareas', getMyTasks); // Ruta para obtener tareas del usuario (solo requiere autenticación)
 router.get('/:id', authorizePermission('workflows_ver'), getWorkflowById);
 router.get('/:id/pasos', authorizePermission('workflows_ver'), getWorkflowPasos);
 

@@ -1,0 +1,228 @@
+/* ===== USER DROPDOWN STYLES ===== */
+
+.user-dropdown-container {
+    position: relative;
+    display: inline-block;
+}
+
+/* Avatar/Botón principal */
+.user-avatar-button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    border-radius: 50%;
+    transition: all 0.2s ease;
+}
+
+.user-avatar-button:hover {
+    transform: scale(1.05);
+}
+
+.user-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 600;
+    font-size: 14px;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.user-avatar.large {
+    width: 50px;
+    height: 50px;
+    font-size: 16px;
+}
+
+.user-avatar.loading {
+    background: #f0f0f0;
+    color: #999;
+    animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+/* Dropdown Menu */
+.user-dropdown-menu {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    min-width: 280px;
+    z-index: 1000;
+    animation: dropdownSlideIn 0.2s ease-out;
+    overflow: hidden;
+}
+
+@keyframes dropdownSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px) scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* Header del dropdown */
+.dropdown-header {
+    padding: 20px;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.user-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex: 1;
+}
+
+.user-details {
+    flex: 1;
+    min-width: 0; /* Para permitir text-overflow */
+}
+
+.user-name {
+    font-size: 16px;
+    font-weight: 600;
+    color: #2d3748;
+    margin: 0 0 4px 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.user-email {
+    font-size: 13px;
+    color: #718096;
+    margin: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.close-dropdown {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #718096;
+    font-size: 16px;
+    padding: 4px;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+}
+
+.close-dropdown:hover {
+    background: rgba(0, 0, 0, 0.1);
+    color: #2d3748;
+}
+
+/* Separador */
+.dropdown-divider {
+    height: 1px;
+    background: rgba(0, 0, 0, 0.1);
+    margin: 0;
+}
+
+/* Opciones del menú */
+.dropdown-options {
+    padding: 8px 0;
+}
+
+.dropdown-option {
+    width: 100%;
+    padding: 12px 20px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 14px;
+    color: #2d3748;
+    transition: all 0.2s ease;
+    text-align: left;
+}
+
+.dropdown-option:hover {
+    background: #f7fafc;
+    color: #1a202c;
+}
+
+.dropdown-option.logout {
+    color: #e53e3e;
+    border-top: 1px solid rgba(0, 0, 0, 0.1);
+    margin-top: 8px;
+    padding-top: 16px;
+}
+
+.dropdown-option.logout:hover {
+    background: #fed7d7;
+    color: #c53030;
+}
+
+.option-icon {
+    font-size: 16px;
+    width: 20px;
+    text-align: center;
+    flex-shrink: 0;
+}
+
+.option-text {
+    flex: 1;
+    font-weight: 500;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .user-dropdown-menu {
+        min-width: 260px;
+        right: -10px;
+    }
+    
+    .dropdown-header {
+        padding: 16px;
+    }
+    
+    .user-name {
+        font-size: 15px;
+    }
+    
+    .user-email {
+        font-size: 12px;
+    }
+}
+
+/* Estados de focus para accesibilidad */
+.user-avatar-button:focus {
+    outline: 2px solid #4299e1;
+    outline-offset: 2px;
+}
+
+.dropdown-option:focus {
+    outline: none;
+    background: #e2e8f0;
+}
+
+.close-dropdown:focus {
+    outline: none;
+    background: rgba(0, 0, 0, 0.1);
+}

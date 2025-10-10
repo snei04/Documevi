@@ -42,6 +42,7 @@ import PlantillaDetalle from './components/PlantillaDetalle';
 import DiseñadorPlantilla from './components/DiseñadorPlantilla';
 import GestionEliminacion from './components/GestionEliminacion';
 import MisPrestamos from './components/MisPrestamos';
+import MiPerfil from './components/MiPerfil';
 import ForgotPassword from './components/ForgotPassword';
 import ResetPassword from './components/ResetPassword';
 import GestionarPermisosMaestro from './components/GestionarPermisosMaestro';
@@ -112,6 +113,7 @@ const AppContent = () => {
                     <Route path="/dashboard" element={<DashboardLayout />}>
                         <Route index element={<DashboardHome />} />
                         <Route path="mis-tareas" element={<MisTareas />} />
+                        <Route path="mi-perfil" element={<MiPerfil />} />
                         <Route path="search" element={<Search />} />
                         <Route path="mis-prestamos" element={<MisPrestamos />} />
                         <Route path="visor-onedrive" element={<OneDriveViewer />} />

@@ -26,6 +26,18 @@ module.exports = async function(req, res, next) {
         const decoded = jwt.verify(token, secret);
         console.log("✔️ Token verificado con éxito. Payload decodificado:", decoded);
 
+        // Obtener datos completos del usuario
+        const [userRows] = await pool.query(
+            `SELECT id, nombre_completo, email, documento, rol_id FROM usuarios WHERE id = ?`,
+            [decoded.user.id]
+        );
+        
+        if (userRows.length === 0) {
+            return res.status(401).json({ msg: 'Usuario no encontrado' });
+        }
+        
+        const userData = userRows[0];
+
         const [permisosRows] = await pool.query(
             `SELECT p.nombre_permiso FROM permisos p JOIN rol_permisos rp ON p.id = rp.id_permiso JOIN usuarios u ON rp.id_rol = u.rol_id WHERE u.id = ?`,
             [decoded.user.id]
@@ -33,8 +45,11 @@ module.exports = async function(req, res, next) {
         const permisos = permisosRows.map(p => p.nombre_permiso);
 
         req.user = {
-            id: decoded.user.id,
-            rol_id: decoded.user.rol_id,
+            id: userData.id,
+            nombre_completo: userData.nombre_completo,
+            email: userData.email,
+            documento: userData.documento,
+            rol_id: userData.rol_id,
             permissions: permisos
         };
         

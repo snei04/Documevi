@@ -13,9 +13,14 @@ export const PermissionsProvider = ({ children }) => {
     setLoading(false);
   }, []);
 
+  const clearPermissions = useCallback(() => {
+    setPermissions([]);
+    setLoading(true);
+  }, []);
+
   // --- 👇 CAMBIO AQUÍ ---
   // Añadimos 'setLoading' al objeto 'value' para poder usarlo en otros componentes.
-  const value = { permissions, loading, setLoading, loadPermissions };
+  const value = { permissions, loading, setLoading, loadPermissions, clearPermissions };
 
   return (
     <PermissionsContext.Provider value={value}>

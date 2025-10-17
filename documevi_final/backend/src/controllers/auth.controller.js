@@ -8,123 +8,110 @@ const sendEmail = require('../services/email.service');
 
 /**
  * Registra un nuevo usuario en la base de datos.
+ * Esta es una acción administrativa.
  */
 exports.registerUser = async (req, res) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    return res.status(400).json({ errors: errors.array() });
-  }
-
-  const { nombre_completo, email, documento, password, rol_id } = req.body;
-
-  try {
-    const [existingUser] = await pool.query('SELECT * FROM usuarios WHERE email = ? OR documento = ?', [email, documento]);
-    if (existingUser.length > 0) {
-      return res.status(400).json({ msg: 'El correo electrónico o el documento ya están registrados.' });
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
     }
 
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
+    const { nombre_completo, email, documento, password, rol_id } = req.body;
 
-    const [result] = await pool.query(
-      'INSERT INTO usuarios (nombre_completo, email, documento, password, rol_id) VALUES (?, ?, ?, ?, ?)',
-      [nombre_completo, email, documento, hashedPassword, rol_id]
-      
-    );
-    const userId = result.insertId;
-    const subject = '¡Bienvenido a Documevi!';
-    const text = `Hola ${nombre_completo}, tu cuenta ha sido creada exitosamente.`;
-    const html = `<b>Hola ${nombre_completo},</b><p>Tu cuenta en el Sistema de Gestión Documental IMEVI ha sido creada exitosamente.</p>`;
-    await sendEmail(email, subject, text, html);
+    try {
+        const [existingUser] = await pool.query('SELECT id FROM usuarios WHERE email = ? OR documento = ?', [email, documento]);
+        if (existingUser.length > 0) {
+            return res.status(400).json({ msg: 'El correo electrónico o el documento ya están registrados.' });
+        }
 
-    const payload = {
-      user: {
-        id: userId,
-        rol: rol_id
-      },
-    };
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(password, salt);
 
-    jwt.sign(
-      payload,
-      process.env.JWT_SECRET,
-      { expiresIn: '8h' },
-      (err, token) => {
-        if (err) throw err;
-        res.status(201).json({ token });
-      }
-    );
-  } catch (error) {
-    console.error(error.message);
-    res.status(500).send('Error en el servidor');
-  }
+        // --- ✅ CORRECCIÓN: Se añade 'activo = true' a la inserción ---
+        await pool.query(
+            'INSERT INTO usuarios (nombre_completo, email, documento, password, rol_id, activo) VALUES (?, ?, ?, ?, ?, ?)',
+            [nombre_completo, email, documento, hashedPassword, rol_id, true]
+        );
+        
+        // --- ✅ CORRECCIÓN: Se llama a sendEmail con un objeto ---
+        await sendEmail({
+            to: email,
+            subject: '¡Bienvenido a Documevi!',
+            text: `Hola ${nombre_completo}, tu cuenta ha sido creada exitosamente.`,
+            html: `<b>Hola ${nombre_completo},</b><p>Tu cuenta en el Sistema de Gestión Documental IMEVI ha sido creada exitosamente.</p>`
+        });
+
+        // --- ✅ MEJORA: No se devuelve un token, solo un mensaje de éxito ---
+        res.status(201).json({ msg: 'Usuario creado con éxito.' });
+
+    } catch (error) {
+        console.error(error.message);
+        res.status(500).send('Error en el servidor');
+    }
 };
 
 /**
- * Autentica un usuario y devuelve un token.
+ * Autentica un usuario y establece una cookie HttpOnly segura.
  */
 exports.loginUser = async (req, res) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    return res.status(400).json({ errors: errors.array() });
-  }
-
-  const { documento, password } = req.body;
-
-  try {
-    const [users] = await pool.query('SELECT * FROM usuarios WHERE documento = ?', [documento]);
-    if (users.length === 0) {
-      return res.status(400).json({ msg: 'Credenciales inválidas' });
-    }
-    const usuario = users[0];
-
-    const isMatch = await bcrypt.compare(password, usuario.password);
-    if (!isMatch) {
-      return res.status(400).json({ msg: 'Credenciales inválidas' });
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
     }
 
-    // --- INICIO DEL CAMBIO ---
+    const { documento, password } = req.body;
 
-    // 1. Buscamos los permisos asociados al rol del usuario
-    const [permissions] = await pool.query(
-      `SELECT p.nombre_permiso 
-       FROM rol_permisos rp 
-       JOIN permisos p ON rp.id_permiso = p.id 
-       WHERE rp.id_rol = ?`,
-      [usuario.rol_id]
-    );
-    // Creamos un array simple con los nombres de los permisos: ['gestionar_usuarios', 'ver_reportes']
-    const userPermissions = permissions.map(p => p.nombre_permiso);
+    try {
+        const [users] = await pool.query('SELECT * FROM usuarios WHERE documento = ? AND activo = true', [documento]);
+        if (users.length === 0) {
+            return res.status(400).json({ msg: 'Credenciales inválidas o usuario inactivo.' });
+        }
+        const usuario = users[0];
 
-    // 2. Creamos el nuevo payload para el token, incluyendo los permisos
-    const payload = {
-      user: {
-        id: usuario.id,
-        rol: usuario.rol_id,
-        permissions: userPermissions 
-      },
-    };
+        const isMatch = await bcrypt.compare(password, usuario.password);
+        if (!isMatch) {
+            return res.status(400).json({ msg: 'Credenciales inválidas.' });
+        }
 
-    // --- FIN DEL CAMBIO ---
+        // El payload ya no necesita los permisos, el auth.middleware los carga en cada petición
+        const payload = {
+            user: {
+                id: usuario.id,
+                rol_id: usuario.rol_id
+            },
+        };
 
-    await pool.query(
-      'INSERT INTO auditoria (usuario_id, accion, detalles) VALUES (?, ?, ?)',
-      [usuario.id, 'LOGIN_EXITOSO', `El usuario con documento ${usuario.documento} inició sesión.`]
-    );
+        // --- ✅ AJUSTE DE SEGURIDAD: Devolver token en una cookie HttpOnly ---
+        const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '8h' });
 
-    jwt.sign(
-      payload,
-      process.env.JWT_SECRET,
-      { expiresIn: '8h' },
-      (err, token) => {
-        if (err) throw err;
-        res.json({ token });
-      }
-    );
+        res.cookie('token', token, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'strict',
+            maxAge: 8 * 60 * 60 * 1000 // 8 horas
+        });
 
-  } catch (error) {
-    console.error(error.message);
-    res.status(500).send('Error en el servidor');
-  }
+        // El registro de auditoría se mantiene igual
+        await pool.query(
+            'INSERT INTO auditoria (usuario_id, accion, detalles) VALUES (?, ?, ?)',
+            [usuario.id, 'LOGIN_EXITOSO', `El usuario con documento ${usuario.documento} inició sesión.`]
+        );
+
+        res.status(200).json({ msg: 'Inicio de sesión exitoso.' });
+        // --- FIN DEL AJUSTE DE SEGURIDAD ---
+
+    } catch (error) {
+        console.error(error.message);
+        res.status(500).send('Error en el servidor');
+    }
+};
+
+/**
+ * Cierra la sesión del usuario limpiando la cookie.
+ */
+exports.logoutUser = (req, res) => {
+    res.clearCookie('token');
+    res.status(200).json({ msg: 'Cierre de sesión exitoso.' });
 };
 
 /**
@@ -147,36 +134,26 @@ exports.getAuthenticatedUser = async (req, res) => {
 };
 
 exports.setPassword = async (req, res) => {
-  const { token, password } = req.body;
-
-  try {
-    // 1. Buscar al usuario con el token que no haya expirado
-    const [users] = await pool.query(
-      'SELECT * FROM usuarios WHERE password_reset_token = ? AND password_reset_expires > NOW()',
-      [token]
-    );
-
-    if (users.length === 0) {
-      return res.status(400).json({ msg: 'El token es inválido o ha expirado.' });
+    const { token, password } = req.body;
+    try {
+        const [users] = await pool.query(
+            'SELECT * FROM usuarios WHERE password_reset_token = ? AND password_reset_expires > NOW()',
+            [token]
+        );
+        if (users.length === 0) {
+            return res.status(400).json({ msg: 'El token es inválido o ha expirado.' });
+        }
+        const user = users[0];
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(password, salt);
+        await pool.query(
+            'UPDATE usuarios SET password = ?, activo = true, password_reset_token = NULL, password_reset_expires = NULL WHERE id = ?',
+            [hashedPassword, user.id]
+        );
+        res.json({ msg: 'Contraseña establecida con éxito. Ahora puedes iniciar sesión.' });
+    } catch (error) {
+        res.status(500).json({ msg: 'Error en el servidor' });
     }
-
-    const user = users[0];
-
-    // 2. Hashear y guardar la nueva contraseña
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
-
-    // 3. Actualizar el usuario: establecer contraseña, activarlo y limpiar el token
-    await pool.query(
-      'UPDATE usuarios SET password = ?, activo = true, password_reset_token = NULL, password_reset_expires = NULL WHERE id = ?',
-      [hashedPassword, user.id]
-    );
-
-    res.json({ msg: 'Contraseña establecida con éxito. Ahora puedes iniciar sesión.' });
-
-  } catch (error) {
-    res.status(500).json({ msg: 'Error en el servidor' });
-  }
 };
 
 exports.forgotPassword = async (req, res) => {

@@ -32,28 +32,20 @@ const eliminacionRoutes = require('./src/routes/eliminacion.routes.js');
 const app = express();
 
 // --- Middlewares Esenciales ---
-
 const corsOptions = {
-  // Se especifica el origen del frontend para mayor seguridad
   origin: process.env.FRONTEND_URL || 'http://localhost:3000',
   methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
-  // Se permite explícitamente el encabezado 'Authorization'
   allowedHeaders: ['Content-Type', 'Authorization'] 
 };
 app.use(cors(corsOptions));
-// --- FIN DE LA CONFIGURACIÓN DE CORS ---
-
 
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
-
 // --- Rutas de la API ---
-// Ruta de prueba para saber si el servidor funciona
 app.get('/api', (req, res) => {
   res.json({ message: '¡API del Sistema de Gestión Documental IMEVI funcionando!' });
 });
-// Ruta para servir archivos estáticos (como imágenes, documentos, etc.)
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Conexión de las rutas a sus prefijos en la API
@@ -78,6 +70,14 @@ app.use('/api/campos-personalizados', campoRoutes);
 app.use('/api/plantillas', plantillaRoutes);
 app.use('/api/eliminacion', eliminacionRoutes);
 
+// --- MIDDLEWARE GLOBAL PARA MANEJO DE ERRORES ---
+// Este middleware debe ir DESPUÉS de todas las rutas de la API.
+app.use((err, req, res, next) => {
+  // Registra el error completo en la consola del servidor (para ti)
+  console.error(err.stack); 
+  // Envía un mensaje genérico y seguro al usuario
+  res.status(500).json({ msg: 'Ocurrió un error inesperado en el servidor.' });
+});
 
 // --- Iniciar el Servidor ---
 const PORT = process.env.PORT || 4000;

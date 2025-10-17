@@ -4,23 +4,25 @@ import { toast } from 'react-toastify';
 import FileUpload from './FileUpload';
 import './Dashboard.css';
 
+// --- ✅ CORRECCIÓN: Se define la constante FUERA del componente ---
+// Esto asegura que el objeto se cree una sola vez y tenga una referencia estable.
+const initialFormData = {
+    asunto: '',
+    tipo_soporte: 'Electrónico',
+    ubicacion_fisica: '',
+    id_dependencia: '',
+    id_oficina_productora: '',
+    id_serie: '',
+    id_subserie: '',
+    remitente_nombre: '',
+    remitente_identificacion: '',
+    remitente_direccion: ''
+};
+
 const CapturaDocumento = () => {
-    // --- ESTADO INICIAL Y ESTADOS DEL COMPONENTE ---
-    const initialFormData = {
-        asunto: '',
-        tipo_soporte: 'Electrónico',
-        ubicacion_fisica: '',
-        id_dependencia: '', // Added for cascading logic
-        id_oficina_productora: '',
-        id_serie: '',
-        id_subserie: '',
-        remitente_nombre: '',
-        remitente_identificacion: '',
-        remitente_direccion: ''
-    };
-    
-    const [modo, setModo] = useState('manual');
+    // El estado ahora se inicializa desde la constante estable
     const [formData, setFormData] = useState(initialFormData);
+    const [modo, setModo] = useState('manual');
     const [dependencias, setDependencias] = useState([]);
     const [oficinas, setOficinas] = useState([]);
     const [series, setSeries] = useState([]);
@@ -39,10 +41,10 @@ const CapturaDocumento = () => {
     const [camposPlantilla, setCamposPlantilla] = useState([]);
     const [datosPlantilla, setDatosPlantilla] = useState({});
 
-    // --- NUEVO ESTADO PARA EL RESPALDO FÍSICO ---
+    // Estado para el respaldo físico
     const [tieneRespaldoFisico, setTieneRespaldoFisico] = useState(false);
 
-    // --- LÓGICA DE CARGA DE DATOS ---
+    // Lógica de carga de datos
     useEffect(() => {
         const fetchInitialData = async () => {
             try {
@@ -65,7 +67,21 @@ const CapturaDocumento = () => {
         fetchInitialData();
     }, []);
     
-    // --- MANEJADORES PARA MODO PLANTILLA ---
+    // --- ✅ CORRECCIÓN: El array de dependencias de useCallback ahora es correcto ---
+    // Ya no necesita 'initialFormData' porque es una constante externa y estable.
+    const resetForm = useCallback(() => {
+        setFormData(initialFormData);
+        setArchivo(null);
+        setCustomFields([]);
+        setCustomData({});
+        setFilteredOficinas([]);
+        setFilteredSeries([]);
+        setFilteredSubseries([]);
+        setTieneRespaldoFisico(false);
+        if (fileInputRef.current) fileInputRef.current.value = "";
+    }, []); // El array vacío es ahora correcto y la advertencia desaparecerá.
+
+    // --- El resto de tus funciones se mantienen igual ---
     const handleTemplateChange = async (e) => {
         const id = e.target.value;
         if (id) {
@@ -107,19 +123,6 @@ const CapturaDocumento = () => {
             toast.error(error.response?.data?.msg || 'Error al generar el documento.');
         }
     };
-
-    // --- MANEJADORES PARA MODO MANUAL ---
-    const resetForm = useCallback(() => {
-        setFormData(initialFormData);
-        setArchivo(null);
-        setCustomFields([]);
-        setCustomData({});
-        setFilteredOficinas([]);
-        setFilteredSeries([]);
-        setFilteredSubseries([]);
-        setTieneRespaldoFisico(false); // Reset del nuevo estado
-        if (fileInputRef.current) fileInputRef.current.value = "";
-    }, [initialFormData]);
 
     const handleDependenciaChange = (e) => {
         const depId = e.target.value;
@@ -263,7 +266,7 @@ const CapturaDocumento = () => {
                                 <FileUpload onFileChange={handleFileChange} ref={fileInputRef} />
                                 
                                 <div style={{ marginTop: '20px', borderTop: '1px solid #eee', paddingTop: '20px' }}>
-                                    <label>
+                                    <label style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                                         <input 
                                             type="checkbox" 
                                             checked={tieneRespaldoFisico} 

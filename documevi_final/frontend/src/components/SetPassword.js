@@ -52,7 +52,7 @@ const SetPassword = () => {
                 <p style={{ color: 'white', textAlign: 'center', fontSize: '1.1rem' }}>{success}</p>
             ) : (
                 <form onSubmit={handleSubmit} className="login-form">
-                    <div className="form-group">
+                    <div className="form-group-1">
                         <label htmlFor="password" className="form-label">Nueva Contraseña</label>
                         <input
                             type="password"
@@ -63,7 +63,7 @@ const SetPassword = () => {
                             required
                         />
                     </div>
-                    <div className="form-group">
+                    <div className="form-group-1">
                         <label htmlFor="confirmPassword" className="form-label">Confirmar Contraseña</label>
                         <input
                             type="password"

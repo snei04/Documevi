@@ -200,7 +200,7 @@ exports.forgotPassword = async (req, res) => {
             [passwordResetToken, passwordResetExpires, email]
         );
 
-        const baseUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+        const baseUrl = 'http://localhost:3000';
         const resetUrl = `${baseUrl}/reset-password/${resetToken}`;
         
         // Versión en texto plano (para respaldo)

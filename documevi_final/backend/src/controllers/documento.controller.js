@@ -16,39 +16,101 @@ exports.getAllDocumentos = async (req, res) => {
 };
 
 /**
- * Crea un nuevo documento a partir de datos y un archivo opcional.
+ * Crea un nuevo documento, maneja el archivo adjunto y guarda los metadatos.
+ * Acepta tipo_soporte: 'Electrónico', 'Físico', o 'Híbrido'.
  */
 exports.createDocumento = async (req, res) => {
-    try {
-        const { asunto, tipo_soporte, ubicacion_fisica, id_oficina_productora, id_serie, id_subserie, remitente_nombre, remitente_identificacion, remitente_direccion, customData: customDataString } = req.body;
-        
-        // --- Validaciones de entrada ---
-        if (tipo_soporte === 'Electrónico' && !req.file) {
-            return res.status(400).json({ msg: 'Para un documento electrónico, se requiere adjuntar un archivo.' });
-        }
-        if (tipo_soporte === 'Físico' && (!ubicacion_fisica || !ubicacion_fisica.trim())) {
-            return res.status(400).json({ msg: 'Para un documento físico, se requiere especificar su ubicación.' });
-        }
-        
-        let customData = {};
-        if (customDataString) {
-            try {
-                customData = JSON.parse(customDataString);
-            } catch (e) {
-                return res.status(400).json({ msg: 'Los datos personalizados no tienen un formato JSON válido.' });
-            }
-        }
-        
-        const documentoData = { asunto, tipo_soporte, ubicacion_fisica, id_oficina_productora, id_serie, id_subserie, remitente_nombre, remitente_identificacion, remitente_direccion, customData };
+    // 1. Get a connection from the pool to handle transactions
+    const connection = await pool.getConnection();
 
-        // --- Llamada al servicio ---
-        const nuevoDocumento = await documentoService.crearNuevoDocumento(documentoData, req.file, req.user.id);
+    try {
+        // Deconstruct all expected data from the multipart form
+        const { 
+            asunto, tipo_soporte, ubicacion_fisica,
+            id_oficina_productora, id_serie, id_subserie,
+            remitente_nombre, remitente_identificacion, remitente_direccion,
+            customData // This comes as a JSON string
+        } = req.body;
         
-        res.status(201).json(nuevoDocumento);
+        const archivo = req.file;
+        const id_usuario_creador = req.user.id; // Get user ID from the auth middleware
+
+        // --- Start Transaction ---
+        await connection.beginTransaction();
+
+        // --- Validation Logic ---
+        let ruta_almacenamiento = null;
+        let nombre_archivo_original = null;
+
+        if (tipo_soporte === 'Electrónico' || tipo_soporte === 'Híbrido') {
+            if (!archivo) {
+                await connection.rollback(); // Abort transaction
+                return res.status(400).json({ msg: 'Debe adjuntar un archivo para el soporte electrónico o híbrido.' });
+            }
+            ruta_almacenamiento = archivo.path;
+            nombre_archivo_original = archivo.originalname;
+        }
+
+        if ((tipo_soporte === 'Físico' || tipo_soporte === 'Híbrido') && (!ubicacion_fisica || ubicacion_fisica.trim() === '')) {
+            await connection.rollback(); // Abort transaction
+            return res.status(400).json({ msg: 'Debe especificar la ubicación física para el soporte físico o híbrido.' });
+        }
+
+        // --- Radicado Generation Logic ---
+        const today = new Date();
+        const yyyy = today.getFullYear();
+        const mm = String(today.getMonth() + 1).padStart(2, '0');
+        const dd = String(today.getDate()).padStart(2, '0');
+        const datePrefix = `${yyyy}${mm}${dd}`;
+
+        // Find the last sequence for today and increment it
+        const [lastRadicado] = await connection.query(
+            "SELECT MAX(CAST(SUBSTRING_INDEX(radicado, '-', -1) AS UNSIGNED)) as last_seq FROM documentos WHERE radicado LIKE ?", 
+            [`${datePrefix}-%`]
+        );
+        const newSequence = (lastRadicado[0].last_seq || 0) + 1;
+        const radicado = `${datePrefix}-${String(newSequence).padStart(4, '0')}`;
+
+        // --- Main Document Insertion ---
+        const [result] = await connection.query(
+            `INSERT INTO documentos (
+                radicado, asunto, tipo_soporte, ubicacion_fisica, ruta_almacenamiento, 
+                nombre_archivo_original, id_oficina_productora, id_serie, id_subserie, 
+                remitente_nombre, remitente_identificacion, remitente_direccion, id_usuario_creador
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [
+                radicado, asunto, tipo_soporte, ubicacion_fisica || null, ruta_almacenamiento, 
+                nombre_archivo_original, id_oficina_productora, id_serie, id_subserie, 
+                remitente_nombre, remitente_identificacion, remitente_direccion, id_usuario_creador
+            ]
+        );
+        const newDocumentId = result.insertId;
+
+        // --- Custom Data Insertion ---
+        const customDataParsed = JSON.parse(customData || '{}');
+        const customDataEntries = Object.entries(customDataParsed);
+
+        if (customDataEntries.length > 0) {
+            const customValues = customDataEntries.map(([id_campo, valor]) => [newDocumentId, id_campo, valor]);
+            await connection.query(
+                'INSERT INTO documento_datos_personalizados (id_documento, id_campo, valor) VALUES ?',
+                [customValues]
+            );
+        }
+
+        // --- Commit Transaction ---
+        await connection.commit();
+
+        res.status(201).json({ msg: 'Documento radicado con éxito.', radicado: radicado, id: newDocumentId });
 
     } catch (error) {
-        console.error("Error al radicar documento:", error);
-        res.status(500).json({ msg: 'Error en el servidor', error: error.message });
+        // If anything fails, undo all changes
+        await connection.rollback();
+        console.error("Error al crear documento:", error);
+        res.status(500).json({ msg: 'Error en el servidor al procesar la solicitud.' });
+    } finally {
+        // Always release the connection back to the pool
+        connection.release();
     }
 };
 

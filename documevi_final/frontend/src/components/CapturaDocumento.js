@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import api from '../api/axios';
 import { toast } from 'react-toastify';
 import FileUpload from './FileUpload';
@@ -7,12 +7,19 @@ import './Dashboard.css';
 const CapturaDocumento = () => {
     // --- ESTADO INICIAL Y ESTADOS DEL COMPONENTE ---
     const initialFormData = {
-        asunto: '', tipo_soporte: 'Electrónico', ubicacion_fisica: '',
-        id_oficina_productora: '', id_serie: '', id_subserie: '',
-        remitente_nombre: '', remitente_identificacion: '', remitente_direccion: ''
+        asunto: '',
+        tipo_soporte: 'Electrónico',
+        ubicacion_fisica: '',
+        id_dependencia: '', // Added for cascading logic
+        id_oficina_productora: '',
+        id_serie: '',
+        id_subserie: '',
+        remitente_nombre: '',
+        remitente_identificacion: '',
+        remitente_direccion: ''
     };
     
-    const [modo, setModo] = useState('manual'); // 'manual' o 'plantilla'
+    const [modo, setModo] = useState('manual');
     const [formData, setFormData] = useState(initialFormData);
     const [dependencias, setDependencias] = useState([]);
     const [oficinas, setOficinas] = useState([]);
@@ -31,6 +38,9 @@ const CapturaDocumento = () => {
     const [plantillaSeleccionada, setPlantillaSeleccionada] = useState(null);
     const [camposPlantilla, setCamposPlantilla] = useState([]);
     const [datosPlantilla, setDatosPlantilla] = useState({});
+
+    // --- NUEVO ESTADO PARA EL RESPALDO FÍSICO ---
+    const [tieneRespaldoFisico, setTieneRespaldoFisico] = useState(false);
 
     // --- LÓGICA DE CARGA DE DATOS ---
     useEffect(() => {
@@ -75,11 +85,10 @@ const CapturaDocumento = () => {
     };
     
     const handleDatosPlantillaChange = (e) => setDatosPlantilla(prev => ({ ...prev, [e.target.name]: e.target.value }));
-    // Enviar datos de la plantilla para generar documento
+
     const handleSubmitPlantilla = async (e) => {
         e.preventDefault();
         if (!plantillaSeleccionada) return toast.error("Por favor, selecciona una plantilla.");
-
         const payload = {
             id_plantilla: plantillaSeleccionada.id,
             datos_rellenados: datosPlantilla,
@@ -100,7 +109,7 @@ const CapturaDocumento = () => {
     };
 
     // --- MANEJADORES PARA MODO MANUAL ---
-    const resetForm = () => {
+    const resetForm = useCallback(() => {
         setFormData(initialFormData);
         setArchivo(null);
         setCustomFields([]);
@@ -108,9 +117,10 @@ const CapturaDocumento = () => {
         setFilteredOficinas([]);
         setFilteredSeries([]);
         setFilteredSubseries([]);
+        setTieneRespaldoFisico(false); // Reset del nuevo estado
         if (fileInputRef.current) fileInputRef.current.value = "";
-    };
-    // Filtrar oficinas, series y subseries según selección
+    }, [initialFormData]);
+
     const handleDependenciaChange = (e) => {
         const depId = e.target.value;
         setFormData({ ...initialFormData, id_dependencia: depId });
@@ -119,7 +129,7 @@ const CapturaDocumento = () => {
         setFilteredSubseries([]);
         setCustomFields([]);
     };
-    // Cargar campos personalizados al cambiar oficina
+
     const handleOficinaChange = async (e) => {
         const ofiId = e.target.value;
         setFormData(prev => ({ ...prev, id_oficina_productora: ofiId, id_serie: '', id_subserie: '' }));
@@ -135,34 +145,45 @@ const CapturaDocumento = () => {
             }
         }
     };
-    // Filtrar subseries al cambiar serie
+    
     const handleSerieChange = (e) => {
         const serId = e.target.value;
         setFormData(prev => ({ ...prev, id_serie: serId, id_subserie: '' }));
         setFilteredSubseries(subseries.filter(ss => ss.id_serie === parseInt(serId)));
     };
-    // Manejo de cambios en el formulario
+    
     const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
     const handleFileChange = (file) => setArchivo(file);
     const handleCustomDataChange = (e) => {
         const { name, value } = e.target;
         setCustomData(prev => ({ ...prev, [name]: value }));
     };
-    // Enviar formulario de captura manual
+
     const handleSubmit = async (e) => {
         e.preventDefault();
+        
         if (formData.tipo_soporte === 'Electrónico' && !archivo) {
-            return toast.warn('Debe seleccionar un archivo.');
+            return toast.warn('Debe seleccionar un archivo electrónico.');
+        }
+        if (formData.tipo_soporte === 'Electrónico' && tieneRespaldoFisico && !formData.ubicacion_fisica.trim()) {
+            return toast.warn('Debe especificar la ubicación física del respaldo.');
         }
         if (formData.tipo_soporte === 'Físico' && !formData.ubicacion_fisica.trim()) {
             return toast.warn('Debe especificar la ubicación física.');
         }
+
+        let datosParaEnviar = { ...formData };
+        if (datosParaEnviar.tipo_soporte === 'Electrónico' && tieneRespaldoFisico) {
+            datosParaEnviar.tipo_soporte = 'Híbrido';
+        }
+
         const formDataConDatos = new FormData();
-        for (const key in formData) {
-            formDataConDatos.append(key, formData[key]);
+        for (const key in datosParaEnviar) {
+            formDataConDatos.append(key, datosParaEnviar[key]);
         }
         if (archivo) formDataConDatos.append('archivo', archivo);
         formDataConDatos.append('customData', JSON.stringify(customData));
+
         try {
             const res = await api.post('/documentos', formDataConDatos, { headers: { 'Content-Type': 'multipart/form-data' } });
             toast.success(`Documento radicado con éxito. Radicado: ${res.data.radicado}`);
@@ -171,7 +192,7 @@ const CapturaDocumento = () => {
             toast.error(err.response?.data?.msg || 'Error al radicar.');
         }
     };
-// --- RENDERIZADO DEL COMPONENTE ---
+
     return (
         <div>
             <div className="page-header">
@@ -198,7 +219,7 @@ const CapturaDocumento = () => {
                     <div className="content-box">
                         <h3>Clasificación TRD</h3>
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-                            <select onChange={handleDependenciaChange} required><option value="">-- Seleccione Dependencia --</option>{dependencias.map(d => <option key={d.id} value={d.id}>{d.nombre_dependencia}</option>)}</select>
+                            <select value={formData.id_dependencia} onChange={handleDependenciaChange} required><option value="">-- Seleccione Dependencia --</option>{dependencias.map(d => <option key={d.id} value={d.id}>{d.nombre_dependencia}</option>)}</select>
                             <select name="id_oficina_productora" value={formData.id_oficina_productora} onChange={handleOficinaChange} required><option value="">-- Seleccione Oficina --</option>{filteredOficinas.map(o => <option key={o.id} value={o.id}>{o.nombre_oficina}</option>)}</select>
                             <select name="id_serie" value={formData.id_serie} onChange={handleSerieChange} required><option value="">-- Seleccione Serie --</option>{filteredSeries.map(s => <option key={s.id} value={s.id}>{s.nombre_serie}</option>)}</select>
                             <select name="id_subserie" value={formData.id_subserie} onChange={handleChange} required><option value="">-- Seleccione Subserie --</option>{filteredSubseries.map(ss => <option key={ss.id} value={ss.id}>{ss.nombre_subserie}</option>)}</select>
@@ -213,7 +234,7 @@ const CapturaDocumento = () => {
                                     <label>{field.nombre_campo}{field.es_obligatorio ? ' *' : ''}:
                                         <input
                                             type={field.tipo_campo === 'fecha' ? 'date' : field.tipo_campo}
-                                            name={field.id}
+                                            name={String(field.id)}
                                             value={customData[field.id] || ''}
                                             onChange={handleCustomDataChange}
                                             required={field.es_obligatorio}
@@ -240,11 +261,37 @@ const CapturaDocumento = () => {
                             <div>
                                 <label>Adjuntar Archivo Digital *</label><br/>
                                 <FileUpload onFileChange={handleFileChange} ref={fileInputRef} />
+                                
+                                <div style={{ marginTop: '20px', borderTop: '1px solid #eee', paddingTop: '20px' }}>
+                                    <label>
+                                        <input 
+                                            type="checkbox" 
+                                            checked={tieneRespaldoFisico} 
+                                            onChange={(e) => setTieneRespaldoFisico(e.target.checked)}
+                                        />
+                                        ¿Existe un respaldo o copia física de este documento?
+                                    </label>
+                                    
+                                    {tieneRespaldoFisico && (
+                                        <div style={{ marginTop: '10px' }}>
+                                            <label>Ubicación Física del Respaldo *</label><br/>
+                                            <input 
+                                                type="text" 
+                                                name="ubicacion_fisica" 
+                                                placeholder="Ej: Archivo Central, Caja 10, Carpeta 2" 
+                                                value={formData.ubicacion_fisica} 
+                                                onChange={handleChange} 
+                                                style={{width: '100%', padding: '8px', border: '1px solid #ccc', borderRadius: '6px'}}
+                                                required 
+                                            />
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                         ) : (
                             <div>
                                 <label>Ubicación Física del Documento *</label><br/>
-                                <input type="text" name="ubicacion_fisica" placeholder="Ej: Estante A, Caja 3, Carpeta 5" value={formData.ubicacion_fisica} onChange={handleChange} style={{width: '100%', padding: '8px', border: '1px solid #ccc', borderRadius: '6px'}}/>
+                                <input type="text" name="ubicacion_fisica" placeholder="Ej: Estante A, Caja 3, Carpeta 5" value={formData.ubicacion_fisica} onChange={handleChange} style={{width: '100%', padding: '8px', border: '1px solid #ccc', borderRadius: '6px'}} required/>
                             </div>
                         )}
                     </div>

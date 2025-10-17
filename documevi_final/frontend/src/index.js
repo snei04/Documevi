@@ -15,7 +15,7 @@ const msalConfig = {
     authority: 'https://login.microsoftonline.com/common',
     redirectUri: isLocalhost
       ? 'http://localhost:3000'
-      : 'https://tu-dominio-produccion.com' // Cambia esto por tu dominio de producción real
+      : 'https://documevi.appsimevi.co'
   }
 };
 const msalInstance = new PublicClientApplication(msalConfig);

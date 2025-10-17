@@ -23,26 +23,69 @@ exports.inviteUser = async (req, res) => {
     const { nombre_completo, email, documento, rol_id } = req.body;
 
     try {
-        // Verificamos si el correo o documento ya están registrados
+        // La lógica de creación de usuario se mantiene igual
         const [existingUser] = await pool.query('SELECT * FROM usuarios WHERE email = ? OR documento = ?', [email, documento]);
         if (existingUser.length > 0) {
             return res.status(400).json({ msg: 'El correo o documento ya está registrado.' });
         }
         const resetToken = crypto.randomBytes(32).toString('hex');
-        const passwordResetExpires = new Date(Date.now() + 3600000);
+        const passwordResetExpires = new Date(Date.now() + 3600000); // 1 hora
         await pool.query(
             'INSERT INTO usuarios (nombre_completo, email, documento, rol_id, activo, password_reset_token, password_reset_expires) VALUES (?, ?, ?, ?, ?, ?, ?)',
             [nombre_completo, email, documento, rol_id, false, resetToken, passwordResetExpires]
         );
         
-        const inviteURL = `${process.env.FRONTEND_URL}/set-password?token=${resetToken}`;
-        const subject = 'Invitación para unirte a Documevi';
-        const htmlBody = `...`; // Tu plantilla HTML aquí
+        const inviteURL = `${'http://localhost:3000'}/set-password/${resetToken}`;
+        const subject = '¡Bienvenido! Has sido invitado a Documevi';
+
+        // --- INICIO DE LA PLANTILLA HTML MEJORADA ---
+        const htmlBody = `
+            <!DOCTYPE html>
+            <html lang="es">
+            <head>
+                <meta charset="UTF-g">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <title>${subject}</title>
+            </head>
+            <body style="margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f4f7f6;">
+                <table align="center" border="0" cellpadding="0" cellspacing="0" width="600" style="border-collapse: collapse; margin-top: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
+                    <tr>
+                        <td align="center" style="background-color: #0077B6; padding: 40px 0;">
+                            <h1 style="color: #ffffff; margin: 0; font-size: 28px;">¡Bienvenido a Documevi!</h1>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td bgcolor="#ffffff" style="padding: 40px 30px;">
+                            <p style="color: #333333; font-size: 16px; line-height: 1.6;">Hola, <strong>{{nombre_usuario}}</strong>,</p>
+                            <p style="color: #333333; font-size: 16px; line-height: 1.6;">Has sido invitado a unirte a nuestro Sistema de Gestión Documental. Para activar tu cuenta y crear tu contraseña personal, por favor haz clic en el siguiente botón:</p>
+                            <table border="0" cellpadding="0" cellspacing="0" width="100%">
+                                <tr>
+                                    <td align="center" style="padding: 20px 0;">
+                                        <a href="{{inviteURL}}" style="background-color: #0077B6; color: #ffffff; padding: 15px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; font-size: 16px;">Crear mi Contraseña</a>
+                                    </td>
+                                </tr>
+                            </table>
+                            <p style="color: #555555; font-size: 14px; line-height: 1.6;">Si el botón no funciona, puedes copiar y pegar el siguiente enlace en tu navegador:</p>
+                            <p style="font-size: 12px; color: #0077B6; word-break: break-all;"><a href="{{inviteURL}}" style="color: #0077B6;">{{inviteURL}}</a></p>
+                            <p style="color: #555555; font-size: 14px; line-height: 1.6;">Si no esperabas esta invitación, puedes ignorar este correo de forma segura.</p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td bgcolor="#f4f7f6" style="padding: 20px 30px; text-align: center;">
+                            <p style="color: #888888; font-size: 12px; margin: 0;">&copy; ${new Date().getFullYear()} IMEVI SAS. Todos los derechos reservados.</p>
+                        </td>
+                    </tr>
+                </table>
+            </body>
+            </html>
+        `;
+        // --- FIN DE LA PLANTILLA HTML ---
+
+        // El resto de la lógica se mantiene igual
         const finalHtml = htmlBody
             .replace('{{nombre_usuario}}', nombre_completo)
             .replace(new RegExp('{{inviteURL}}', 'g'), inviteURL);
 
-        
         await sendEmail({
             to: email,
             subject: subject,

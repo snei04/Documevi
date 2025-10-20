@@ -81,7 +81,7 @@ exports.loginUser = async (req, res) => {
             },
         };
 
-        // --- ✅ AJUSTE DE SEGURIDAD: Devolver token en una cookie HttpOnly ---
+       
         const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '8h' });
 
         res.cookie('token', token, {
@@ -91,7 +91,7 @@ exports.loginUser = async (req, res) => {
             maxAge: 8 * 60 * 60 * 1000 // 8 horas
         });
 
-        // El registro de auditoría se mantiene igual
+        
         await pool.query(
             'INSERT INTO auditoria (usuario_id, accion, detalles) VALUES (?, ?, ?)',
             [usuario.id, 'LOGIN_EXITOSO', `El usuario con documento ${usuario.documento} inició sesión.`]
@@ -133,6 +133,10 @@ exports.getAuthenticatedUser = async (req, res) => {
 
 };
 
+/**
+ * Establece una nueva contraseña para el usuario que ha solicitado restablecerla.
+ */
+
 exports.setPassword = async (req, res) => {
     const { token, password } = req.body;
     try {
@@ -155,6 +159,10 @@ exports.setPassword = async (req, res) => {
         res.status(500).json({ msg: 'Error en el servidor' });
     }
 };
+
+/**
+ * Inicia el proceso de recuperación de contraseña enviando un correo con un enlace.
+ */
 
 exports.forgotPassword = async (req, res) => {
     const { email } = req.body;
@@ -211,6 +219,9 @@ exports.forgotPassword = async (req, res) => {
     }
 };
 
+/**
+ * Resetea la contraseña del usuario utilizando el token enviado por correo.
+ */
 
 exports.resetPassword = async (req, res) => {
     const { token } = req.params;

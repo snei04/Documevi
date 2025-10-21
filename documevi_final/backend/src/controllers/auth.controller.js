@@ -97,7 +97,17 @@ exports.loginUser = async (req, res) => {
             [usuario.id, 'LOGIN_EXITOSO', `El usuario con documento ${usuario.documento} inició sesión.`]
         );
 
-        res.status(200).json({ msg: 'Inicio de sesión exitoso.' });
+        res.status(200).json({ 
+            msg: 'Inicio de sesión exitoso.',
+            token: token,
+            user: {
+                id: usuario.id,
+                nombre_completo: usuario.nombre_completo,
+                email: usuario.email,
+                documento: usuario.documento,
+                rol_id: usuario.rol_id
+            }
+        });
         // --- FIN DEL AJUSTE DE SEGURIDAD ---
 
     } catch (error) {
@@ -259,5 +269,52 @@ exports.resetPassword = async (req, res) => {
     } catch (error) {
         console.error("Error en resetPassword:", error);
         res.status(500).json({ msg: 'Error en el servidor.' });
+    }
+};
+
+/**
+ * Crea el primer usuario administrador del sistema (solo si no existen usuarios)
+ */
+exports.setupAdmin = async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+    }
+
+    const { nombre_completo, email, documento, password } = req.body;
+
+    try {
+        // Verificar si ya existen usuarios en el sistema
+        const [existingUsers] = await pool.query('SELECT COUNT(*) as count FROM usuarios');
+        if (existingUsers[0].count > 0) {
+            return res.status(400).json({ msg: 'El sistema ya tiene usuarios configurados. Use el endpoint de registro normal.' });
+        }
+
+        // Verificar si ya existe un usuario con ese email o documento
+        const [duplicateUser] = await pool.query('SELECT id FROM usuarios WHERE email = ? OR documento = ?', [email, documento]);
+        if (duplicateUser.length > 0) {
+            return res.status(400).json({ msg: 'El correo electrónico o el documento ya están registrados.' });
+        }
+
+        // Hashear la contraseña
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(password, salt);
+
+        // Crear el usuario administrador (rol_id = 1 por defecto)
+        const [result] = await pool.query(
+            'INSERT INTO usuarios (nombre_completo, email, documento, password, rol_id, activo) VALUES (?, ?, ?, ?, ?, ?)',
+            [nombre_completo, email, documento, hashedPassword, 1, true]
+        );
+
+        console.log(`✅ Usuario administrador creado con ID: ${result.insertId}`);
+
+        res.status(201).json({ 
+            msg: 'Usuario administrador creado con éxito. Ahora puede usar el endpoint de login.',
+            user_id: result.insertId
+        });
+
+    } catch (error) {
+        console.error("Error en setupAdmin:", error.message);
+        res.status(500).json({ msg: 'Error en el servidor: ' + error.message });
     }
 };

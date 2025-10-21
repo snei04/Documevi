@@ -1,5 +1,5 @@
 import React from 'react';
-import './Loader.css'; // Importamos los estilos de la animación
+import './Loader.css';
 
 const Loader = () => {
   return (
@@ -9,7 +9,7 @@ const Loader = () => {
       height="56px"
       width="56px"
       viewBox="0 0 56 56"
-      className="loader" // Corregido: class -> className
+      className="loader" 
     >
       <clipPath id="sand-mound-top">
         <path
@@ -26,9 +26,9 @@ const Loader = () => {
       <g transform="translate(2,2)">
         <g
           transform="rotate(-90,26,26)"
-          strokeLinecap="round"         // Corregido: stroke-linecap -> strokeLinecap
-          strokeDashoffset="153.94"     // Corregido: stroke-dashoffset -> strokeDashoffset
-          strokeDasharray="153.94 153.94" // Corregido: stroke-dasharray -> strokeDasharray
+          strokeLinecap="round"         
+          strokeDashoffset="153.94"     
+          strokeDasharray="153.94 153.94" 
           stroke="hsl(0,0%,100%)"
           fill="none"
         >
@@ -36,7 +36,7 @@ const Loader = () => {
             r="24.5"
             cy="26"
             cx="26"
-            strokeWidth="2.5" // Corregido: stroke-width -> strokeWidth
+            strokeWidth="2.5"
             className="loader__motion-thick"
           ></circle>
           <circle

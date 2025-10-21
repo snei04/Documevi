@@ -44,4 +44,12 @@ router.post('/reset-password/:token', authController.resetPassword);
 // Ruta para cerrar sesión
 router.post('/logout', authController.logoutUser);
 
+// Ruta temporal para setup inicial (sin autenticación)
+router.post('/setup-admin', [
+    check('nombre_completo', 'El nombre es obligatorio').not().isEmpty(),
+    check('email', 'El email no es válido').isEmail(),
+    check('documento', 'El documento es obligatorio').not().isEmpty(),
+    check('password', 'La contraseña debe tener al menos 8 caracteres').isLength({ min: 8 }),
+], authController.setupAdmin);
+
 module.exports = router;

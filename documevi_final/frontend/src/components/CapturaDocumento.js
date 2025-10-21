@@ -4,7 +4,6 @@ import { toast } from 'react-toastify';
 import FileUpload from './FileUpload';
 import './Dashboard.css';
 
-// --- ✅ CORRECCIÓN: Se define la constante FUERA del componente ---
 // Esto asegura que el objeto se cree una sola vez y tenga una referencia estable.
 const initialFormData = {
     asunto: '',
@@ -67,7 +66,7 @@ const CapturaDocumento = () => {
         fetchInitialData();
     }, []);
     
-    // --- ✅ CORRECCIÓN: El array de dependencias de useCallback ahora es correcto ---
+
     // Ya no necesita 'initialFormData' porque es una constante externa y estable.
     const resetForm = useCallback(() => {
         setFormData(initialFormData);

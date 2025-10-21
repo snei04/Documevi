@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { usePermissionsContext } from '../context/PermissionsContext';
 import api from '../api/axios';
 import './UserDropdown.css';

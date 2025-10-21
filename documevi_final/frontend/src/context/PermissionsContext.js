@@ -1,5 +1,3 @@
-// En: src/context/PermissionsContext.js
-
 import React, { createContext, useState, useContext, useCallback } from 'react';
 
 const PermissionsContext = createContext();

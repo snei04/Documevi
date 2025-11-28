@@ -32,10 +32,25 @@ const eliminacionRoutes = require('./src/routes/eliminacion.routes.js');
 const app = express();
 
 // --- Middlewares Esenciales ---
+const allowedOrigins = [
+  'http://localhost:3000',
+  'https://documevi.appsimevi.co',
+  process.env.FRONTEND_URL
+].filter(Boolean);
+
 const corsOptions = {
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  origin: function (origin, callback) {
+    // Permitir requests sin origin (como mobile apps o curl)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('No permitido por CORS'));
+    }
+  },
   methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
-  allowedHeaders: ['Content-Type', 'Authorization'] 
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true
 };
 app.use(cors(corsOptions));
 

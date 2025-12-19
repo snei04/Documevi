@@ -1,11 +1,32 @@
+/**
+ * @fileoverview Controlador de usuarios para el sistema Documevi.
+ * Gestiona operaciones CRUD de usuarios, invitaciones, perfiles y contraseñas.
+ * 
+ * @module controllers/usuario
+ */
+
 const pool = require('../config/db');
 const crypto = require('crypto'); 
 const bcrypt = require('bcryptjs');
 const sendEmail = require('../services/email.service');
 
-// Obtener todos los usuarios
+
+// ============================================
+// GESTIÓN DE USUARIOS (ADMIN)
+// ============================================
+
+/**
+ * Obtiene la lista de todos los usuarios del sistema.
+ * Incluye información del rol asociado a cada usuario.
+ * 
+ * @async
+ * @param {Object} req - Request de Express
+ * @param {Object} res - Response de Express
+ * @returns {Array} JSON con lista de usuarios (id, nombre_completo, email, documento, activo, rol)
+ */
 exports.getAllUsers = async (req, res) => {
   try {
+    // Consulta con JOIN para obtener el nombre del rol de cada usuario
     const [rows] = await pool.query(`
       SELECT u.id, u.nombre_completo, u.email, u.documento, u.activo, r.nombre as rol
       FROM usuarios u
@@ -18,27 +39,48 @@ exports.getAllUsers = async (req, res) => {
   }
 };
 
-// Invitar a un nuevo usuario
+/**
+ * Invita a un nuevo usuario al sistema enviando un correo con enlace de activación.
+ * El usuario se crea inactivo y debe establecer su contraseña para activarse.
+ * 
+ * @async
+ * @param {Object} req - Request de Express
+ * @param {Object} req.body - Datos del nuevo usuario
+ * @param {string} req.body.nombre_completo - Nombre completo del usuario
+ * @param {string} req.body.email - Correo electrónico (debe ser único)
+ * @param {string} req.body.documento - Documento de identidad (debe ser único)
+ * @param {number} req.body.rol_id - ID del rol a asignar
+ * @param {Object} res - Response de Express
+ * @returns {Object} JSON con mensaje de éxito o error
+ */
 exports.inviteUser = async (req, res) => {
     const { nombre_completo, email, documento, rol_id } = req.body;
 
     try {
-        // La lógica de creación de usuario se mantiene igual
+        // Verificar que no exista un usuario con el mismo email o documento
         const [existingUser] = await pool.query('SELECT * FROM usuarios WHERE email = ? OR documento = ?', [email, documento]);
         if (existingUser.length > 0) {
             return res.status(400).json({ msg: 'El correo o documento ya está registrado.' });
         }
+        
+        // Generar token aleatorio para el enlace de activación
         const resetToken = crypto.randomBytes(32).toString('hex');
-        const passwordResetExpires = new Date(Date.now() + 3600000); // 1 hora
+        // El token expira en 1 hora
+        const passwordResetExpires = new Date(Date.now() + 3600000);
+        
+        // Crear usuario inactivo con token de activación
         await pool.query(
             'INSERT INTO usuarios (nombre_completo, email, documento, rol_id, activo, password_reset_token, password_reset_expires) VALUES (?, ?, ?, ?, ?, ?, ?)',
             [nombre_completo, email, documento, rol_id, false, resetToken, passwordResetExpires]
         );
         
+        // Construir URL de activación
         const inviteURL = `${'http://localhost:3000'}/set-password/${resetToken}`;
         const subject = '¡Bienvenido! Has sido invitado a Documevi';
 
-        // --- INICIO DE LA PLANTILLA HTML MEJORADA ---
+        // ============================================
+        // PLANTILLA HTML DEL CORREO DE INVITACIÓN
+        // ============================================
         const htmlBody = `
             <!DOCTYPE html>
             <html lang="es">
@@ -79,13 +121,13 @@ exports.inviteUser = async (req, res) => {
             </body>
             </html>
         `;
-        // --- FIN DE LA PLANTILLA HTML ---
 
-        // El resto de la lógica se mantiene igual
+        // Reemplazar placeholders con valores reales
         const finalHtml = htmlBody
             .replace('{{nombre_usuario}}', nombre_completo)
             .replace(new RegExp('{{inviteURL}}', 'g'), inviteURL);
 
+        // Enviar correo de invitación
         await sendEmail({
             to: email,
             subject: subject,
@@ -101,15 +143,29 @@ exports.inviteUser = async (req, res) => {
     }
 };
 
-// Actualizar un usuario (rol o estado)
+/**
+ * Actualiza los datos de un usuario (rol y/o estado activo).
+ * Solo para uso administrativo.
+ * 
+ * @async
+ * @param {Object} req - Request de Express
+ * @param {Object} req.params - Parámetros de la URL
+ * @param {string} req.params.id - ID del usuario a actualizar
+ * @param {Object} req.body - Campos a actualizar
+ * @param {number} [req.body.rol_id] - Nuevo rol del usuario
+ * @param {boolean} [req.body.activo] - Estado activo/inactivo del usuario
+ * @param {Object} res - Response de Express
+ * @returns {Object} JSON con mensaje de éxito o error
+ */
 exports.updateUser = async (req, res) => {
   const { id } = req.params;
   const { rol_id, activo } = req.body;
 
   try {
-    // Construimos la consulta dinámicamente por si solo se envía un campo
+    // Construir consulta dinámica según los campos proporcionados
     let fieldsToUpdate = [];
     let params = [];
+    
     if (rol_id) {
       fieldsToUpdate.push('rol_id = ?');
       params.push(rol_id);
@@ -119,28 +175,43 @@ exports.updateUser = async (req, res) => {
       params.push(activo);
     }
     
+    // Validar que se proporcionó al menos un campo
     if (fieldsToUpdate.length === 0) {
       return res.status(400).json({ msg: 'No se proporcionaron campos para actualizar.' });
     }
 
-    params.push(id); // Añadimos el ID del usuario al final para el WHERE
+    // Añadir ID del usuario al final para la cláusula WHERE
+    params.push(id);
 
     const [result] = await pool.query(
       `UPDATE usuarios SET ${fieldsToUpdate.join(', ')} WHERE id = ?`,
       params
     );
 
+    // Verificar que el usuario existe
     if (result.affectedRows === 0) {
       return res.status(404).json({ msg: 'Usuario no encontrado.' });
     }
+    
     res.json({ msg: 'Usuario actualizado con éxito.' });
   } catch (error) {
     res.status(500).json({ msg: 'Error en el servidor', error: error.message });
   }
 };
 
+
+// ============================================
+// PERFIL DE USUARIO (USUARIO AUTENTICADO)
+// ============================================
+
 /**
  * Obtiene el perfil del usuario actualmente autenticado, incluyendo sus permisos.
+ * Los permisos se obtienen a través del rol asignado al usuario.
+ * 
+ * @async
+ * @param {Object} req - Request de Express (con req.user del middleware de auth)
+ * @param {Object} res - Response de Express
+ * @returns {Object} JSON con datos del usuario y array de permisos
  */
 exports.getPerfilUsuario = async (req, res) => {
     // El middleware de autenticación ya ha puesto los datos del usuario en req.user
@@ -156,17 +227,17 @@ exports.getPerfilUsuario = async (req, res) => {
             WHERE u.id = ?
         `, [id_usuario]);
         
-        // Extraemos solo los nombres de los permisos en un array de strings
+        // Extraer solo los nombres de los permisos en un array de strings
         const permisos = permisosRows.map(p => p.nombre_permiso);
 
-        // Devolvemos los datos del usuario y su lista de permisos
+        // Devolver los datos del usuario y su lista de permisos
         res.json({
             id: req.user.id,
             nombre_completo: req.user.nombre_completo,
-            nombre: req.user.nombre_completo, // Para compatibilidad
+            nombre: req.user.nombre_completo, // Alias para compatibilidad con frontend
             email: req.user.email,
             documento: req.user.documento,
-            rol_id: req.user.rol_id, // Es bueno enviar el ID del rol también
+            rol_id: req.user.rol_id,
             permissions: permisos // El frontend espera esta clave
         });
 
@@ -178,18 +249,29 @@ exports.getPerfilUsuario = async (req, res) => {
 
 /**
  * Permite a un usuario autenticado actualizar sus propios datos.
- * RESTRICCIÓN: Solo puede cambiar el nombre_completo
- * Email y documento NO son editables por seguridad
+ * 
+ * RESTRICCIÓN DE SEGURIDAD: Solo puede cambiar el nombre_completo.
+ * Email y documento NO son editables por el usuario (solo administradores).
+ * 
+ * @async
+ * @param {Object} req - Request de Express
+ * @param {Object} req.body - Datos a actualizar
+ * @param {string} req.body.nombre_completo - Nuevo nombre completo
+ * @param {Object} req.user - Usuario autenticado (del middleware)
+ * @param {Object} res - Response de Express
+ * @returns {Object} JSON con mensaje de éxito o error
  */
 exports.updatePerfil = async (req, res) => {
     const { nombre_completo } = req.body;
     const id_usuario = req.user.id;
 
+    // Validar que el nombre no esté vacío
     if (!nombre_completo || nombre_completo.trim() === '') {
         return res.status(400).json({ msg: 'El nombre completo es obligatorio.' });
     }
 
     try {
+        // Actualizar solo el nombre (email y documento son inmutables para el usuario)
         await pool.query(
             'UPDATE usuarios SET nombre_completo = ? WHERE id = ?',
             [nombre_completo.trim(), id_usuario]
@@ -201,17 +283,34 @@ exports.updatePerfil = async (req, res) => {
     }
 };
 
+
+// ============================================
+// CAMBIO DE CONTRASEÑA (USUARIO AUTENTICADO)
+// ============================================
+
 /**
  * Permite a un usuario autenticado cambiar su propia contraseña.
+ * Requiere la contraseña actual para verificar identidad.
+ * 
+ * @async
+ * @param {Object} req - Request de Express
+ * @param {Object} req.body - Datos de contraseñas
+ * @param {string} req.body.currentPassword - Contraseña actual (para verificación)
+ * @param {string} req.body.newPassword - Nueva contraseña (mínimo 6 caracteres)
+ * @param {Object} req.user - Usuario autenticado (del middleware)
+ * @param {Object} res - Response de Express
+ * @returns {Object} JSON con mensaje de éxito o error
  */
 exports.changePassword = async (req, res) => {
     const { currentPassword, newPassword } = req.body;
     const id_usuario = req.user.id;
 
+    // Validar que se proporcionaron ambas contraseñas
     if (!currentPassword || !newPassword) {
         return res.status(400).json({ msg: 'La contraseña actual y la nueva contraseña son obligatorias.' });
     }
 
+    // Validar longitud mínima de la nueva contraseña
     if (newPassword.length < 6) {
         return res.status(400).json({ msg: 'La nueva contraseña debe tener al menos 6 caracteres.' });
     }
@@ -224,17 +323,17 @@ exports.changePassword = async (req, res) => {
         }
         const user = users[0];
 
-        // 2. Comparar la contraseña actual enviada con la de la BD
+        // 2. Verificar que la contraseña actual sea correcta
         const isMatch = await bcrypt.compare(currentPassword, user.password);
         if (!isMatch) {
             return res.status(401).json({ msg: 'La contraseña actual es incorrecta.' });
         }
 
-        // 3. Hashear la nueva contraseña
+        // 3. Hashear la nueva contraseña con bcrypt
         const salt = await bcrypt.genSalt(10);
         const newPasswordHashed = await bcrypt.hash(newPassword, salt);
 
-        // 4. Actualizar la contraseña en la BD
+        // 4. Actualizar la contraseña en la base de datos
         await pool.query('UPDATE usuarios SET password = ? WHERE id = ?', [newPasswordHashed, id_usuario]);
 
         res.json({ msg: 'Contraseña actualizada con éxito.' });

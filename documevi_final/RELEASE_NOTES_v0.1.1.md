@@ -1,12 +1,12 @@
 # Release Notes - DOCUMEVI SGDEA v1.1.1
 
-**Fecha de lanzamiento:** 10 de diciembre de 2025
+**Fecha de lanzamiento:** 19 de diciembre de 2025
 
 ---
 
 ## 🎯 Resumen
 
-Esta versión incluye mejoras significativas en la interfaz de usuario, nuevas funcionalidades de búsqueda avanzada con campos personalizados, y un nuevo módulo de Retención Documental para gestionar el ciclo de vida de los expedientes según la TRD.
+Esta versión incluye mejoras significativas en la interfaz de usuario, nuevas funcionalidades de búsqueda avanzada con campos personalizados, un nuevo módulo de Retención Documental, **documentación completa del código fuente** y **mejoras en la colección de API de Postman**.
 
 ---
 
@@ -33,6 +33,15 @@ Esta versión incluye mejoras significativas en la interfaz de usuario, nuevas f
   - Campo personalizado específico con valor
 - **Resultados en tabla**: Vista tabular con información detallada de los documentos encontrados.
 
+### Colección Postman Mejorada
+
+- **Documentación completa**: Cada endpoint incluye descripción detallada, campos requeridos y ejemplos.
+- **Script automático de Login**: El token se guarda automáticamente en las variables de colección.
+- **Organización por subcarpetas**: Usuarios dividido en "Perfil" y "Administración".
+- **Ejemplos de body**: Todos los endpoints POST/PUT incluyen ejemplos de payload.
+- **Variables de URL documentadas**: Parámetros como `:id` y `:token` con descripciones.
+- **Endpoint Logout agregado**: Faltaba en la colección anterior.
+
 ---
 
 ## 🎨 Mejoras de Interfaz de Usuario
@@ -54,6 +63,23 @@ Esta versión incluye mejoras significativas en la interfaz de usuario, nuevas f
 - **Filtros avanzados**: Búsqueda por nombre, filtro por estado y por serie.
 - **Tabla mejorada**: Columnas adicionales (Fecha Apertura, Disponibilidad), badges de estado con colores.
 - **Manejo de subseries**: Detecta automáticamente si la serie requiere subserie.
+
+### Gestión de Usuarios (Rediseño Completo)
+
+- **Nuevo encabezado visual**: Header con gradiente azul, icono y subtítulo descriptivo.
+- **Tarjetas de estadísticas**: Contadores de Total, Activos e Inactivos en tiempo real.
+- **Formulario de invitación mejorado**:
+  - Diseño de tarjeta con animación de entrada
+  - Labels visibles y placeholders descriptivos
+  - Grid responsive de 4 columnas
+- **Tabla de usuarios rediseñada**:
+  - Avatares con inicial del nombre
+  - Columna combinada nombre + email
+  - Badges para documento y rol
+  - Estados visuales con dot indicator
+  - Filas inactivas con fondo diferenciado
+- **Estados de carga y vacío**: Spinner animado y mensaje cuando no hay datos.
+- **Estilos CSS dedicados**: Nuevo archivo `GestionUsuarios.css` con diseño moderno y responsive.
 
 ### Selectores TRD en toda la aplicación
 
@@ -88,10 +114,54 @@ Componentes actualizados:
   - `GET /search/avanzada` - Búsqueda avanzada
   - `GET /search/campos-personalizados` - Lista campos personalizados
 
+### Documentación del Código (JSDoc)
+
+Se agregaron comentarios JSDoc completos y comentarios inline a los siguientes archivos:
+
+**Controladores Backend:**
+
+- `auth.controller.js` - Autenticación, login, registro, recuperación de contraseña
+- `usuario.controller.js` - Gestión de usuarios, perfiles, invitaciones
+- `workflow.controller.js` - Workflows, pasos y tareas
+- `transferencia.controller.js` - Transferencias documentales
+
+**Rutas Backend:**
+
+- `dependencia.routes.js` - Rutas de dependencias con documentación de endpoints
+
+**Hooks Frontend:**
+
+- `useAuth.js` - Hook de autenticación
+- `usePermissions.js` - Hook de verificación de permisos
+- `usePermissionTree.js` - Hook de árbol de permisos
+- `useExpedienteData.js` - Hook de datos de expediente
+- `useGrapesJSEditor.js` - Hook del editor de plantillas
+- `useInactivityTimeout.js` - Hook de timeout por inactividad
+
+**API Frontend:**
+
+- `expedienteAPI.js` - Funciones de API de expedientes
+
+**Contextos Frontend:**
+
+- `PermissionsContext.js` - Contexto de permisos
+
+**Formato de documentación:**
+
+- `@fileoverview` con descripción del módulo
+- `@param` y `@returns` para funciones
+- `@async` para funciones asíncronas
+- `@example` con ejemplos de uso
+- Secciones organizadas con separadores visuales
+- Comentarios inline explicando lógica compleja
+
 ### Frontend
 
 - **Nuevos componentes**:
   - `RetencionDocumental.js` - Módulo de retención documental
+  - `GestionUsuarios.js` - Rediseño completo con nuevo diseño visual
+- **Nuevos estilos CSS**:
+  - `GestionUsuarios.css` - Estilos dedicados para gestión de usuarios
 - **Estilos CSS** (`Dashboard.css`):
   - `.form-grid-2`, `.form-grid-3`, `.form-grid-4` - Grids responsivos
   - `.form-group` - Estilos mejorados para formularios
@@ -110,15 +180,32 @@ Componentes actualizados:
 
 ### Backend
 
+**Controladores:**
+
 - `src/controllers/retencion.controller.js` (nuevo)
 - `src/controllers/search.controller.js`
+- `src/controllers/auth.controller.js` (documentación)
+- `src/controllers/usuario.controller.js` (documentación)
+- `src/controllers/workflow.controller.js` (documentación)
+- `src/controllers/transferencia.controller.js` (documentación)
+
+**Rutas:**
+
 - `src/routes/retencion.routes.js` (nuevo)
 - `src/routes/search.routes.js`
+- `src/routes/dependencia.routes.js` (documentación)
+
+**Otros:**
+
 - `server.js`
+- `Documevi_API_Postman_Collection.json` (mejoras completas)
 
 ### Frontend
 
+**Componentes:**
+
 - `src/components/RetencionDocumental.js` (nuevo)
+- `src/components/GestionUsuarios.js` (rediseño completo)
 - `src/components/GestionExpedientes.js`
 - `src/components/GestionOficinas.js`
 - `src/components/GestionSeries.js`
@@ -126,7 +213,31 @@ Componentes actualizados:
 - `src/components/CapturaDocumento.js`
 - `src/components/Search.js`
 - `src/components/Sidebar.js`
+
+**Estilos:**
+
 - `src/components/Dashboard.css`
+- `src/components/GestionUsuarios.css` (nuevo)
+
+**Hooks (documentación):**
+
+- `src/hooks/useAuth.js`
+- `src/hooks/usePermissions.js`
+- `src/hooks/usePermissionTree.js`
+- `src/hooks/useExpedienteData.js`
+- `src/hooks/useGrapesJSEditor.js`
+- `src/hooks/useInactivityTimeout.js`
+
+**API (documentación):**
+
+- `src/api/expedienteAPI.js`
+
+**Contextos (documentación):**
+
+- `src/context/PermissionsContext.js`
+
+**Otros:**
+
 - `src/App.js`
 
 ---

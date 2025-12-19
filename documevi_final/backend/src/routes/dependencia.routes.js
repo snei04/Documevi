@@ -1,37 +1,67 @@
+/**
+ * @fileoverview Rutas de la API para gestión de dependencias.
+ * Define los endpoints CRUD para dependencias organizacionales.
+ * Todas las rutas requieren autenticación y permisos específicos.
+ * 
+ * @module routes/dependencia
+ * @requires express
+ * @requires ../controllers/dependencia.controller
+ * @requires ../middleware/auth.middleware
+ * @requires ../middleware/authorizePermission
+ */
+
 const { Router } = require('express');
-
-// 1. Importamos el controlador completo en una sola variable para mayor claridad
 const dependenciaController = require('../controllers/dependencia.controller');
-
-// Importamos los middlewares
 const authMiddleware = require('../middleware/auth.middleware');
 const authorizePermission = require('../middleware/authorizePermission');
 
 const router = Router();
 
-// --- Definición de Rutas ---
-
-// Todas las rutas a partir de aquí requerirán que el usuario esté autenticado
+// ============================================
+// MIDDLEWARE GLOBAL: Autenticación requerida
+// ============================================
+// Todas las rutas de este módulo requieren usuario autenticado
 router.use(authMiddleware);
 
-// GET /api/dependencias - Obtener todas las dependencias
-// ✅ SE AÑADIÓ SEGURIDAD: Requiere estar autenticado y tener permiso de ver
+// ============================================
+// RUTAS DE DEPENDENCIAS
+// ============================================
+
+/**
+ * @route   GET /api/dependencias
+ * @desc    Obtiene la lista de todas las dependencias
+ * @access  Privado - Requiere permiso 'dependencias_ver'
+ */
 router.get('/', authorizePermission('dependencias_ver'), dependenciaController.getAllDependencias); 
 
-// POST /api/dependencias - Crear una nueva dependencia
-// Requiere el permiso 'dependencias_crear'
+/**
+ * @route   POST /api/dependencias
+ * @desc    Crea una nueva dependencia
+ * @access  Privado - Requiere permiso 'dependencias_crear'
+ */
 router.post('/', authorizePermission('dependencias_crear'), dependenciaController.createDependencia);
 
-// PUT /api/dependencias/:id - Actualizar una dependencia
-// ✅ SE AÑADIÓ SEGURIDAD: Requiere el permiso 'dependencias_editar'
+/**
+ * @route   POST /api/dependencias/bulk
+ * @desc    Carga masiva de dependencias desde archivo Excel
+ * @access  Privado - Requiere permiso 'dependencias_crear'
+ */
+router.post('/bulk', authorizePermission('dependencias_crear'), dependenciaController.bulkCreateDependencias);
+
+/**
+ * @route   PUT /api/dependencias/:id
+ * @desc    Actualiza una dependencia existente
+ * @param   {string} id - ID de la dependencia a actualizar
+ * @access  Privado - Requiere permiso 'dependencias_editar'
+ */
 router.put('/:id', authorizePermission('dependencias_editar'), dependenciaController.updateDependencia);
 
-// PATCH /api/dependencias/:id/toggle-status - Cambiar el estado (activo/inactivo)
-// ✅ SE AÑADIÓ SEGURIDAD: Requiere el permiso 'dependencias_inactivar'
+/**
+ * @route   PATCH /api/dependencias/:id/toggle-status
+ * @desc    Cambia el estado activo/inactivo de una dependencia
+ * @param   {string} id - ID de la dependencia
+ * @access  Privado - Requiere permiso 'dependencias_inactivar'
+ */
 router.patch('/:id/toggle-status', authorizePermission('dependencias_inactivar'), dependenciaController.toggleDependenciaStatus);
-
-// POST /api/dependencias/bulk - Carga masiva de dependencias desde Excel
-// ✅ v1.2.0: Requiere el permiso 'dependencias_crear'
-router.post('/bulk', authorizePermission('dependencias_crear'), dependenciaController.bulkCreateDependencias);
 
 module.exports = router;

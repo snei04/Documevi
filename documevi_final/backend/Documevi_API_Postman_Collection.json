@@ -1,19 +1,22 @@
 {
   "info": {
     "name": "Documevi API",
-    "description": "Sistema de Gestión Documental IMEVI - API Collection",
-    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    "description": "Sistema de Gestión Documental IMEVI - Colección completa de endpoints de la API.\n\n## Autenticación\nLa mayoría de endpoints requieren autenticación Bearer Token. Usa el endpoint Login para obtener el token.\n\n## Variables\n- `baseUrl`: URL base de la API (default: http://localhost:4000/api)\n- `token`: Token JWT de autenticación\n\n## Módulos\n- Auth: Autenticación y gestión de sesión\n- Usuarios: Gestión de usuarios y perfiles\n- Documentos: Gestión documental y workflows",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "version": "1.0.0"
   },
   "variable": [
     {
       "key": "baseUrl",
       "value": "http://localhost:4000/api",
-      "type": "string"
+      "type": "string",
+      "description": "URL base de la API"
     },
     {
       "key": "token",
       "value": "",
-      "type": "string"
+      "type": "string",
+      "description": "Token JWT de autenticación (se obtiene del Login)"
     }
   ],
   "auth": {
@@ -28,7 +31,8 @@
   },
   "item": [
     {
-      "name": "Auth",
+      "name": "🔐 Auth",
+      "description": "Endpoints de autenticación: registro, login, logout y recuperación de contraseña.",
       "item": [
         {
           "name": "Register User",
@@ -42,18 +46,46 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"nombre_completo\": \"Juan Pérez\",\n  \"email\": \"juan@example.com\",\n  \"documento\": \"12345678\",\n  \"password\": \"password123\",\n  \"rol_id\": 1\n}"
+              "raw": "{\n  \"nombre_completo\": \"Juan Pérez\",\n  \"email\": \"juan@example.com\",\n  \"documento\": \"12345678\",\n  \"password\": \"password123\",\n  \"rol_id\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             },
             "url": {
               "raw": "{{baseUrl}}/auth/register",
               "host": ["{{baseUrl}}"],
               "path": ["auth", "register"]
-            }
-          }
+            },
+            "description": "Registra un nuevo usuario en el sistema. Requiere permisos de administrador.\n\n**Campos requeridos:**\n- `nombre_completo`: Nombre completo del usuario\n- `email`: Correo electrónico único\n- `documento`: Documento de identidad único\n- `password`: Contraseña (mínimo 6 caracteres)\n- `rol_id`: ID del rol a asignar"
+          },
+          "response": []
         },
         {
           "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Guardar el token automáticamente en las variables de colección",
+                  "if (pm.response.code === 200) {",
+                  "    var jsonData = pm.response.json();",
+                  "    if (jsonData.token) {",
+                  "        pm.collectionVariables.set('token', jsonData.token);",
+                  "        console.log('Token guardado exitosamente');",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
           "request": {
+            "auth": {
+              "type": "noauth"
+            },
             "method": "POST",
             "header": [
               {
@@ -63,18 +95,41 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"documento\": \"12345678\",\n  \"password\": \"password123\"\n}"
+              "raw": "{\n  \"documento\": \"12345678\",\n  \"password\": \"password123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             },
             "url": {
               "raw": "{{baseUrl}}/auth/login",
               "host": ["{{baseUrl}}"],
               "path": ["auth", "login"]
-            }
-          }
+            },
+            "description": "Autentica un usuario y devuelve un token JWT.\n\n**Campos requeridos:**\n- `documento`: Documento de identidad\n- `password`: Contraseña\n\n**Response exitosa:**\n- `token`: Token JWT para autenticación\n- `user`: Datos del usuario autenticado\n\n⚡ **Script automático:** El token se guarda automáticamente en las variables de colección."
+          },
+          "response": []
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/auth/logout",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "logout"]
+            },
+            "description": "Cierra la sesión del usuario actual y limpia la cookie de autenticación."
+          },
+          "response": []
         },
         {
           "name": "Set Password",
           "request": {
+            "auth": {
+              "type": "noauth"
+            },
             "method": "POST",
             "header": [
               {
@@ -82,12 +137,23 @@
                 "value": "application/json"
               }
             ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"token_de_invitacion\",\n  \"password\": \"nuevaPassword123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
             "url": {
               "raw": "{{baseUrl}}/auth/set-password",
               "host": ["{{baseUrl}}"],
               "path": ["auth", "set-password"]
-            }
-          }
+            },
+            "description": "Establece la contraseña para un usuario invitado usando el token de invitación.\n\n**Campos requeridos:**\n- `token`: Token de invitación recibido por correo\n- `password`: Nueva contraseña (mínimo 6 caracteres)"
+          },
+          "response": []
         },
         {
           "name": "Get Me",
@@ -97,12 +163,17 @@
               "raw": "{{baseUrl}}/auth/me",
               "host": ["{{baseUrl}}"],
               "path": ["auth", "me"]
-            }
-          }
+            },
+            "description": "Obtiene los datos del usuario actualmente autenticado.\n\n**Requiere:** Token de autenticación válido."
+          },
+          "response": []
         },
         {
           "name": "Forgot Password",
           "request": {
+            "auth": {
+              "type": "noauth"
+            },
             "method": "POST",
             "header": [
               {
@@ -110,16 +181,30 @@
                 "value": "application/json"
               }
             ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"usuario@example.com\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
             "url": {
               "raw": "{{baseUrl}}/auth/forgot-password",
               "host": ["{{baseUrl}}"],
               "path": ["auth", "forgot-password"]
-            }
-          }
+            },
+            "description": "Inicia el proceso de recuperación de contraseña. Envía un correo con enlace de recuperación.\n\n**Campos requeridos:**\n- `email`: Correo electrónico registrado\n\n⚠️ Por seguridad, siempre responde con éxito sin importar si el email existe."
+          },
+          "response": []
         },
         {
           "name": "Reset Password",
           "request": {
+            "auth": {
+              "type": "noauth"
+            },
             "method": "POST",
             "header": [
               {
@@ -127,120 +212,199 @@
                 "value": "application/json"
               }
             ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"password\": \"nuevaPassword123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
             "url": {
               "raw": "{{baseUrl}}/auth/reset-password/:token",
               "host": ["{{baseUrl}}"],
-              "path": ["auth", "reset-password", ":token"]
-            }
-          }
+              "path": ["auth", "reset-password", ":token"],
+              "variable": [
+                {
+                  "key": "token",
+                  "value": "",
+                  "description": "Token de recuperación recibido por correo"
+                }
+              ]
+            },
+            "description": "Restablece la contraseña usando el token de recuperación.\n\n**Parámetros URL:**\n- `token`: Token de recuperación (del enlace del correo)\n\n**Campos requeridos:**\n- `password`: Nueva contraseña (mínimo 6 caracteres)"
+          },
+          "response": []
         }
       ]
     },
     {
-      "name": "Usuarios",
+      "name": "👤 Usuarios",
+      "description": "Gestión de usuarios: perfil personal, administración de usuarios e invitaciones.",
       "item": [
         {
-          "name": "Get Profile",
-          "request": {
-            "method": "GET",
-            "url": {
-              "raw": "{{baseUrl}}/usuarios/perfil",
-              "host": ["{{baseUrl}}"],
-              "path": ["usuarios", "perfil"]
-            }
-          }
-        },
-        {
-          "name": "Update Profile",
-          "request": {
-            "method": "PUT",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"nombre_completo\": \"Juan Pérez Actualizado\"\n}"
+          "name": "📋 Perfil",
+          "description": "Endpoints para gestión del perfil del usuario autenticado.",
+          "item": [
+            {
+              "name": "Get Profile",
+              "request": {
+                "method": "GET",
+                "url": {
+                  "raw": "{{baseUrl}}/usuarios/perfil",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["usuarios", "perfil"]
+                },
+                "description": "Obtiene el perfil completo del usuario autenticado, incluyendo sus permisos.\n\n**Response incluye:**\n- Datos personales (id, nombre, email, documento)\n- `permissions`: Array de permisos del usuario"
+              },
+              "response": []
             },
-            "url": {
-              "raw": "{{baseUrl}}/usuarios/perfil",
-              "host": ["{{baseUrl}}"],
-              "path": ["usuarios", "perfil"]
-            }
-          }
-        },
-        {
-          "name": "Change Password",
-          "request": {
-            "method": "PUT",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"current_password\": \"oldpassword\",\n  \"new_password\": \"newpassword123\"\n}"
+            {
+              "name": "Update Profile",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"nombre_completo\": \"Juan Pérez Actualizado\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/usuarios/perfil",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["usuarios", "perfil"]
+                },
+                "description": "Actualiza el perfil del usuario autenticado.\n\n**Campos editables:**\n- `nombre_completo`: Nombre completo\n\n⚠️ **Restricción de seguridad:** Email y documento NO son editables por el usuario."
+              },
+              "response": []
             },
-            "url": {
-              "raw": "{{baseUrl}}/usuarios/cambiar-password",
-              "host": ["{{baseUrl}}"],
-              "path": ["usuarios", "cambiar-password"]
+            {
+              "name": "Change Password",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"currentPassword\": \"contraseñaActual\",\n  \"newPassword\": \"nuevaContraseña123\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/usuarios/cambiar-password",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["usuarios", "cambiar-password"]
+                },
+                "description": "Cambia la contraseña del usuario autenticado.\n\n**Campos requeridos:**\n- `currentPassword`: Contraseña actual (para verificación)\n- `newPassword`: Nueva contraseña (mínimo 6 caracteres)"
+              },
+              "response": []
             }
-          }
+          ]
         },
         {
-          "name": "Get All Users",
-          "request": {
-            "method": "GET",
-            "url": {
-              "raw": "{{baseUrl}}/usuarios",
-              "host": ["{{baseUrl}}"],
-              "path": ["usuarios"]
+          "name": "⚙️ Administración",
+          "description": "Endpoints administrativos para gestión de usuarios (requieren permisos especiales).",
+          "item": [
+            {
+              "name": "Get All Users",
+              "request": {
+                "method": "GET",
+                "url": {
+                  "raw": "{{baseUrl}}/usuarios",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["usuarios"]
+                },
+                "description": "Obtiene la lista de todos los usuarios del sistema.\n\n**Requiere permiso:** `usuarios_ver`\n\n**Response incluye:**\n- id, nombre_completo, email, documento, activo, rol"
+              },
+              "response": []
+            },
+            {
+              "name": "Update User",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"rol_id\": 2,\n  \"activo\": true\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/usuarios/:id",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["usuarios", ":id"],
+                  "variable": [
+                    {
+                      "key": "id",
+                      "value": "1",
+                      "description": "ID del usuario a actualizar"
+                    }
+                  ]
+                },
+                "description": "Actualiza los datos de un usuario (solo administradores).\n\n**Requiere permiso:** `usuarios_editar`\n\n**Campos editables:**\n- `rol_id`: ID del nuevo rol\n- `activo`: Estado activo/inactivo (boolean)"
+              },
+              "response": []
+            },
+            {
+              "name": "Invite User",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"nombre_completo\": \"Nuevo Usuario\",\n  \"email\": \"nuevo@example.com\",\n  \"documento\": \"87654321\",\n  \"rol_id\": 2\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/usuarios/invite",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["usuarios", "invite"]
+                },
+                "description": "Invita a un nuevo usuario enviando un correo con enlace de activación.\n\n**Requiere permiso:** `usuarios_crear`\n\n**Campos requeridos:**\n- `nombre_completo`: Nombre completo\n- `email`: Correo electrónico único\n- `documento`: Documento de identidad único\n- `rol_id`: ID del rol a asignar\n\n📧 El usuario recibirá un correo para establecer su contraseña."
+              },
+              "response": []
             }
-          }
-        },
-        {
-          "name": "Update User",
-          "request": {
-            "method": "PUT",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/usuarios/:id",
-              "host": ["{{baseUrl}}"],
-              "path": ["usuarios", ":id"]
-            }
-          }
-        },
-        {
-          "name": "Invite User",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/usuarios/invite",
-              "host": ["{{baseUrl}}"],
-              "path": ["usuarios", "invite"]
-            }
-          }
+          ]
         }
       ]
     },
     {
-      "name": "Documentos",
+      "name": "📄 Documentos",
+      "description": "Gestión documental: captura, workflows, firmas y consultas.",
       "item": [
         {
           "name": "Get All Documents",
@@ -250,8 +414,10 @@
               "raw": "{{baseUrl}}/documentos",
               "host": ["{{baseUrl}}"],
               "path": ["documentos"]
-            }
-          }
+            },
+            "description": "Obtiene la lista de todos los documentos del sistema.\n\n**Requiere permiso:** `documentos_ver`"
+          },
+          "response": []
         },
         {
           "name": "Create Document",
@@ -264,7 +430,20 @@
                 {
                   "key": "archivo",
                   "type": "file",
-                  "src": []
+                  "src": [],
+                  "description": "Archivo del documento (PDF, DOCX, etc.)"
+                },
+                {
+                  "key": "asunto",
+                  "value": "Asunto del documento",
+                  "type": "text",
+                  "description": "Asunto o título del documento"
+                },
+                {
+                  "key": "id_expediente",
+                  "value": "1",
+                  "type": "text",
+                  "description": "ID del expediente al que pertenece (opcional)"
                 }
               ]
             },
@@ -272,8 +451,10 @@
               "raw": "{{baseUrl}}/documentos",
               "host": ["{{baseUrl}}"],
               "path": ["documentos"]
-            }
-          }
+            },
+            "description": "Crea un nuevo documento subiendo un archivo.\n\n**Requiere permiso:** `documentos_crear`\n\n**Campos (form-data):**\n- `archivo`: Archivo a subir (requerido)\n- `asunto`: Asunto del documento\n- `id_expediente`: ID del expediente (opcional)"
+          },
+          "response": []
         },
         {
           "name": "Create Document from Template",
@@ -285,12 +466,23 @@
                 "value": "application/json"
               }
             ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id_plantilla\": 1,\n  \"id_expediente\": 1,\n  \"variables\": {\n    \"nombre_usuario\": \"Juan Pérez\",\n    \"fecha\": \"2024-01-15\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
             "url": {
               "raw": "{{baseUrl}}/documentos/desde-plantilla",
               "host": ["{{baseUrl}}"],
               "path": ["documentos", "desde-plantilla"]
-            }
-          }
+            },
+            "description": "Genera un documento a partir de una plantilla predefinida.\n\n**Requiere permiso:** `documentos_crear`\n\n**Campos requeridos:**\n- `id_plantilla`: ID de la plantilla a usar\n- `id_expediente`: ID del expediente destino\n- `variables`: Objeto con los valores de las variables de la plantilla"
+          },
+          "response": []
         },
         {
           "name": "Start Workflow",
@@ -302,12 +494,30 @@
                 "value": "application/json"
               }
             ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id_workflow\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
             "url": {
               "raw": "{{baseUrl}}/documentos/:id/start-workflow",
               "host": ["{{baseUrl}}"],
-              "path": ["documentos", ":id", "start-workflow"]
-            }
-          }
+              "path": ["documentos", ":id", "start-workflow"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1",
+                  "description": "ID del documento"
+                }
+              ]
+            },
+            "description": "Inicia un workflow para un documento específico.\n\n**Parámetros URL:**\n- `id`: ID del documento\n\n**Campos requeridos:**\n- `id_workflow`: ID del workflow a iniciar"
+          },
+          "response": []
         },
         {
           "name": "Advance Workflow",
@@ -319,12 +529,30 @@
                 "value": "application/json"
               }
             ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"comentario\": \"Aprobado, continuar con el siguiente paso\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
             "url": {
               "raw": "{{baseUrl}}/documentos/:id/advance-workflow",
               "host": ["{{baseUrl}}"],
-              "path": ["documentos", ":id", "advance-workflow"]
-            }
-          }
+              "path": ["documentos", ":id", "advance-workflow"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1",
+                  "description": "ID del documento"
+                }
+              ]
+            },
+            "description": "Avanza el workflow de un documento al siguiente paso.\n\n**Parámetros URL:**\n- `id`: ID del documento\n\n**Campos opcionales:**\n- `comentario`: Comentario sobre la acción realizada"
+          },
+          "response": []
         },
         {
           "name": "Sign Document",
@@ -336,12 +564,30 @@
                 "value": "application/json"
               }
             ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firma_imagen\": \"data:image/png;base64,iVBORw0KGgo...\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
             "url": {
               "raw": "{{baseUrl}}/documentos/:id/firmar",
               "host": ["{{baseUrl}}"],
-              "path": ["documentos", ":id", "firmar"]
-            }
-          }
+              "path": ["documentos", ":id", "firmar"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1",
+                  "description": "ID del documento a firmar"
+                }
+              ]
+            },
+            "description": "Firma digitalmente un documento.\n\n**Parámetros URL:**\n- `id`: ID del documento\n\n**Campos requeridos:**\n- `firma_imagen`: Imagen de la firma en formato base64"
+          },
+          "response": []
         }
       ]
     }

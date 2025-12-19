@@ -30,4 +30,8 @@ router.put('/:id', authorizePermission('dependencias_editar'), dependenciaContro
 // ✅ SE AÑADIÓ SEGURIDAD: Requiere el permiso 'dependencias_inactivar'
 router.patch('/:id/toggle-status', authorizePermission('dependencias_inactivar'), dependenciaController.toggleDependenciaStatus);
 
+// POST /api/dependencias/bulk - Carga masiva de dependencias desde Excel
+// ✅ v1.2.0: Requiere el permiso 'dependencias_crear'
+router.post('/bulk', authorizePermission('dependencias_crear'), dependenciaController.bulkCreateDependencias);
+
 module.exports = router;

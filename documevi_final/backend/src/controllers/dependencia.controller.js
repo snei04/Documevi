@@ -56,25 +56,84 @@ exports.updateDependencia = async (req, res) => {
             return res.status(404).json({ msg: 'Dependencia no encontrada.' });
         }
         res.json({ msg: 'Dependencia actualizada con éxito.' });
-    } catch (error) {
-        res.status(500).json({ msg: 'Error en el servidor', error: error.message });
-    }
+    } catch (error) {
+        res.status(500).json({ msg: 'Error en el servidor', error: error.message });
+    }
 };
 
 // Función para activar/desactivar una dependencia
 exports.toggleDependenciaStatus = async (req, res) => {
-    const { id } = req.params;
-    try {
-        // Cambia el estado de activo a inactivo o viceversa
-        const [result] = await pool.query(
-            'UPDATE dependencias SET activo = NOT activo WHERE id = ?',
-            [id]
-        );
-        if (result.affectedRows === 0) {
-            return res.status(404).json({ msg: 'Dependencia no encontrada.' });
-        }
-        res.json({ msg: 'Estado de la dependencia actualizado con éxito.' });
-    } catch (error) {
-        res.status(500).json({ msg: 'Error en el servidor', error: error.message });
-    }
+    const { id } = req.params;
+    try {
+      // Cambia el estado de activo a inactivo o viceversa
+      const [result] = await pool.query(
+        'UPDATE dependencias SET activo = NOT activo WHERE id = ?',
+        [id]
+      );
+      if (result.affectedRows === 0) {
+        return res.status(404).json({ msg: 'Dependencia no encontrada.' });
+      }
+      res.json({ msg: 'Estado de la dependencia actualizado con éxito.' });
+    } catch (error) {
+      res.status(500).json({ msg: 'Error en el servidor', error: error.message });
+    }
+};
+
+// Carga masiva de dependencias desde Excel
+exports.bulkCreateDependencias = async (req, res) => {
+    const { dependencias } = req.body;
+
+    if (!dependencias || !Array.isArray(dependencias) || dependencias.length === 0) {
+        return res.status(400).json({ msg: 'Debe proporcionar un array de dependencias.' });
+    }
+
+    const resultados = {
+        creadas: 0,
+        errores: [],
+        duplicados: []
+    };
+
+    for (let i = 0; i < dependencias.length; i++) {
+        const dep = dependencias[i];
+        const fila = i + 2; // +2 porque Excel empieza en 1 y la fila 1 es el encabezado
+
+        // Validar que tenga código y nombre
+        if (!dep.codigo || !dep.nombre) {
+            resultados.errores.push({
+                fila,
+                mensaje: 'Código y nombre son obligatorios',
+                datos: dep
+            });
+            continue;
+        }
+
+        try {
+            await pool.query(
+                'INSERT INTO dependencias (codigo_dependencia, nombre_dependencia) VALUES (?, ?)',
+                [String(dep.codigo).trim(), String(dep.nombre).trim()]
+            );
+            resultados.creadas++;
+        } catch (error) {
+            if (error.code === 'ER_DUP_ENTRY') {
+                resultados.duplicados.push({
+                    fila,
+                    codigo: dep.codigo,
+                    nombre: dep.nombre
+                });
+            } else {
+                resultados.errores.push({
+                    fila,
+                    mensaje: error.message,
+                    datos: dep
+                });
+            }
+        }
+    }
+
+    const mensaje = `Carga completada: ${resultados.creadas} dependencias creadas, ${resultados.duplicados.length} duplicados, ${resultados.errores.length} errores.`;
+    
+    res.status(200).json({
+        msg: mensaje,
+        resultados
+    });
 };

@@ -5,22 +5,28 @@ import 'grapesjs/dist/css/grapes.min.css';
 import api from '../api/axios';
 import { toast } from 'react-toastify';
 
-// Opcional: Extraer la configuración a una constante para mayor limpieza
+/**
+ * Genera la configuración base para el editor GrapesJS.
+ * Configura plugins, bloques básicos, estilos y dispositivos responsivos.
+ * 
+ * @returns {Object} Objeto de configuración para grapesjs.init()
+ */
 const getGrapesJSConfig = () => ({
     height: '100%',
     width: 'auto',
-    storageManager: false,
-    fromElement: false,
-    plugins: [gjsBlocksBasic],
+    storageManager: false,      // Desactivar almacenamiento automático (se guarda manualmente)
+    fromElement: false,         // No cargar contenido desde el elemento HTML
+    plugins: [gjsBlocksBasic],  // Plugin de bloques básicos (columnas, texto, imagen, etc.)
     pluginsOpts: {
         [gjsBlocksBasic]: {
-            blocks: ['column1', 'column2', 'column3', 'text', 'link', 'image'],
-            flexGrid: true,
-            category: 'Básicos'
+            blocks: ['column1', 'column2', 'column3', 'text', 'link', 'image'], // Bloques disponibles
+            flexGrid: true,     // Usar flexbox para el sistema de grillas
+            category: 'Básicos' // Nombre de la categoría en el panel de bloques
         }
     },
-    blockManager: { appendTo: '#blocks' },
+    blockManager: { appendTo: '#blocks' }, // Contenedor donde se renderizan los bloques arrastrables
     styleManager: {
+        // Sectores de estilos disponibles en el panel de estilos
         sectors: [
             { name: 'Dimensiones', open: false, properties: ['width', 'height', 'padding', 'margin'] },
             { name: 'Tipografía', open: false, properties: ['font-size', 'font-weight', 'color', 'text-align'] },
@@ -28,34 +34,57 @@ const getGrapesJSConfig = () => ({
         ]
     },
     deviceManager: {
+        // Dispositivos para vista previa responsiva
         devices: [
-            { name: 'Desktop', width: '' },
-            { name: 'Tablet', width: '768px', widthMedia: '992px' },
-            { name: 'Mobile', width: '320px', widthMedia: '480px' }
+            { name: 'Desktop', width: '' },                              // Ancho completo
+            { name: 'Tablet', width: '768px', widthMedia: '992px' },     // Vista tablet
+            { name: 'Mobile', width: '320px', widthMedia: '480px' }      // Vista móvil
         ]
     }
 });
 
 /**
- * Custom Hook para encapsular toda la lógica de GrapesJS.
- * @param {object} plantilla - El objeto de la plantilla cargada.
- * @param {Array} variables - La lista de variables de la plantilla.
+ * Hook personalizado para encapsular toda la lógica del editor visual GrapesJS.
+ * Inicializa el editor, configura bloques de variables dinámicas, comandos de guardado
+ * y carga diseños existentes de la plantilla.
+ * 
+ * @param {Object} plantilla - Objeto de la plantilla a editar
+ * @param {number} plantilla.id - ID de la plantilla para guardar cambios
+ * @param {string} [plantilla.diseño_json] - JSON del diseño guardado previamente
+ * @param {Array} variables - Lista de variables disponibles para insertar en la plantilla
+ * @param {string} variables[].id - Identificador único de la variable (ej: 'nombre_usuario')
+ * @param {string} variables[].label - Etiqueta visible de la variable (ej: 'Nombre del Usuario')
+ * 
+ * @returns {React.RefObject} Referencia al contenedor DOM donde se monta el editor
+ * 
+ * @example
+ * const editorRef = useGrapesJSEditor(plantilla, variables);
+ * return <div ref={editorRef} />;
  */
 export const useGrapesJSEditor = (plantilla, variables) => {
+    // Referencia al elemento DOM contenedor del editor
     const editorContainerRef = useRef(null);
+    // Referencia a la instancia del editor GrapesJS (para limpieza)
     const editorInstance = useRef(null);
 
     useEffect(() => {
+        // Validar que existan todos los requisitos antes de inicializar
+        // También evita re-inicializar si ya existe una instancia
         if (!plantilla || !variables.length || !editorContainerRef.current || editorInstance.current) {
             return;
         }
 
+        // Inicializar el editor GrapesJS con la configuración base
         const editor = grapesjs.init({
             container: editorContainerRef.current,
             ...getGrapesJSConfig(),
         });
 
-        // 1. Agregar Bloques de Variables
+        // ============================================
+        // 1. BLOQUES DE VARIABLES DINÁMICAS
+        // ============================================
+        // Crear un bloque arrastrable por cada variable de la plantilla
+        // Al arrastrar, inserta un placeholder con formato {{variable_id}}
         variables.forEach(variable => {
             editor.BlockManager.add(`variable-${variable.id}`, {
                 label: `Var: ${variable.label}`,
@@ -64,14 +93,18 @@ export const useGrapesJSEditor = (plantilla, variables) => {
             });
         });
 
-        // 2. Comando para Guardar
+        // ============================================
+        // 2. COMANDO DE GUARDADO EN BASE DE DATOS
+        // ============================================
+        // Comando personalizado que guarda el diseño completo en el servidor
         editor.Commands.add('save-to-db', {
             run: async (editor) => {
                 try {
+                    // Recopilar todos los datos del diseño: proyecto, HTML y CSS
                     const designData = {
-                        ...editor.getProjectData(),
-                        html: editor.getHtml(),
-                        css: editor.getCss(),
+                        ...editor.getProjectData(),  // Datos del proyecto (componentes, estilos, etc.)
+                        html: editor.getHtml(),      // HTML generado
+                        css: editor.getCss(),        // CSS generado
                     };
                     
                     toast.info('Guardando diseño...');
@@ -84,7 +117,10 @@ export const useGrapesJSEditor = (plantilla, variables) => {
             }
         });
 
-        // 3. Paneles y Botones
+        // ============================================
+        // 3. PANEL DE ACCIONES CON BOTÓN DE GUARDAR
+        // ============================================
+        // Agregar panel con botón que ejecuta el comando de guardado
         editor.Panels.addPanel({
             id: 'basic-actions',
             el: '.panel__basic-actions',
@@ -96,13 +132,18 @@ export const useGrapesJSEditor = (plantilla, variables) => {
             }],
         });
         
-        // 4. Cargar Diseño Existente
+        // ============================================
+        // 4. CARGAR DISEÑO EXISTENTE (SI EXISTE)
+        // ============================================
+        // Si la plantilla tiene un diseño guardado, cargarlo en el editor
         if (plantilla.diseño_json) {
             try {
                 const disenoGuardado = JSON.parse(plantilla.diseño_json);
                 if (disenoGuardado.components) {
+                    // Formato nuevo: cargar proyecto completo con componentes
                     editor.loadProjectData(disenoGuardado);
                 } else {
+                    // Formato legacy: cargar solo HTML y CSS
                     editor.setComponents(disenoGuardado.html || '');
                     editor.setStyle(disenoGuardado.css || '');
                 }
@@ -111,16 +152,20 @@ export const useGrapesJSEditor = (plantilla, variables) => {
             }
         }
 
+        // Guardar referencia a la instancia para limpieza posterior
         editorInstance.current = editor;
 
-        // Función de limpieza para destruir la instancia al desmontar el componente
+        // ============================================
+        // CLEANUP: Destruir instancia al desmontar
+        // ============================================
+        // Evita memory leaks y conflictos al re-renderizar
         return () => {
             if (editorInstance.current) {
                 editorInstance.current.destroy();
                 editorInstance.current = null;
             }
         };
-    }, [plantilla, variables]); // Dependencias clave para la inicialización
+    }, [plantilla, variables]); // Re-ejecutar si cambia la plantilla o las variables
 
     return editorContainerRef;
 };

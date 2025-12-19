@@ -1,49 +1,71 @@
 import { useEffect, useRef, useCallback } from 'react';
 
 /**
- * A custom React hook that executes a callback function after a specified period of user inactivity.
- * @param {function} onTimeout - The function to call when the user has been inactive.
- * @param {number} timeout - The inactivity duration in milliseconds (e.g., 1 hour = 3600000).
+ * Hook personalizado que ejecuta un callback después de un período de inactividad del usuario.
+ * Detecta actividad mediante eventos de mouse, teclado, touch y scroll.
+ * Útil para implementar cierre de sesión automático por inactividad.
+ * 
+ * @param {Function} onTimeout - Función a ejecutar cuando el usuario ha estado inactivo
+ * @param {number} timeout - Duración de inactividad en milisegundos (ej: 1 hora = 3600000)
+ * 
+ * @example
+ * // Cerrar sesión después de 30 minutos de inactividad
+ * useInactivityTimeout(() => {
+ *     logout();
+ *     navigate('/login');
+ * }, 30 * 60 * 1000);
  */
 export const useInactivityTimeout = (onTimeout, timeout) => {
+    // Referencia al timer activo para poder cancelarlo
     const timerRef = useRef(null);
 
-    // FIX 1: Wrap resetTimer in useCallback
-    // This ensures the function itself has a stable identity and doesn't get
-    // recreated on every render unless its dependencies (onTimeout, timeout) change.
+    /**
+     * Reinicia el temporizador de inactividad.
+     * Cancela el timer anterior (si existe) y crea uno nuevo.
+     * Envuelto en useCallback para mantener identidad estable y evitar
+     * recreaciones innecesarias en cada render.
+     */
     const resetTimer = useCallback(() => {
+        // Limpiar timer existente antes de crear uno nuevo
         if (timerRef.current) {
             clearTimeout(timerRef.current);
         }
+        // Programar ejecución del callback después del tiempo de inactividad
         timerRef.current = setTimeout(onTimeout, timeout);
     }, [onTimeout, timeout]);
 
     useEffect(() => {
+        // Eventos que indican actividad del usuario
         const events = ['mousemove', 'mousedown', 'keypress', 'touchstart', 'scroll'];
 
+        /**
+         * Handler que se ejecuta en cada evento de actividad.
+         * Reinicia el contador de inactividad.
+         */
         const handleActivity = () => {
             resetTimer();
         };
 
-        // Initial call to start the timer when the component mounts
+        // Iniciar el temporizador al montar el componente
         resetTimer();
 
-        // Add event listeners for all specified activity types
+        // Registrar listeners para todos los eventos de actividad
         events.forEach(event => {
             window.addEventListener(event, handleActivity);
         });
 
-        // Cleanup function: This runs when the component unmounts
+        // ============================================
+        // CLEANUP: Limpieza al desmontar el componente
+        // ============================================
         return () => {
+            // Cancelar el timer pendiente
             if (timerRef.current) {
                 clearTimeout(timerRef.current);
             }
-            // Remove all event listeners to prevent memory leaks
+            // Remover todos los event listeners para evitar memory leaks
             events.forEach(event => {
                 window.removeEventListener(event, handleActivity);
             });
         };
-    // FIX 2: Add the now-stable resetTimer to the dependency array
-    // This satisfies the rules of hooks and prevents potential bugs.
-    }, [resetTimer]);
+    }, [resetTimer]); // resetTimer es estable gracias a useCallback
 };

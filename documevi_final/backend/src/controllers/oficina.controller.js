@@ -76,3 +76,80 @@ exports.toggleOficinaStatus = async (req, res) => {
         res.status(500).json({ msg: 'Error en el servidor', error: error.message });
     }
 };
+
+// Carga masiva de oficinas desde Excel
+exports.bulkCreateOficinas = async (req, res) => {
+    const { oficinas } = req.body;
+
+    if (!oficinas || !Array.isArray(oficinas) || oficinas.length === 0) {
+        return res.status(400).json({ msg: 'Debe proporcionar un array de oficinas.' });
+    }
+
+    // Obtener todas las dependencias para mapear código -> id
+    const [dependenciasRows] = await pool.query('SELECT id, codigo_dependencia FROM dependencias WHERE activo = 1');
+    const dependenciasMap = {};
+    dependenciasRows.forEach(dep => {
+        dependenciasMap[String(dep.codigo_dependencia).trim()] = dep.id;
+    });
+
+    const resultados = {
+        creadas: 0,
+        errores: [],
+        duplicados: []
+    };
+
+    for (let i = 0; i < oficinas.length; i++) {
+        const ofi = oficinas[i];
+        const fila = i + 2; // +2 porque Excel empieza en 1 y la fila 1 es el encabezado
+
+        // Validar campos obligatorios
+        if (!ofi.codigo_dependencia || !ofi.codigo_oficina || !ofi.nombre_oficina) {
+            resultados.errores.push({
+                fila,
+                mensaje: 'Código dependencia, código oficina y nombre son obligatorios',
+                datos: ofi
+            });
+            continue;
+        }
+
+        // Buscar el id de la dependencia por su código
+        const idDependencia = dependenciasMap[String(ofi.codigo_dependencia).trim()];
+        if (!idDependencia) {
+            resultados.errores.push({
+                fila,
+                mensaje: `Dependencia con código "${ofi.codigo_dependencia}" no encontrada`,
+                datos: ofi
+            });
+            continue;
+        }
+
+        try {
+            await pool.query(
+                'INSERT INTO oficinas_productoras (id_dependencia, codigo_oficina, nombre_oficina) VALUES (?, ?, ?)',
+                [idDependencia, String(ofi.codigo_oficina).trim(), String(ofi.nombre_oficina).trim()]
+            );
+            resultados.creadas++;
+        } catch (error) {
+            if (error.code === 'ER_DUP_ENTRY') {
+                resultados.duplicados.push({
+                    fila,
+                    codigo_oficina: ofi.codigo_oficina,
+                    nombre_oficina: ofi.nombre_oficina
+                });
+            } else {
+                resultados.errores.push({
+                    fila,
+                    mensaje: error.message,
+                    datos: ofi
+                });
+            }
+        }
+    }
+
+    const mensaje = `Carga completada: ${resultados.creadas} oficinas creadas, ${resultados.duplicados.length} duplicados, ${resultados.errores.length} errores.`;
+    
+    res.status(200).json({
+        msg: mensaje,
+        resultados
+    });
+};

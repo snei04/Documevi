@@ -1,4 +1,5 @@
 import React, { useState, useRef } from 'react';
+import * as XLSX from 'xlsx';
 import { useOutletContext } from 'react-router-dom';
 import api from '../api/axios';
 import { toast } from 'react-toastify';
@@ -24,6 +25,11 @@ const GestionDependencias = () => {
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
+    const [isBulkModalOpen, setIsBulkModalOpen] = useState(false);
+    const [bulkData, setBulkData] = useState([]);
+    const [bulkLoading, setBulkLoading] = useState(false);
+    const [bulkResults, setBulkResults] = useState(null);
+    const fileInputRef = useRef(null);
 
     // Estado para guardar los datos de la dependencia que se está editando
     const [editingDep, setEditingDep] = useState(null);
@@ -56,6 +62,80 @@ const GestionDependencias = () => {
     const showConfirmation = (message) => {
         setConfirmMessage(message);
         setIsConfirmModalOpen(true);
+    };
+
+    // --- LÓGICA PARA CARGA MASIVA DESDE EXCEL ---
+    const openBulkModal = () => {
+        setBulkData([]);
+        setBulkResults(null);
+        setIsBulkModalOpen(true);
+    };
+    const closeBulkModal = () => {
+        setIsBulkModalOpen(false);
+        setBulkData([]);
+        setBulkResults(null);
+        if (fileInputRef.current) fileInputRef.current.value = '';
+    };
+
+    const handleFileUpload = (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (evt) => {
+            try {
+                const bstr = evt.target.result;
+                const wb = XLSX.read(bstr, { type: 'binary' });
+                const wsname = wb.SheetNames[0];
+                const ws = wb.Sheets[wsname];
+                const data = XLSX.utils.sheet_to_json(ws, { header: 1 });
+                
+                // Saltar la primera fila (encabezados) y mapear los datos
+                const dependenciasData = data.slice(1)
+                    .filter(row => row[0] || row[1]) // Filtrar filas vacías
+                    .map(row => ({
+                        codigo: row[0] || '',
+                        nombre: row[1] || ''
+                    }));
+                
+                setBulkData(dependenciasData);
+                setBulkResults(null);
+            } catch (error) {
+                toast.error('Error al leer el archivo Excel');
+                console.error(error);
+            }
+        };
+        reader.readAsBinaryString(file);
+    };
+
+    const handleBulkSubmit = async () => {
+        if (bulkData.length === 0) {
+            toast.warning('No hay datos para cargar');
+            return;
+        }
+
+        setBulkLoading(true);
+        try {
+            const response = await api.post('/dependencias/bulk', { dependencias: bulkData });
+            setBulkResults(response.data.resultados);
+            refreshDependencias();
+            toast.success(response.data.msg);
+        } catch (err) {
+            toast.error(err.response?.data?.msg || 'Error en la carga masiva');
+        } finally {
+            setBulkLoading(false);
+        }
+    };
+
+    const downloadTemplate = () => {
+        const ws = XLSX.utils.aoa_to_sheet([
+            ['codigo', 'nombre'],
+            ['001', 'Dependencia Ejemplo 1'],
+            ['002', 'Dependencia Ejemplo 2']
+        ]);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, 'Dependencias');
+        XLSX.writeFile(wb, 'plantilla_dependencias.xlsx');
     };
 
     // --- 3. LÓGICA DE LOS FORMULARIOS (CREAR, EDITAR, CAMBIAR ESTADO) ---
@@ -121,7 +201,10 @@ const GestionDependencias = () => {
             <div className="page-header">
                 <h1>Gestión de Dependencias</h1>
                 <PermissionGuard permission="dependencias_crear">
-                    <button onClick={openCreateModal} className="button button-primary">Crear Nueva Dependencia</button>
+                    <div className="header-buttons">
+                        <button onClick={openCreateModal} className="button button-primary">Crear Nueva Dependencia</button>
+                        <button onClick={openBulkModal} className="button button-secondary">📥 Carga Masiva Excel</button>
+                    </div>
                 </PermissionGuard>
             </div>
 
@@ -224,6 +307,123 @@ const GestionDependencias = () => {
                 <button onClick={() => setIsConfirmModalOpen(false)} className="button button-primary">
                     Aceptar
                 </button>
+            </Modal>
+
+            {/* --- MODAL PARA CARGA MASIVA --- */}
+            <Modal
+                isOpen={isBulkModalOpen}
+                onRequestClose={closeBulkModal}
+                contentLabel="Carga Masiva de Dependencias"
+                className="modal modal-large"
+                overlayClassName="modal-overlay"
+            >
+                <h2>📥 Carga Masiva de Dependencias</h2>
+                <p className="modal-description">
+                    Sube un archivo Excel (.xlsx) con las columnas <strong>codigo</strong> y <strong>nombre</strong>.
+                </p>
+                
+                <div className="bulk-actions">
+                    <button onClick={downloadTemplate} className="button button-secondary">
+                        📄 Descargar Plantilla
+                    </button>
+                </div>
+
+                <div className="form-group">
+                    <label htmlFor="excel-file">Seleccionar archivo Excel</label>
+                    <input
+                        ref={fileInputRef}
+                        id="excel-file"
+                        type="file"
+                        accept=".xlsx,.xls"
+                        onChange={handleFileUpload}
+                        className="file-input"
+                    />
+                </div>
+
+                {bulkData.length > 0 && (
+                    <div className="bulk-preview">
+                        <h4>Vista previa ({bulkData.length} registros)</h4>
+                        <div className="preview-table-container">
+                            <table className="styled-table preview-table">
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Código</th>
+                                        <th>Nombre</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {bulkData.slice(0, 10).map((dep, idx) => (
+                                        <tr key={idx}>
+                                            <td>{idx + 1}</td>
+                                            <td>{dep.codigo}</td>
+                                            <td>{dep.nombre}</td>
+                                        </tr>
+                                    ))}
+                                    {bulkData.length > 10 && (
+                                        <tr>
+                                            <td colSpan="3" style={{ textAlign: 'center', fontStyle: 'italic' }}>
+                                                ... y {bulkData.length - 10} registros más
+                                            </td>
+                                        </tr>
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                )}
+
+                {bulkResults && (
+                    <div className="bulk-results">
+                        <h4>Resultados de la carga</h4>
+                        <div className="results-summary">
+                            <span className="result-item success">✅ Creadas: {bulkResults.creadas}</span>
+                            <span className="result-item warning">⚠️ Duplicados: {bulkResults.duplicados.length}</span>
+                            <span className="result-item error">❌ Errores: {bulkResults.errores.length}</span>
+                        </div>
+                        {bulkResults.duplicados.length > 0 && (
+                            <details className="result-details">
+                                <summary>Ver duplicados</summary>
+                                <ul>
+                                    {bulkResults.duplicados.map((d, i) => (
+                                        <li key={i}>Fila {d.fila}: {d.codigo} - {d.nombre}</li>
+                                    ))}
+                                </ul>
+                            </details>
+                        )}
+                        {bulkResults.errores.length > 0 && (
+                            <details className="result-details">
+                                <summary>Ver errores</summary>
+                                <ul>
+                                    {bulkResults.errores.map((e, i) => (
+                                        <li key={i}>Fila {e.fila}: {e.mensaje}</li>
+                                    ))}
+                                </ul>
+                            </details>
+                        )}
+                    </div>
+                )}
+
+                <div className="modal-actions">
+                    {!bulkResults ? (
+                        <>
+                            <button
+                                onClick={handleBulkSubmit}
+                                className="button button-primary"
+                                disabled={bulkData.length === 0 || bulkLoading}
+                            >
+                                {bulkLoading ? 'Cargando...' : `Cargar ${bulkData.length} Dependencias`}
+                            </button>
+                            <button type="button" onClick={closeBulkModal} className="button">
+                                Cancelar
+                            </button>
+                        </>
+                    ) : (
+                        <button onClick={closeBulkModal} className="button button-primary">
+                            Cerrar
+                        </button>
+                    )}
+                </div>
             </Modal>
         </div>
     );

@@ -92,6 +92,9 @@ const Sidebar = ({ isOpen }) => {
                             <PermissionGuard permission="eliminacion_ver">
                                 <li><NavLink to="/dashboard/eliminacion">Eliminación</NavLink></li>
                             </PermissionGuard>
+                            <PermissionGuard permission="retencion_ver">
+                                <li><NavLink to="/dashboard/retencion">Retención Documental</NavLink></li>
+                            </PermissionGuard>
                             <PermissionGuard permission="roles_ver">
                                 <li><NavLink to="/dashboard/roles">Gestión de Roles</NavLink></li>
                             </PermissionGuard>

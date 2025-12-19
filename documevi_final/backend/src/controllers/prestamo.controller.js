@@ -1,4 +1,3 @@
-// Archivo: backend/src/controllers/prestamo.controller.js
 const pool = require('../config/db');
 const { sendEmail } = require('../services/email.service');
 const { addBusinessDays } = require('../utils/date.util');

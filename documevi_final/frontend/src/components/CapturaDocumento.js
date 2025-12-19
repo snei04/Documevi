@@ -18,6 +18,18 @@ const initialFormData = {
     remitente_direccion: ''
 };
 
+// Campos de ubicación física estructurada
+const initialUbicacionFisica = {
+    carpeta: '',
+    paquete: '',
+    tomo: '',
+    otro: '',
+    modulo: '',
+    estante: '',
+    entrepano: '',
+    ubicacion: ''
+};
+
 const CapturaDocumento = () => {
     // El estado ahora se inicializa desde la constante estable
     const [formData, setFormData] = useState(initialFormData);
@@ -42,6 +54,9 @@ const CapturaDocumento = () => {
 
     // Estado para el respaldo físico
     const [tieneRespaldoFisico, setTieneRespaldoFisico] = useState(false);
+    
+    // Estado para ubicación física estructurada
+    const [ubicacionFisica, setUbicacionFisica] = useState(initialUbicacionFisica);
 
     // Lógica de carga de datos
     useEffect(() => {
@@ -77,8 +92,29 @@ const CapturaDocumento = () => {
         setFilteredSeries([]);
         setFilteredSubseries([]);
         setTieneRespaldoFisico(false);
+        setUbicacionFisica(initialUbicacionFisica);
         if (fileInputRef.current) fileInputRef.current.value = "";
     }, []); // El array vacío es ahora correcto y la advertencia desaparecerá.
+    
+    // Manejar cambios en ubicación física
+    const handleUbicacionChange = (e) => {
+        const { name, value } = e.target;
+        setUbicacionFisica(prev => ({ ...prev, [name]: value }));
+    };
+    
+    // Construir string de ubicación física
+    const buildUbicacionString = () => {
+        const parts = [];
+        if (ubicacionFisica.carpeta) parts.push(`Carpeta: ${ubicacionFisica.carpeta}`);
+        if (ubicacionFisica.paquete) parts.push(`Paquete: ${ubicacionFisica.paquete}`);
+        if (ubicacionFisica.tomo) parts.push(`Tomo: ${ubicacionFisica.tomo}`);
+        if (ubicacionFisica.otro) parts.push(`Otro: ${ubicacionFisica.otro}`);
+        if (ubicacionFisica.modulo) parts.push(`Módulo: ${ubicacionFisica.modulo}`);
+        if (ubicacionFisica.estante) parts.push(`Estante: ${ubicacionFisica.estante}`);
+        if (ubicacionFisica.entrepano) parts.push(`Entrepaño: ${ubicacionFisica.entrepano}`);
+        if (ubicacionFisica.ubicacion) parts.push(`Ubicación: ${ubicacionFisica.ubicacion}`);
+        return parts.join(' | ');
+    };
 
     // --- El resto de tus funciones se mantienen igual ---
     const handleTemplateChange = async (e) => {
@@ -167,14 +203,25 @@ const CapturaDocumento = () => {
         if (formData.tipo_soporte === 'Electrónico' && !archivo) {
             return toast.warn('Debe seleccionar un archivo electrónico.');
         }
-        if (formData.tipo_soporte === 'Electrónico' && tieneRespaldoFisico && !formData.ubicacion_fisica.trim()) {
-            return toast.warn('Debe especificar la ubicación física del respaldo.');
-        }
-        if (formData.tipo_soporte === 'Físico' && !formData.ubicacion_fisica.trim()) {
-            return toast.warn('Debe especificar la ubicación física.');
+        
+        // Validación para documentos físicos o híbridos
+        const requiereUbicacion = formData.tipo_soporte === 'Físico' || 
+                                  (formData.tipo_soporte === 'Electrónico' && tieneRespaldoFisico);
+        
+        if (requiereUbicacion) {
+            // Carpeta y Paquete son obligatorios
+            if (!ubicacionFisica.carpeta.trim()) {
+                return toast.warn('Debe especificar la Carpeta.');
+            }
+            if (!ubicacionFisica.paquete.trim()) {
+                return toast.warn('Debe especificar el Paquete.');
+            }
         }
 
-        let datosParaEnviar = { ...formData };
+        // Construir ubicación física como string
+        const ubicacionString = buildUbicacionString();
+
+        let datosParaEnviar = { ...formData, ubicacion_fisica: ubicacionString };
         if (datosParaEnviar.tipo_soporte === 'Electrónico' && tieneRespaldoFisico) {
             datosParaEnviar.tipo_soporte = 'Híbrido';
         }
@@ -208,52 +255,106 @@ const CapturaDocumento = () => {
                 <form onSubmit={handleSubmit}>
                     <div className="content-box">
                         <h3>Datos del Documento</h3>
-                        <div style={{marginBottom: '1rem'}}>
-                            <label>Tipo de Soporte: </label>
-                            <select name="tipo_soporte" value={formData.tipo_soporte} onChange={handleChange}>
-                                <option value="Electrónico">Electrónico</option>
-                                <option value="Físico">Físico</option>
-                            </select>
+                        <div className="form-grid-2" style={{ marginBottom: '15px' }}>
+                            <div className="form-group">
+                                <label>Tipo de Soporte *</label>
+                                <select name="tipo_soporte" value={formData.tipo_soporte} onChange={handleChange}>
+                                    <option value="Electrónico">Electrónico</option>
+                                    <option value="Físico">Físico</option>
+                                </select>
+                            </div>
                         </div>
-                        <textarea name="asunto" placeholder="Asunto o descripción del documento..." value={formData.asunto} onChange={handleChange} required style={{width: '100%', minHeight: '80px', padding: '8px', border: '1px solid #ccc', borderRadius: '6px'}} />
+                        <div className="form-group">
+                            <label>Asunto o Descripción *</label>
+                            <textarea 
+                                name="asunto" 
+                                placeholder="Describa brevemente el contenido del documento..." 
+                                value={formData.asunto} 
+                                onChange={handleChange} 
+                                required 
+                                rows="3"
+                            />
+                        </div>
                     </div>
 
                     <div className="content-box">
                         <h3>Clasificación TRD</h3>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-                            <select value={formData.id_dependencia} onChange={handleDependenciaChange} required><option value="">-- Seleccione Dependencia --</option>{dependencias.map(d => <option key={d.id} value={d.id}>{d.nombre_dependencia}</option>)}</select>
-                            <select name="id_oficina_productora" value={formData.id_oficina_productora} onChange={handleOficinaChange} required><option value="">-- Seleccione Oficina --</option>{filteredOficinas.map(o => <option key={o.id} value={o.id}>{o.nombre_oficina}</option>)}</select>
-                            <select name="id_serie" value={formData.id_serie} onChange={handleSerieChange} required><option value="">-- Seleccione Serie --</option>{filteredSeries.map(s => <option key={s.id} value={s.id}>{s.nombre_serie}</option>)}</select>
-                            <select name="id_subserie" value={formData.id_subserie} onChange={handleChange} required><option value="">-- Seleccione Subserie --</option>{filteredSubseries.map(ss => <option key={ss.id} value={ss.id}>{ss.nombre_subserie}</option>)}</select>
+                        <div className="form-grid-2">
+                            <div className="form-group">
+                                <label>Dependencia *</label>
+                                <select value={formData.id_dependencia} onChange={handleDependenciaChange} required>
+                                    <option value="">-- Seleccione Dependencia --</option>
+                                    {dependencias.filter(d => d.activo).map(d => (
+                                        <option key={d.id} value={d.id}>{d.codigo_dependencia} - {d.nombre_dependencia}</option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div className="form-group">
+                                <label>Oficina Productora *</label>
+                                <select name="id_oficina_productora" value={formData.id_oficina_productora} onChange={handleOficinaChange} required disabled={!formData.id_dependencia}>
+                                    <option value="">{formData.id_dependencia ? '-- Seleccione Oficina --' : '-- Primero seleccione Dependencia --'}</option>
+                                    {filteredOficinas.filter(o => o.activo).map(o => (
+                                        <option key={o.id} value={o.id}>{o.codigo_oficina} - {o.nombre_oficina}</option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div className="form-group">
+                                <label>Serie Documental *</label>
+                                <select name="id_serie" value={formData.id_serie} onChange={handleSerieChange} required disabled={!formData.id_oficina_productora}>
+                                    <option value="">{formData.id_oficina_productora ? '-- Seleccione Serie --' : '-- Primero seleccione Oficina --'}</option>
+                                    {filteredSeries.filter(s => s.activo).map(s => (
+                                        <option key={s.id} value={s.id}>{s.codigo_serie} - {s.nombre_serie}</option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div className="form-group">
+                                <label>Subserie Documental *</label>
+                                <select name="id_subserie" value={formData.id_subserie} onChange={handleChange} required disabled={!formData.id_serie}>
+                                    <option value="">{formData.id_serie ? '-- Seleccione Subserie --' : '-- Primero seleccione Serie --'}</option>
+                                    {filteredSubseries.filter(ss => ss.activo).map(ss => (
+                                        <option key={ss.id} value={ss.id}>{ss.codigo_subserie} - {ss.nombre_subserie}</option>
+                                    ))}
+                                </select>
+                            </div>
                         </div>
                     </div>
 
                     {customFields.length > 0 && (
                         <div className="content-box">
                             <h3>Metadatos Adicionales</h3>
-                            {customFields.map(field => (
-                                <div key={field.id} style={{ marginBottom: '10px' }}>
-                                    <label>{field.nombre_campo}{field.es_obligatorio ? ' *' : ''}:
+                            <div className="form-grid-3">
+                                {customFields.map(field => (
+                                    <div key={field.id} className="form-group">
+                                        <label>{field.nombre_campo}{field.es_obligatorio ? ' *' : ''}</label>
                                         <input
-                                            type={field.tipo_campo === 'fecha' ? 'date' : field.tipo_campo}
+                                            type={field.tipo_campo === 'fecha' ? 'date' : field.tipo_campo === 'numero' ? 'number' : 'text'}
                                             name={String(field.id)}
                                             value={customData[field.id] || ''}
                                             onChange={handleCustomDataChange}
                                             required={field.es_obligatorio}
-                                            style={{ marginLeft: '10px' }}
+                                            placeholder={`Ingrese ${field.nombre_campo.toLowerCase()}`}
                                         />
-                                    </label>
-                                </div>
-                            ))}
+                                    </div>
+                                ))}
+                            </div>
                         </div>
                     )}
 
                     <div className="content-box">
                         <h3>Datos del Remitente</h3>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '20px' }}>
-                            <input type="text" name="remitente_nombre" placeholder="Nombre del Remitente" value={formData.remitente_nombre} onChange={handleChange} required />
-                            <input type="text" name="remitente_identificacion" placeholder="Identificación" value={formData.remitente_identificacion} onChange={handleChange} />
-                            <input type="text" name="remitente_direccion" placeholder="Dirección" value={formData.remitente_direccion} onChange={handleChange} />
+                        <div className="form-grid-3">
+                            <div className="form-group">
+                                <label>Nombre del Remitente *</label>
+                                <input type="text" name="remitente_nombre" placeholder="Ej: Juan Pérez García" value={formData.remitente_nombre} onChange={handleChange} required />
+                            </div>
+                            <div className="form-group">
+                                <label>Identificación</label>
+                                <input type="text" name="remitente_identificacion" placeholder="Ej: 123456789" value={formData.remitente_identificacion} onChange={handleChange} />
+                            </div>
+                            <div className="form-group">
+                                <label>Dirección</label>
+                                <input type="text" name="remitente_direccion" placeholder="Ej: Calle 123 #45-67" value={formData.remitente_direccion} onChange={handleChange} />
+                            </div>
                         </div>
                     </div>
 
@@ -275,25 +376,83 @@ const CapturaDocumento = () => {
                                     </label>
                                     
                                     {tieneRespaldoFisico && (
-                                        <div style={{ marginTop: '10px' }}>
-                                            <label>Ubicación Física del Respaldo *</label><br/>
-                                            <input 
-                                                type="text" 
-                                                name="ubicacion_fisica" 
-                                                placeholder="Ej: Archivo Central, Caja 10, Carpeta 2" 
-                                                value={formData.ubicacion_fisica} 
-                                                onChange={handleChange} 
-                                                style={{width: '100%', padding: '8px', border: '1px solid #ccc', borderRadius: '6px'}}
-                                                required 
-                                            />
+                                        <div style={{ marginTop: '15px' }}>
+                                            <h4>Ubicación Física del Respaldo</h4>
+                                            <div className="form-grid-4">
+                                                <div className="form-group">
+                                                    <label>Carpeta *</label>
+                                                    <input type="text" name="carpeta" value={ubicacionFisica.carpeta} onChange={handleUbicacionChange} placeholder="Ej: 001" />
+                                                </div>
+                                                <div className="form-group">
+                                                    <label>Paquete *</label>
+                                                    <input type="text" name="paquete" value={ubicacionFisica.paquete} onChange={handleUbicacionChange} placeholder="Ej: 01" />
+                                                </div>
+                                                <div className="form-group">
+                                                    <label>Tomo</label>
+                                                    <input type="text" name="tomo" value={ubicacionFisica.tomo} onChange={handleUbicacionChange} placeholder="Opcional" />
+                                                </div>
+                                                <div className="form-group">
+                                                    <label>Otro</label>
+                                                    <input type="text" name="otro" value={ubicacionFisica.otro} onChange={handleUbicacionChange} placeholder="Opcional" />
+                                                </div>
+                                                <div className="form-group">
+                                                    <label>Módulo</label>
+                                                    <input type="text" name="modulo" value={ubicacionFisica.modulo} onChange={handleUbicacionChange} placeholder="Opcional" />
+                                                </div>
+                                                <div className="form-group">
+                                                    <label>Estante</label>
+                                                    <input type="text" name="estante" value={ubicacionFisica.estante} onChange={handleUbicacionChange} placeholder="Opcional" />
+                                                </div>
+                                                <div className="form-group">
+                                                    <label>Entrepaño</label>
+                                                    <input type="text" name="entrepano" value={ubicacionFisica.entrepano} onChange={handleUbicacionChange} placeholder="Opcional" />
+                                                </div>
+                                                <div className="form-group">
+                                                    <label>Ubicación</label>
+                                                    <input type="text" name="ubicacion" value={ubicacionFisica.ubicacion} onChange={handleUbicacionChange} placeholder="Opcional" />
+                                                </div>
+                                            </div>
                                         </div>
                                     )}
                                 </div>
                             </div>
                         ) : (
                             <div>
-                                <label>Ubicación Física del Documento *</label><br/>
-                                <input type="text" name="ubicacion_fisica" placeholder="Ej: Estante A, Caja 3, Carpeta 5" value={formData.ubicacion_fisica} onChange={handleChange} style={{width: '100%', padding: '8px', border: '1px solid #ccc', borderRadius: '6px'}} required/>
+                                <h4>Ubicación Física del Documento</h4>
+                                <div className="form-grid-4">
+                                    <div className="form-group">
+                                        <label>Carpeta *</label>
+                                        <input type="text" name="carpeta" value={ubicacionFisica.carpeta} onChange={handleUbicacionChange} placeholder="Ej: 001" />
+                                    </div>
+                                    <div className="form-group">
+                                        <label>Paquete *</label>
+                                        <input type="text" name="paquete" value={ubicacionFisica.paquete} onChange={handleUbicacionChange} placeholder="Ej: 01" />
+                                    </div>
+                                    <div className="form-group">
+                                        <label>Tomo</label>
+                                        <input type="text" name="tomo" value={ubicacionFisica.tomo} onChange={handleUbicacionChange} placeholder="Opcional" />
+                                    </div>
+                                    <div className="form-group">
+                                        <label>Otro</label>
+                                        <input type="text" name="otro" value={ubicacionFisica.otro} onChange={handleUbicacionChange} placeholder="Opcional" />
+                                    </div>
+                                    <div className="form-group">
+                                        <label>Módulo</label>
+                                        <input type="text" name="modulo" value={ubicacionFisica.modulo} onChange={handleUbicacionChange} placeholder="Opcional" />
+                                    </div>
+                                    <div className="form-group">
+                                        <label>Estante</label>
+                                        <input type="text" name="estante" value={ubicacionFisica.estante} onChange={handleUbicacionChange} placeholder="Opcional" />
+                                    </div>
+                                    <div className="form-group">
+                                        <label>Entrepaño</label>
+                                        <input type="text" name="entrepano" value={ubicacionFisica.entrepano} onChange={handleUbicacionChange} placeholder="Opcional" />
+                                    </div>
+                                    <div className="form-group">
+                                        <label>Ubicación</label>
+                                        <input type="text" name="ubicacion" value={ubicacionFisica.ubicacion} onChange={handleUbicacionChange} placeholder="Opcional" />
+                                    </div>
+                                </div>
                             </div>
                         )}
                     </div>

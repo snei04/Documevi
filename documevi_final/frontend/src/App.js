@@ -41,6 +41,7 @@ import GestionPlantillas from './components/GestionPlantillas';
 import PlantillaDetalle from './components/PlantillaDetalle';
 import DiseñadorPlantilla from './components/DiseñadorPlantilla';
 import GestionEliminacion from './components/GestionEliminacion';
+import RetencionDocumental from './components/RetencionDocumental';
 import MisPrestamos from './components/MisPrestamos';
 import MiPerfil from './components/MiPerfil';
 import ForgotPassword from './components/ForgotPassword';
@@ -178,6 +179,10 @@ const AppContent = () => {
                         
                         <Route element={<ProtectedRoute permission="eliminacion_ver" />}>
                             <Route path="eliminacion" element={<GestionEliminacion />} />
+                        </Route>
+                        
+                        <Route element={<ProtectedRoute permission="retencion_ver" />}>
+                            <Route path="retencion" element={<RetencionDocumental />} />
                         </Route>
                         
                         <Route element={<ProtectedRoute permission="estadisticas_ver" />}>

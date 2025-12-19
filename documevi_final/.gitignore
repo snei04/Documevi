@@ -36,3 +36,5 @@ Thumbs.db
 .cache/
 .vercel/
 .netlify/
+.RELEASE_NOTES_v0.1.1.md
+

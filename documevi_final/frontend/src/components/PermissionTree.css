@@ -74,6 +74,13 @@
     font-weight: 500;
 }
 
+.permission-tree__count {
+    margin-left: var(--pt-spacing);
+    font-size: 12px;
+    color: var(--pt-icon-color);
+    font-weight: 400;
+}
+
 .permission-tree__action-label {
     display: flex;
     align-items: center;

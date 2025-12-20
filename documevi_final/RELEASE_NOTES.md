@@ -1,12 +1,12 @@
 # Release Notes - DOCUMEVI SGDEA v1.1.1
 
-**Fecha de lanzamiento:** 19 de diciembre de 2025
+**Fecha de lanzamiento:** 20 de diciembre de 2025
 
 ---
 
 ## 🎯 Resumen
 
-Esta versión incluye mejoras significativas en la interfaz de usuario, nuevas funcionalidades de búsqueda avanzada con campos personalizados, un nuevo módulo de Retención Documental, **documentación completa del código fuente** y **mejoras en la colección de API de Postman**.
+Esta versión incluye mejoras significativas en la interfaz de usuario, nuevas funcionalidades de búsqueda avanzada con campos personalizados, un nuevo módulo de Retención Documental, **documentación completa del código fuente**, **mejoras en la colección de API de Postman**, **gestión de permisos mejorada** y **footer informativo en el dashboard**.
 
 ---
 
@@ -80,6 +80,22 @@ Esta versión incluye mejoras significativas en la interfaz de usuario, nuevas f
   - Filas inactivas con fondo diferenciado
 - **Estados de carga y vacío**: Spinner animado y mensaje cuando no hay datos.
 - **Estilos CSS dedicados**: Nuevo archivo `GestionUsuarios.css` con diseño moderno y responsive.
+
+### Gestión de Permisos Mejorada
+
+- **Filtrado por permisos del usuario**: El árbol de permisos ahora solo muestra los permisos que el usuario actual tiene asignados.
+- **Restricción de asignación**: Un usuario solo puede asignar a otros roles los permisos que él mismo posee.
+- **Contador de módulos**: Cada grupo muestra la cantidad de módulos visibles.
+- **Mensaje informativo**: Indica cuántos permisos tiene disponibles el usuario para asignar.
+- **Estado vacío**: Muestra mensaje cuando el usuario no tiene permisos para asignar.
+- **Corrección de permiso**: `GestionarPermisosMaestro.js` ahora usa `permisos_editar` en lugar de `gestionar_roles_permisos`.
+
+### Footer del Dashboard
+
+- **Nuevo footer informativo**: Aparece en todas las páginas del dashboard.
+- **Información de copyright**: "Todos los derechos reservados 2025 | Desarrollado por IMEVISAS desde el equipo de TI".
+- **Versión del sistema**: Muestra la versión actual (v1.1.1) destacada en color primario.
+- **Diseño oscuro**: Fondo `#1a1a2e` con texto gris y versión en azul.
 
 ### Selectores TRD en toda la aplicación
 
@@ -160,8 +176,14 @@ Se agregaron comentarios JSDoc completos y comentarios inline a los siguientes a
 - **Nuevos componentes**:
   - `RetencionDocumental.js` - Módulo de retención documental
   - `GestionUsuarios.js` - Rediseño completo con nuevo diseño visual
+- **Componentes mejorados**:
+  - `GestionPermisos.js` - Filtrado de permisos según usuario actual
+  - `GestionarPermisosMaestro.js` - Corrección de permisos
+  - `DashboardLayout.js` - Nuevo footer informativo
 - **Nuevos estilos CSS**:
   - `GestionUsuarios.css` - Estilos dedicados para gestión de usuarios
+  - `.dashboard-footer` - Estilos para el footer del dashboard
+  - `.permission-tree__count` - Contador de módulos en árbol de permisos
 - **Estilos CSS** (`Dashboard.css`):
   - `.form-grid-2`, `.form-grid-3`, `.form-grid-4` - Grids responsivos
   - `.form-group` - Estilos mejorados para formularios
@@ -238,7 +260,11 @@ Se agregaron comentarios JSDoc completos y comentarios inline a los siguientes a
 
 **Otros:**
 
-- `src/App.js`
+- `src/App.js` (documentación JSDoc completa)
+- `src/components/DashboardLayout.js` (footer)
+- `src/components/GestionPermisos.js` (filtrado de permisos)
+- `src/components/GestionarPermisosMaestro.js` (corrección de permisos)
+- `src/components/PermissionTree.css` (estilos de contador)
 
 ---
 
@@ -246,6 +272,8 @@ Se agregaron comentarios JSDoc completos y comentarios inline a los siguientes a
 
 - Eliminado import no utilizado `useOutletContext` en `Search.js`.
 - Removidos emojis del título de "Retención Documental" en el sidebar y header.
+- Corregido permiso en `GestionarPermisosMaestro.js`: cambiado de `gestionar_roles_permisos` a `permisos_editar` para coincidir con el backend.
+- Eliminado import no utilizado `usePermissions` en `GestionPermisos.js`.
 
 ---
 

@@ -10,6 +10,24 @@
   width: 100vw;
 }
 
+/* Footer del dashboard */
+.dashboard-footer {
+  background-color: #1a1a2e;
+  color: #a0a0a0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 5px 20px;
+  font-size: 0.85rem;
+  flex-shrink: 0;
+  border-top: 1px solid #2d2d44;
+}
+
+.dashboard-footer span:last-child {
+  color: var(--primary-color);
+  font-weight: 500;
+}
+
 .header {
   background-color: var(--primary-color);
   color: white;

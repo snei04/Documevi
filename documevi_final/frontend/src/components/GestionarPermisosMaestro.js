@@ -76,7 +76,7 @@ const GestionarPermisosMaestro = () => {
                         <tr>
                             <th>Nombre del Permiso</th>
                             <th>Descripción</th>
-                            {auth.hasPermission('gestionar_roles_permisos') && <th>Acciones</th>}
+                            {auth.hasPermission('permisos_editar') && <th>Acciones</th>}
                         </tr>
                     </thead>
                     <tbody>
@@ -84,7 +84,7 @@ const GestionarPermisosMaestro = () => {
                             <tr key={p.id}>
                                 <td><code>{p.nombre_permiso}</code></td>
                                 <td>{p.descripcion || 'Sin descripción'}</td>
-                                {auth.hasPermission('gestionar_roles_permisos') && (
+                                {auth.hasPermission('permisos_editar') && (
                                     <td className="action-cell">
                                         <button onClick={() => openEditModal(p)} className="button">Editar Descripción</button>
                                     </td>

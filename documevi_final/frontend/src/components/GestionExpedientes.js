@@ -1,9 +1,10 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../api/axios';
 import { toast } from 'react-toastify';
 import Modal from 'react-modal';
 import PermissionGuard from './auth/PermissionGuard';
+import DuplicadoAlertModal from './DuplicadoAlertModal';
 import './Dashboard.css';
 
 Modal.setAppElement('#root');
@@ -26,6 +27,14 @@ const GestionExpedientes = () => {
         descriptor_2: ''
     });
     const [submitting, setSubmitting] = useState(false);
+    
+    // Estados para campos personalizados y validacion de duplicados
+    const [oficinas, setOficinas] = useState([]);
+    const [camposPersonalizados, setCamposPersonalizados] = useState([]);
+    const [customData, setCustomData] = useState({});
+    const [duplicadoModalOpen, setDuplicadoModalOpen] = useState(false);
+    const [duplicadoInfo, setDuplicadoInfo] = useState(null);
+    const [documentoParaAnexar, setDocumentoParaAnexar] = useState(null);
 
     // Estados de filtros
     const [searchTerm, setSearchTerm] = useState('');
@@ -40,20 +49,37 @@ const GestionExpedientes = () => {
     const fetchData = async () => {
         setLoading(true);
         try {
-            const [resExp, resSer, resSub] = await Promise.all([
+            const [resExp, resSer, resSub, resOfi] = await Promise.all([
                 api.get('/expedientes'),
                 api.get('/series'),
-                api.get('/subseries')
+                api.get('/subseries'),
+                api.get('/oficinas')
             ]);
             setExpedientes(resExp.data);
             setSeries(resSer.data.filter(s => s.activo));
             setSubseries(resSub.data.filter(ss => ss.activo));
+            setOficinas(resOfi.data.filter(o => o.activo));
         } catch (err) {
             toast.error('Error al cargar datos iniciales.');
         } finally {
             setLoading(false);
         }
     };
+
+    // Cargar campos personalizados cuando se selecciona una serie
+    const fetchCamposPersonalizados = useCallback(async (idOficina) => {
+        if (!idOficina) {
+            setCamposPersonalizados([]);
+            return;
+        }
+        try {
+            const res = await api.get(`/campos-personalizados/oficina/${idOficina}`);
+            setCamposPersonalizados(res.data);
+        } catch (err) {
+            console.error('Error al cargar campos personalizados:', err);
+            setCamposPersonalizados([]);
+        }
+    }, []);
 
     // Filtrar expedientes
     const filteredExpedientes = useMemo(() => {
@@ -79,6 +105,7 @@ const GestionExpedientes = () => {
     const handleSerieChange = (e) => {
         const serieId = e.target.value;
         setFormData({ ...formData, id_serie: serieId, id_subserie: '' });
+        setCustomData({});
         
         // Verificar si la serie requiere subserie
         const serieSeleccionada = series.find(s => s.id === parseInt(serieId));
@@ -87,6 +114,21 @@ const GestionExpedientes = () => {
         } else {
             setFilteredSubseries(subseries.filter(ss => ss.id_serie === parseInt(serieId)));
         }
+        
+        // Cargar campos personalizados de la oficina de la serie
+        if (serieSeleccionada) {
+            fetchCamposPersonalizados(serieSeleccionada.id_oficina_productora);
+        } else {
+            setCamposPersonalizados([]);
+        }
+    };
+
+    // Manejar cambio en campos personalizados
+    const handleCustomDataChange = (campoId, valor) => {
+        setCustomData(prev => ({
+            ...prev,
+            [campoId]: valor
+        }));
     };
 
     const handleChange = (e) => {
@@ -103,12 +145,16 @@ const GestionExpedientes = () => {
             descriptor_2: ''
         });
         setFilteredSubseries([]);
+        setCamposPersonalizados([]);
+        setCustomData({});
         setIsModalOpen(true);
     };
 
     // Cerrar modal
     const closeModal = () => {
         setIsModalOpen(false);
+        setCamposPersonalizados([]);
+        setCustomData({});
     };
 
     // Crear expediente
@@ -117,7 +163,6 @@ const GestionExpedientes = () => {
         setSubmitting(true);
         
         try {
-            // Verificar si la serie requiere subserie
             const serieSeleccionada = series.find(s => s.id === parseInt(formData.id_serie));
             const dataToSend = { ...formData };
             
@@ -125,8 +170,46 @@ const GestionExpedientes = () => {
                 dataToSend.id_subserie = null;
             }
             
-            await api.post('/expedientes', dataToSend);
-            toast.success('Expediente creado con éxito!');
+            // Verificar si hay campos con validacion de duplicidad
+            const camposConValidacion = camposPersonalizados.filter(c => c.validar_duplicidad);
+            
+            if (camposConValidacion.length > 0 && Object.keys(customData).length > 0) {
+                // Validar duplicados antes de crear
+                const validacionRes = await api.post('/expedientes/validar-duplicados', {
+                    id_oficina: serieSeleccionada?.id_oficina_productora,
+                    campos_personalizados: customData
+                });
+                
+                if (validacionRes.data.duplicado) {
+                    // Mostrar modal de duplicado
+                    setDuplicadoInfo(validacionRes.data);
+                    setDuplicadoModalOpen(true);
+                    setSubmitting(false);
+                    return;
+                }
+            }
+            
+            // No hay duplicados, crear expediente normalmente
+            await crearExpedienteConDatos(dataToSend);
+            
+        } catch (err) {
+            toast.error(err.response?.data?.msg || 'Error al crear el expediente.');
+            setSubmitting(false);
+        }
+    };
+
+    // Funcion auxiliar para crear expediente con datos personalizados
+    const crearExpedienteConDatos = async (dataToSend) => {
+        try {
+            const res = await api.post('/expedientes', dataToSend);
+            const nuevoExpedienteId = res.data.id;
+            
+            // Guardar datos personalizados si existen
+            if (Object.keys(customData).length > 0) {
+                await api.put(`/expedientes/${nuevoExpedienteId}/custom-data`, customData);
+            }
+            
+            toast.success('Expediente creado con exito!');
             closeModal();
             fetchData();
         } catch (err) {
@@ -134,6 +217,35 @@ const GestionExpedientes = () => {
         } finally {
             setSubmitting(false);
         }
+    };
+
+    // Manejar confirmacion de anexion por duplicado
+    const handleConfirmarAnexion = async (anexionData) => {
+        setSubmitting(true);
+        try {
+            // Aqui se anexaria el documento al expediente existente
+            // Por ahora, redirigimos al expediente existente
+            const expedienteId = duplicadoInfo.expediente_existente.id;
+            
+            toast.success(`Redirigiendo al expediente #${expedienteId} para anexar el documento...`);
+            setDuplicadoModalOpen(false);
+            setDuplicadoInfo(null);
+            closeModal();
+            
+            // Redirigir al detalle del expediente
+            window.location.href = `/dashboard/expedientes/${expedienteId}`;
+            
+        } catch (err) {
+            toast.error(err.response?.data?.msg || 'Error al procesar la anexion.');
+        } finally {
+            setSubmitting(false);
+        }
+    };
+
+    // Cerrar modal de duplicado
+    const handleCloseDuplicadoModal = () => {
+        setDuplicadoModalOpen(false);
+        setDuplicadoInfo(null);
     };
 
     // Obtener clase de estado
@@ -408,6 +520,57 @@ const GestionExpedientes = () => {
                         </div>
                     </div>
 
+                    {/* Campos Personalizados */}
+                    {camposPersonalizados.length > 0 && (
+                        <div style={{ borderTop: '1px solid #eee', paddingTop: '15px', marginTop: '15px' }}>
+                            <h4 style={{ marginBottom: '15px' }}>
+                                Campos Personalizados
+                                {camposPersonalizados.some(c => c.validar_duplicidad) && (
+                                    <span style={{ fontSize: '12px', color: '#6c757d', marginLeft: '10px' }}>
+                                        (🔍 = valida duplicidad)
+                                    </span>
+                                )}
+                            </h4>
+                            <div className="form-row" style={{ flexWrap: 'wrap' }}>
+                                {camposPersonalizados.map(campo => (
+                                    <div className="form-group" key={campo.id} style={{ flex: '1 1 45%', minWidth: '200px' }}>
+                                        <label htmlFor={`campo_${campo.id}`}>
+                                            {campo.nombre_campo}
+                                            {campo.es_obligatorio && ' *'}
+                                            {campo.validar_duplicidad && ' 🔍'}
+                                        </label>
+                                        {campo.tipo_campo === 'fecha' ? (
+                                            <input
+                                                type="date"
+                                                id={`campo_${campo.id}`}
+                                                value={customData[campo.id] || ''}
+                                                onChange={(e) => handleCustomDataChange(campo.id, e.target.value)}
+                                                required={campo.es_obligatorio}
+                                            />
+                                        ) : campo.tipo_campo === 'numero' ? (
+                                            <input
+                                                type="number"
+                                                id={`campo_${campo.id}`}
+                                                value={customData[campo.id] || ''}
+                                                onChange={(e) => handleCustomDataChange(campo.id, e.target.value)}
+                                                required={campo.es_obligatorio}
+                                            />
+                                        ) : (
+                                            <input
+                                                type="text"
+                                                id={`campo_${campo.id}`}
+                                                value={customData[campo.id] || ''}
+                                                onChange={(e) => handleCustomDataChange(campo.id, e.target.value)}
+                                                required={campo.es_obligatorio}
+                                                placeholder={campo.validar_duplicidad ? 'Se validará si ya existe...' : ''}
+                                            />
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
                     <div className="modal-actions">
                         <button 
                             type="submit" 
@@ -426,6 +589,15 @@ const GestionExpedientes = () => {
                     </div>
                 </form>
             </Modal>
+
+            {/* Modal de Alerta de Duplicado */}
+            <DuplicadoAlertModal
+                isOpen={duplicadoModalOpen}
+                onClose={handleCloseDuplicadoModal}
+                duplicadoInfo={duplicadoInfo}
+                onConfirmarAnexion={handleConfirmarAnexion}
+                loading={submitting}
+            />
         </div>
     );
 };

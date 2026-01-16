@@ -10,7 +10,8 @@ const GestionCamposPersonalizados = () => {
     const [newCampo, setNewCampo] = useState({
         nombre_campo: '',
         tipo_campo: 'texto',
-        es_obligatorio: false
+        es_obligatorio: false,
+        validar_duplicidad: false
     });
 
     useEffect(() => {
@@ -55,7 +56,7 @@ const GestionCamposPersonalizados = () => {
         try {
             await api.post(`/campos-personalizados/oficina/${selectedOficina}`, newCampo);
             toast.success('Campo personalizado creado con éxito.');
-            setNewCampo({ nombre_campo: '', tipo_campo: 'texto', es_obligatorio: false });
+            setNewCampo({ nombre_campo: '', tipo_campo: 'texto', es_obligatorio: false, validar_duplicidad: false });
             fetchCampos();
         } catch (err) {
             toast.error(err.response?.data?.msg || 'Error al crear el campo.');
@@ -81,16 +82,20 @@ const GestionCamposPersonalizados = () => {
 
                 {selectedOficina && (
                     <>
-                        <form onSubmit={handleCreateCampo} className="action-bar" style={{borderTop: '1px solid #eee', paddingTop: '20px'}}>
-                            <input type="text" name="nombre_campo" placeholder="Nombre del Campo (ej. No. Contrato)" value={newCampo.nombre_campo} onChange={handleNewCampoChange} required />
+                        <form onSubmit={handleCreateCampo} className="action-bar" style={{borderTop: '1px solid #eee', paddingTop: '20px', flexWrap: 'wrap', gap: '10px'}}>
+                            <input type="text" name="nombre_campo" placeholder="Nombre del Campo (ej. Cédula Paciente)" value={newCampo.nombre_campo} onChange={handleNewCampoChange} required />
                             <select name="tipo_campo" value={newCampo.tipo_campo} onChange={handleNewCampoChange}>
                                 <option value="texto">Texto</option>
                                 <option value="numero">Número</option>
                                 <option value="fecha">Fecha</option>
                             </select>
-                            <label>
+                            <label style={{display: 'flex', alignItems: 'center', gap: '5px'}}>
                                 <input type="checkbox" name="es_obligatorio" checked={newCampo.es_obligatorio} onChange={handleNewCampoChange} />
                                 ¿Es obligatorio?
+                            </label>
+                            <label style={{display: 'flex', alignItems: 'center', gap: '5px'}} title="Si está marcado, el sistema validará que no exista otro expediente con el mismo valor en este campo">
+                                <input type="checkbox" name="validar_duplicidad" checked={newCampo.validar_duplicidad} onChange={handleNewCampoChange} />
+                                🔍 Validar duplicidad
                             </label>
                             <button type="submit" className="button button-primary">Añadir Campo</button>
                         </form>
@@ -107,6 +112,7 @@ const GestionCamposPersonalizados = () => {
                                <th>Nombre del Campo</th>
                                <th>Tipo</th>
                                <th>Obligatorio</th>
+                               <th>Validar Duplicidad</th>
                            </tr>
                        </thead>
                        <tbody>
@@ -115,6 +121,7 @@ const GestionCamposPersonalizados = () => {
                                    <td>{campo.nombre_campo}</td>
                                    <td>{campo.tipo_campo}</td>
                                    <td>{campo.es_obligatorio ? 'Sí' : 'No'}</td>
+                                   <td>{campo.validar_duplicidad ? '🔍 Sí' : 'No'}</td>
                                </tr>
                            ))}
                        </tbody>

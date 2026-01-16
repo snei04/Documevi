@@ -16,17 +16,14 @@ exports.getCamposPorOficina = async (req, res) => {
 // Crear un nuevo campo personalizado para una oficina
 exports.createCampo = async (req, res) => {
     const { id_oficina } = req.params;
-    const { nombre_campo, tipo_campo, es_obligatorio } = req.body;
+    const { nombre_campo, tipo_campo, es_obligatorio, validar_duplicidad } = req.body;
     try {
         const [result] = await pool.query(
-            'INSERT INTO oficina_campos_personalizados (id_oficina, nombre_campo, tipo_campo, es_obligatorio) VALUES (?, ?, ?, ?)',
-            // CAMBIO 2: Nos aseguramos de que 'es_obligatorio' siempre tenga un valor.
-            // Si el frontend no envía nada, se guardará como 'false'.
-            [id_oficina, nombre_campo, tipo_campo, es_obligatorio || false]
+            'INSERT INTO oficina_campos_personalizados (id_oficina, nombre_campo, tipo_campo, es_obligatorio, validar_duplicidad) VALUES (?, ?, ?, ?, ?)',
+            [id_oficina, nombre_campo, tipo_campo, es_obligatorio || false, validar_duplicidad || false]
         );
         res.status(201).json({ id: result.insertId, ...req.body });
     } catch (error) {
-        // CAMBIO 1 (repetido): Se añade un console.error para ver errores.
         console.error("Error al crear el campo personalizado:", error);
         res.status(500).json({ msg: 'Error al crear el campo' });
     }

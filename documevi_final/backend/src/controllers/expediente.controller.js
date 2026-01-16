@@ -2,6 +2,7 @@ const pool = require('../config/db');
 // Importamos el nuevo servicio para la lógica de negocio compleja
 const expedienteService = require('../services/expediente.service');
 const documentoService = require('../services/documento.service');
+const validacionDuplicadosService = require('../services/validacionDuplicados.service');
 
 // --- CONTROLADORES CON LÓGICA SIMPLE ---
 
@@ -229,6 +230,73 @@ exports.createDocumentoFromPlantillaInExpediente = async (req, res) => {
         res.status(201).json(resultado);
     } catch (error) {
         console.error("Error al generar y añadir documento desde plantilla:", error);
+        res.status(error.statusCode || 500).json({ msg: error.message });
+    }
+};
+
+/**
+ * Valida duplicados antes de crear un expediente.
+ * POST /api/expedientes/validar-duplicados
+ */
+exports.validarDuplicados = async (req, res) => {
+    try {
+        const { id_oficina, campos_personalizados } = req.body;
+        
+        if (!id_oficina) {
+            return res.status(400).json({ msg: 'La oficina es obligatoria' });
+        }
+        
+        const resultado = await validacionDuplicadosService.validarDuplicados({
+            id_oficina,
+            campos_personalizados: campos_personalizados || {}
+        });
+        
+        res.json(resultado);
+        
+    } catch (error) {
+        console.error('Error en validacion de duplicados:', error);
+        res.status(500).json({ msg: 'Error en el servidor', error: error.message });
+    }
+};
+
+/**
+ * Anexa un documento a un expediente existente por coincidencia de duplicado.
+ * POST /api/expedientes/:id/anexar-por-duplicado
+ */
+exports.anexarPorDuplicado = async (req, res) => {
+    try {
+        const { id: id_expediente } = req.params;
+        const { 
+            id_documento, 
+            fecha_apertura_documento, 
+            campo_validacion_id,
+            valor_coincidencia,
+            tipo_soporte,
+            observaciones 
+        } = req.body;
+        
+        if (!id_documento) {
+            return res.status(400).json({ msg: 'El documento es obligatorio' });
+        }
+        if (!fecha_apertura_documento) {
+            return res.status(400).json({ msg: 'La fecha de apertura del documento es obligatoria' });
+        }
+        
+        const resultado = await validacionDuplicadosService.anexarDocumentoAExpediente({
+            id_expediente: parseInt(id_expediente),
+            id_documento,
+            fecha_apertura_documento,
+            campo_validacion_id,
+            valor_coincidencia,
+            tipo_soporte,
+            id_usuario: req.user.id,
+            observaciones
+        });
+        
+        res.status(201).json(resultado);
+        
+    } catch (error) {
+        console.error('Error al anexar documento:', error);
         res.status(error.statusCode || 500).json({ msg: error.message });
     }
 };

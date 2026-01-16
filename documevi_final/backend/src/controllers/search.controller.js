@@ -73,7 +73,7 @@ exports.advancedSearch = async (req, res) => {
       FROM documentos d
       LEFT JOIN trd_series s ON d.id_serie = s.id
       LEFT JOIN trd_subseries ss ON d.id_subserie = ss.id
-      LEFT JOIN trd_oficinas_productoras o ON d.id_oficina_productora = o.id
+      LEFT JOIN oficinas_productoras o ON d.id_oficina_productora = o.id
       LEFT JOIN documento_datos_personalizados ddp ON d.id = ddp.id_documento
       WHERE 1=1
     `;
@@ -148,9 +148,8 @@ exports.getSearchableCustomFields = async (req, res) => {
   try {
     const [fields] = await pool.query(`
       SELECT DISTINCT cp.id, cp.nombre_campo, cp.tipo_campo, o.nombre_oficina
-      FROM campos_personalizados cp
-      JOIN trd_oficinas_productoras o ON cp.id_oficina_productora = o.id
-      WHERE cp.activo = 1
+      FROM oficina_campos_personalizados cp
+      JOIN oficinas_productoras o ON cp.id_oficina = o.id
       ORDER BY o.nombre_oficina, cp.nombre_campo
     `);
     res.json(fields);

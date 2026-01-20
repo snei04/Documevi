@@ -17,33 +17,59 @@ export const getExpedienteDetallado = async (id) => {
     const expediente = res.data;
     let payload = { expediente };
 
-    // Si el usuario no tiene vista restringida, cargar datos adicionales
-    if (expediente.vista !== 'solicitante_restringido') {
+    // Si el usuario tiene vista restringida, solo devolver el expediente básico
+    if (expediente.vista === 'solicitante_restringido') {
+        return payload;
+    }
+
+    // Para otras vistas, intentar cargar datos adicionales con manejo de errores
+    try {
         // Cargar en paralelo: documentos, workflows y plantillas
-        const [docs, wfs, plantillas] = await Promise.all([
+        const results = await Promise.allSettled([
             api.get('/documentos'),
             api.get('/workflows'),
             api.get('/plantillas')
         ]);
-        payload.documentosDisponibles = docs.data;
-        payload.workflows = wfs.data;
-        payload.plantillas = plantillas.data;
+        
+        // Solo asignar si la petición fue exitosa
+        if (results[0].status === 'fulfilled') payload.documentosDisponibles = results[0].value.data;
+        else payload.documentosDisponibles = [];
+        
+        if (results[1].status === 'fulfilled') payload.workflows = results[1].value.data;
+        else payload.workflows = [];
+        
+        if (results[2].status === 'fulfilled') payload.plantillas = results[2].value.data;
+        else payload.plantillas = [];
 
         // Si el expediente tiene serie asignada, cargar campos personalizados
         if (expediente.id_serie) {
-            const resSeries = await api.get('/series');
-            const serie = resSeries.data.find(s => s.id === expediente.id_serie);
-            if (serie) {
-                // Obtener campos personalizados de la oficina y datos custom del expediente
-                const [campos, customData] = await Promise.all([
-                    api.get(`/campos-personalizados/oficina/${serie.id_oficina_productora}`),
-                    api.get(`/expedientes/${id}/custom-data`)
-                ]);
-                payload.customFields = campos.data;
-                payload.customData = customData.data;
+            try {
+                const resSeries = await api.get('/series');
+                const serie = resSeries.data.find(s => s.id === expediente.id_serie);
+                if (serie) {
+                    const customResults = await Promise.allSettled([
+                        api.get(`/campos-personalizados/oficina/${serie.id_oficina_productora}`),
+                        api.get(`/expedientes/${id}/custom-data`)
+                    ]);
+                    
+                    if (customResults[0].status === 'fulfilled') payload.customFields = customResults[0].value.data;
+                    else payload.customFields = [];
+                    
+                    if (customResults[1].status === 'fulfilled') payload.customData = customResults[1].value.data;
+                    else payload.customData = {};
+                }
+            } catch (e) {
+                payload.customFields = [];
+                payload.customData = {};
             }
         }
+    } catch (e) {
+        // Si falla la carga de datos adicionales, continuar con valores vacíos
+        payload.documentosDisponibles = [];
+        payload.workflows = [];
+        payload.plantillas = [];
     }
+    
     return payload;
 };
 

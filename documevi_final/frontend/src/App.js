@@ -66,6 +66,7 @@ import GestionSubseries from './components/GestionSubseries';
 import GestionExpedientes from './components/GestionExpedientes';
 import ExpedienteDetalle from './components/ExpedienteDetalle';
 import CapturaDocumento from './components/CapturaDocumento';
+import DocumentoDetalle from './components/DocumentoDetalle';
 
 /** Gestión de workflows */
 import GestionWorkflows from './components/GestionWorkflows';
@@ -225,6 +226,10 @@ const AppContent = () => {
                         
                         <Route element={<ProtectedRoute permission="expedientes_crear" />}>
                             <Route path="captura" element={<CapturaDocumento />} />
+                        </Route>
+                        
+                        <Route element={<ProtectedRoute permission="documentos_ver" />}>
+                            <Route path="documentos/:id" element={<DocumentoDetalle />} />
                         </Route>
 
                         {/* --- Gestión de TRD (Tabla de Retención Documental) --- */}

@@ -43,20 +43,33 @@ INSERT IGNORE INTO oficina_campos_personalizados (id, id_oficina, nombre_campo, 
 
 -- FILA | NOMBRE_EXPEDIENTE | id_serie | id_subserie | descriptor_1 | descriptor_2 | fecha_apertura | fecha_cierre | estado | disponibilidad | id_usuario
 INSERT INTO expedientes (id, nombre_expediente, id_serie, id_subserie, descriptor_1, descriptor_2, fecha_apertura, fecha_cierre, estado, disponibilidad, id_usuario_responsable) VALUES
-(1, 'EXPEDIENTE CLINICO PACIENTE 001', 1, 1, 'EXP-001', NULL, '2024-01-15 08:00:00', NULL, 'En trámite', 'Disponible', 5),
-(2, 'EXPEDIENTE CLINICO PACIENTE 002', 1, 1, 'EXP-002', NULL, '2024-01-20 09:30:00', NULL, 'En trámite', 'Disponible', 5),
-(3, 'EXPEDIENTE CLINICO PACIENTE 003', 1, 1, 'EXP-003', NULL, '2024-02-05 10:15:00', '2024-06-15 12:00:00', 'Cerrado en Gestión', 'Disponible', 5);
+(1, 'EXPEDIENTE CLINICO PACIENTE', 1, 1, 'EXP-001', NULL, '2024-01-15 08:00:00', NULL, 'En trámite', 'Disponible', 5),
+(2, 'EXPEDIENTE CLINICO PACIENTE', 1, 1, 'EXP-002', NULL, '2024-01-20 09:30:00', NULL, 'En trámite', 'Disponible', 5),
+(3, 'EXPEDIENTE CLINICO PACIENTE', 1, 1, 'EXP-003', NULL, '2024-02-05 10:15:00', '2024-06-15 12:00:00', 'Cerrado en Gestión', 'Disponible', 5);
 
 -- =====================================================================
 -- 3. CARGAR DOCUMENTOS RADICADOS
 -- =====================================================================
+-- NOTA: La tabla documentos NO tiene id_expediente directo.
+-- La relación se hace mediante la tabla expediente_documentos
 
--- FILA | id_expediente | radicado | asunto | tipo_soporte | fecha_radicado | id_serie | id_subserie | id_usuario | estado
-INSERT INTO documentos (id, id_expediente, radicado, asunto, tipo_soporte, fecha_radicado, id_serie, id_subserie, id_usuario_radicador, estado) VALUES
-(1, 1, 'RAD-2024-00001', 'Documento ingreso paciente',    'Físico',       '2024-01-15 08:30:00', 1, 1, 5, 'Radicado'),
-(2, 1, 'RAD-2024-00002', 'Resultados laboratorio',        'Electrónico',  '2024-01-16 14:00:00', 1, 1, 5, 'Radicado'),
-(3, 2, 'RAD-2024-00003', 'Historia clínica inicial',      'Físico',       '2024-01-20 09:45:00', 1, 1, 5, 'Radicado'),
-(4, 3, 'RAD-2024-00004', 'Epicrisis de egreso',           'Electrónico',  '2024-06-15 12:00:00', 1, 1, 5, 'Radicado');
+-- Columnas: id | radicado | asunto | tipo_soporte | id_oficina_productora | id_serie | id_subserie | remitente_nombre | id_usuario_radicador | fecha_radicado
+INSERT INTO documentos (id, radicado, asunto, tipo_soporte, id_oficina_productora, id_serie, id_subserie, remitente_nombre, id_usuario_radicador, fecha_radicado) VALUES
+(1, '20240115-0001', 'Documento ingreso paciente',    'Físico',       1, 1, 1, 'PACIENTE', 5, '2024-01-15 08:30:00'),
+(2, '20240116-0001', 'Resultados laboratorio',        'Electrónico',  1, 1, 1, 'LABORATORIO', 5, '2024-01-16 14:00:00'),
+(3, '20240120-0001', 'Historia clínica inicial',      'Físico',       1, 1, 1, 'PACIENTE', 5, '2024-01-20 09:45:00'),
+(4, '20240615-0001', 'Epicrisis de egreso',           'Electrónico',  1, 1, 1, 'MEDICO', 5, '2024-06-15 12:00:00');
+
+-- =====================================================================
+-- 3.1 RELACIONAR DOCUMENTOS CON EXPEDIENTES
+-- =====================================================================
+-- Tabla: expediente_documentos (id_expediente, id_documento, orden_foliado, requiere_firma)
+
+INSERT INTO expediente_documentos (id_expediente, id_documento, orden_foliado, requiere_firma) VALUES
+(1, 1, 1, 0),  -- Documento 1 -> Expediente 1, folio 1
+(1, 2, 2, 0),  -- Documento 2 -> Expediente 1, folio 2
+(2, 3, 1, 0),  -- Documento 3 -> Expediente 2, folio 1
+(3, 4, 1, 0);  -- Documento 4 -> Expediente 3, folio 1
 
 -- =====================================================================
 -- 4. CARGAR CAMPOS PERSONALIZADOS DE EXPEDIENTES
@@ -68,17 +81,19 @@ INSERT INTO expediente_datos_personalizados (id_expediente, id_campo, valor) VAL
 -- Paciente 1
 (1, 1, '19268326'),
 (1, 2, 'JOSE ANTONIO RODRIGUEZ ALVAREZ'),
-(1, 3, 'SURA EPS'),
+
+
+
 
 -- Paciente 2
 (2, 1, '52345678'),
 (2, 2, 'MARIA FERNANDA MARTINEZ LOPEZ'),
-(2, 3, 'NUEVA EPS'),
+
 
 -- Paciente 3
 (3, 1, '80123456'),
 (3, 2, 'CARLOS ANDRES GONZALEZ PEREZ'),
-(3, 3, 'SANITAS');
+
 
 -- =====================================================================
 -- 5. REGISTRAR EN AUDITORÍA
@@ -128,3 +143,29 @@ SELECT
 FROM documentos doc
 JOIN expedientes e ON doc.id_expediente = e.id
 ORDER BY e.id, doc.fecha_radicado;
+
+SET FOREIGN_KEY_CHECKS = 0;
+
+-- EJEMPLO DE CARGA PARA EL SQL --
+INSERT INTO expedientes (id, nombre_expediente, id_serie, id_subserie, descriptor_1, descriptor_2, fecha_apertura, fecha_cierre, estado, disponibilidad, id_usuario_responsable) VALUES
+(5, 'Historia clinica', 5, 8, 'EXP-001', NULL, '16-12-13 0:00:00', '16-12-13 0:00:00', 'Cerrado en Central', 'Disponible', 5);
+
+
+
+INSERT INTO documentos (id, radicado, asunto, tipo_soporte, id_oficina_productora, id_serie, id_subserie, remitente_nombre, ubicacion_fisica, id_usuario_radicador, fecha_radicado) VALUES
+(7, '20130114-0001', 'Documento ingreso paciente', 'Físico', 5, 5, 5, 'PACIENTE', 'Archivo Central - Estante 3 - Caja 15 - Carpeta 7', 5, '2013-12-16 00:00:00');
+
+
+INSERT INTO expediente_documentos (id_expediente, id_documento, orden_foliado, requiere_firma, fecha_incorporacion) VALUES
+(5, 7, 1, 0, '16-12-13 0:00');  -- Documento 1 -> Expediente 1, folio 1
+
+
+INSERT INTO expediente_datos_personalizados (id_expediente, id_campo, valor) VALUES
+(5, 3, '19268326'),
+(5, 4, 'DIAZ VARGAS JOSE LUIS');
+
+
+INSERT INTO auditoria (usuario_id, accion, detalles, fecha) VALUES
+(5, 'MIGRACION_EXPEDIENTES', 'Carga de 1 expedientes de pacientes con 1 documentos y campos personalizados', NOW());
+
+SET FOREIGN_KEY_CHECKS = 1;

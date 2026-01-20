@@ -2,10 +2,10 @@ const { Router } = require('express');
 const { 
     createDocumento,
     getAllDocumentos,
+    getDocumentoById,
     startWorkflow,   
     advanceWorkflow,
     firmarDocumento,
-    // ✅ 1. Importa la nueva función del controlador
     createDocumentoFromPlantillaSinExpediente 
 } = require('../controllers/documento.controller');
 const authMiddleware = require('../middleware/auth.middleware');
@@ -20,8 +20,11 @@ router.route('/')
   .get(authorizePermission('documentos_ver'), getAllDocumentos)
   .post(authorizePermission('documentos_crear'), upload.single('archivo'), createDocumento);
 
-// ✅ 2. Añade la nueva ruta para generar desde plantilla
+// Ruta para generar desde plantilla
 router.post('/desde-plantilla', authorizePermission('documentos_crear'), createDocumentoFromPlantillaSinExpediente);
+
+// Ruta para obtener detalle de un documento
+router.get('/:id', authorizePermission('documentos_ver'), getDocumentoById);
 
 // --- Rutas nuevas para la ejecución del workflow ---
 router.post('/:id/start-workflow', authorizePermission('documentos_workflow'), startWorkflow);

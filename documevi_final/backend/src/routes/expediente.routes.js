@@ -22,7 +22,7 @@ router.use(protect);
 
 
 router.route('/')
-    .get(authorizePermission('expedientes_ver'), getAllExpedientes)
+    .get(getAllExpedientes)  // Todos los usuarios autenticados pueden ver la lista
     .post(authorizePermission('expedientes_crear'), createExpediente);
 
 router.route('/validar-duplicados')
@@ -30,7 +30,7 @@ router.route('/validar-duplicados')
 
 
 router.route('/:id')
-    .get(authorizePermission('expedientes_ver'), getExpedienteById);
+    .get(getExpedienteById);  // Todos pueden acceder, la lógica de permisos está en el controlador
 
 router.route('/:id/cerrar')
     .put(authorizePermission('expedientes_cerrar'), closeExpediente);

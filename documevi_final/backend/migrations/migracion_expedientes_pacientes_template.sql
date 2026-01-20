@@ -132,28 +132,51 @@ CREATE TABLE IF NOT EXISTS `expediente_datos_personalizados` (
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `documentos` (
   `id` INT NOT NULL AUTO_INCREMENT,
-  `id_expediente` INT DEFAULT NULL,
-  `radicado` VARCHAR(50) NOT NULL,
-  `asunto` VARCHAR(255) NOT NULL,
-  `tipo_soporte` ENUM('Físico','Electrónico') NOT NULL DEFAULT 'Electrónico',
-  `fecha_radicado` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
-  `id_serie` INT DEFAULT NULL,
-  `id_subserie` INT DEFAULT NULL,
-  `id_usuario_radicador` INT NOT NULL,
-  `estado` VARCHAR(50) DEFAULT 'Radicado',
-  `ruta_archivo` VARCHAR(500) DEFAULT NULL,
+  `radicado` VARCHAR(20) NOT NULL,
+  `asunto` TEXT NOT NULL,
+  `tipo_soporte` ENUM('Electrónico','Físico','Híbrido') NOT NULL DEFAULT 'Electrónico',
+  `id_oficina_productora` INT NOT NULL,
+  `id_serie` INT NOT NULL,
+  `id_subserie` INT NOT NULL,
+  `remitente_nombre` VARCHAR(255) NOT NULL,
+  `remitente_identificacion` VARCHAR(30) DEFAULT NULL,
+  `remitente_direccion` VARCHAR(255) DEFAULT NULL,
+  `nombre_archivo_original` VARCHAR(255) DEFAULT NULL,
+  `path_archivo` VARCHAR(255) DEFAULT NULL,
+  `ubicacion_fisica` VARCHAR(255) DEFAULT NULL,
   `contenido_extraido` TEXT,
-  `remitente_nombre` VARCHAR(255) DEFAULT NULL,
+  `firma_imagen` LONGTEXT,
+  `firma_hash` VARCHAR(255) DEFAULT NULL,
+  `fecha_firma` DATETIME DEFAULT NULL,
+  `id_usuario_radicador` INT NOT NULL,
+  `fecha_radicado` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   UNIQUE KEY `radicado` (`radicado`),
-  KEY `id_expediente` (`id_expediente`),
+  KEY `id_oficina_productora` (`id_oficina_productora`),
   KEY `id_serie` (`id_serie`),
   KEY `id_subserie` (`id_subserie`),
   KEY `id_usuario_radicador` (`id_usuario_radicador`),
-  CONSTRAINT `documentos_ibfk_1` FOREIGN KEY (`id_expediente`) REFERENCES `expedientes` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `documentos_ibfk_1` FOREIGN KEY (`id_oficina_productora`) REFERENCES `oficinas_productoras` (`id`),
   CONSTRAINT `documentos_ibfk_2` FOREIGN KEY (`id_serie`) REFERENCES `trd_series` (`id`),
   CONSTRAINT `documentos_ibfk_3` FOREIGN KEY (`id_subserie`) REFERENCES `trd_subseries` (`id`),
   CONSTRAINT `documentos_ibfk_4` FOREIGN KEY (`id_usuario_radicador`) REFERENCES `usuarios` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+-- -----------------------------------------------------
+-- Tabla: expediente_documentos (Relación expedientes-documentos)
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `expediente_documentos` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `id_expediente` INT NOT NULL,
+  `id_documento` INT NOT NULL,
+  `orden_foliado` INT NOT NULL,
+  `requiere_firma` TINYINT(1) NOT NULL DEFAULT 0,
+  `fecha_incorporacion` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `id_expediente` (`id_expediente`, `id_documento`),
+  KEY `id_documento` (`id_documento`),
+  CONSTRAINT `expediente_documentos_ibfk_1` FOREIGN KEY (`id_expediente`) REFERENCES `expedientes` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `expediente_documentos_ibfk_2` FOREIGN KEY (`id_documento`) REFERENCES `documentos` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- -----------------------------------------------------

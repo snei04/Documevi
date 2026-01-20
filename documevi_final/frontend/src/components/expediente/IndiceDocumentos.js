@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 
 // Componente para mostrar el índice de documentos del expediente
 const IndiceDocumentos = ({ expediente, workflows, onOpenFile, onSign, onStartWorkflow }) => {
@@ -22,6 +23,8 @@ const IndiceDocumentos = ({ expediente, workflows, onOpenFile, onSign, onStartWo
                         <th>Foliado</th>
                         <th>Radicado</th>
                         <th>Asunto</th>
+                        <th>Tipo Soporte</th>
+                        <th>Ubicación Física</th>
                         <th>Firma Req.</th>
                         <th>Estado Firma</th>
                         {vista === 'productor' && <th>Acciones</th>}
@@ -33,13 +36,30 @@ const IndiceDocumentos = ({ expediente, workflows, onOpenFile, onSign, onStartWo
                             <td>{doc.orden_foliado}</td>
                             <td>
                                 {/*Genera el documento*/}
-                                {doc.path_archivo ? (
-                                    <button onClick={() => onOpenFile(`${API_BASE_URL}/${doc.path_archivo}`)} className="link-button">
-                                        {doc.radicado}
+                                <Link to={`/dashboard/documentos/${doc.id}`} className="link-button" style={{ marginRight: '8px' }}>
+                                    {doc.radicado}
+                                </Link>
+                                {doc.path_archivo && (
+                                    <button onClick={() => onOpenFile(`${API_BASE_URL}/${doc.path_archivo}`)} className="button button-small" title="Ver archivo">
+                                        📄
                                     </button>
-                                ) : doc.radicado}
+                                )}
                             </td>
                             <td>{doc.asunto}</td>
+                            <td style={{ textAlign: 'center' }}>
+                                <span className={`badge ${doc.tipo_soporte === 'Físico' ? 'badge-warning' : doc.tipo_soporte === 'Híbrido' ? 'badge-info' : 'badge-success'}`}>
+                                    {doc.tipo_soporte || 'Electrónico'}
+                                </span>
+                            </td>
+                            <td>
+                                {doc.tipo_soporte === 'Físico' || doc.tipo_soporte === 'Híbrido' ? (
+                                    doc.ubicacion_fisica ? (
+                                        <span title={doc.ubicacion_fisica} style={{ cursor: 'help' }}>
+                                            📍 {doc.ubicacion_fisica.length > 30 ? doc.ubicacion_fisica.substring(0, 30) + '...' : doc.ubicacion_fisica}
+                                        </span>
+                                    ) : <span style={{ color: '#999' }}>Sin ubicación</span>
+                                ) : <span style={{ color: '#999' }}>N/A</span>}
+                            </td>
                             <td style={{ textAlign: 'center' }}>{doc.requiere_firma ? 'Sí' : 'No'}</td>
                             <td style={{ textAlign: 'center' }}>{doc.firma_hash ? <span style={{ color: 'green' }}>✅ Firmado</span> : <span style={{ color: 'orange' }}>Pendiente</span>}</td>
                             {vista === 'productor' && (

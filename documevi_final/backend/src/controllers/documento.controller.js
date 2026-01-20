@@ -2,6 +2,62 @@ const documentoService = require('../services/documento.service');
 const pool = require('../config/db');
 
 /**
+ * Obtiene un documento por su ID con todos sus detalles.
+ */
+exports.getDocumentoById = async (req, res) => {
+    try {
+        const { id } = req.params;
+        
+        const [rows] = await pool.query(`
+            SELECT 
+                d.*,
+                o.nombre_oficina,
+                o.codigo_oficina,
+                dep.nombre_dependencia,
+                dep.codigo_dependencia,
+                s.nombre_serie,
+                s.codigo_serie,
+                ss.nombre_subserie,
+                ss.codigo_subserie,
+                u.nombre_completo as usuario_radicador,
+                e.id as id_expediente,
+                e.nombre_expediente,
+                ed.orden_foliado
+            FROM documentos d
+            LEFT JOIN oficinas_productoras o ON d.id_oficina_productora = o.id
+            LEFT JOIN dependencias dep ON o.id_dependencia = dep.id
+            LEFT JOIN trd_series s ON d.id_serie = s.id
+            LEFT JOIN trd_subseries ss ON d.id_subserie = ss.id
+            LEFT JOIN usuarios u ON d.id_usuario_radicador = u.id
+            LEFT JOIN expediente_documentos ed ON d.id = ed.id_documento
+            LEFT JOIN expedientes e ON ed.id_expediente = e.id
+            WHERE d.id = ?
+        `, [id]);
+        
+        if (rows.length === 0) {
+            return res.status(404).json({ msg: 'Documento no encontrado' });
+        }
+        
+        const documento = rows[0];
+        
+        // Obtener campos personalizados del documento
+        const [camposPersonalizados] = await pool.query(`
+            SELECT cp.nombre_campo, cp.tipo_campo, ddp.valor
+            FROM documento_datos_personalizados ddp
+            JOIN oficina_campos_personalizados cp ON ddp.id_campo = cp.id
+            WHERE ddp.id_documento = ?
+        `, [id]);
+        
+        documento.campos_personalizados = camposPersonalizados;
+        
+        res.json(documento);
+    } catch (error) {
+        console.error("Error al obtener documento:", error);
+        res.status(500).json({ msg: 'Error en el servidor' });
+    }
+};
+
+/**
  * Obtiene todos los documentos.
  */
 exports.getAllDocumentos = async (req, res) => {

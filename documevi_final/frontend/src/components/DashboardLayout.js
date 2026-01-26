@@ -90,7 +90,7 @@ const DashboardLayout = () => {
             {/* Footer del dashboard */}
             <footer className="dashboard-footer">
                 <span>Todos los derechos reservados 2025 | Desarrollado por IMEVISAS desde el equipo de TI</span>
-                <span>Versión: v1.1.1</span>
+                <span>Versión: v1.2.2</span>
             </footer>
         </div>
     );

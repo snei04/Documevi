@@ -98,6 +98,16 @@ export const firmarDocumento = (docId, firma_imagen) => {
  * @param {Object} formData - Datos adicionales del formulario de solicitud
  * @returns {Promise} Respuesta de la API con la solicitud creada
  */
+/**
+ * Actualiza las fechas de apertura y cierre de un expediente.
+ * @param {number|string} id_expediente - ID del expediente
+ * @param {Object} fechas - Objeto con fecha_apertura y fecha_cierre
+ * @returns {Promise} Respuesta de la API
+ */
+export const actualizarFechas = (id_expediente, fechas) => {
+    return api.put(`/expedientes/${id_expediente}/fechas`, fechas);
+};
+
 export const solicitarPrestamo = (id_expediente, formData) => {
     return api.post('/prestamos', { id_expediente, ...formData });
 };

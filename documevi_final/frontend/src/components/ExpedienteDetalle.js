@@ -10,6 +10,7 @@ import IndiceDocumentos from './expediente/IndiceDocumentos';
 import AccionesProductor from './expediente/AccionesProductor';
 import VistaRestringida from './expediente/VistaRestringida';
 import FirmaModal from './expediente/FirmaModal';
+import EditarFechasModal from './expediente/EditarFechasModal';
 import PermissionGuard from './auth/PermissionGuard';
 
 
@@ -40,6 +41,7 @@ const ExpedienteDetalle = () => {
     const handleOpenFile = (url) => dispatch({ type: 'OPEN_VIEWER_MODAL', payload: url });
     const handleOpenSignatureModal = (docId) => dispatch({ type: 'OPEN_SIGNATURE_MODAL', payload: docId });
     const handleCloseModals = () => dispatch({ type: 'CLOSE_MODALS' });
+    const handleToggleDateModal = () => dispatch({ type: 'TOGGLE_DATE_MODAL' });
 
     const handleSignatureSubmit = async (firma_imagen) => {
         try {
@@ -49,6 +51,17 @@ const ExpedienteDetalle = () => {
             fetchData();
         } catch (err) {
             toast.error(err.response?.data?.msg || 'Error al firmar el documento.');
+        }
+    };
+
+    const handleUpdateFechas = async (fechas) => {
+        try {
+            await expedienteAPI.actualizarFechas(id, fechas);
+            toast.success('Fechas actualizadas con éxito.');
+            handleToggleDateModal();
+            fetchData();
+        } catch (err) {
+            toast.error(err.response?.data?.msg || 'Error al actualizar fechas.');
         }
     };
 
@@ -99,15 +112,27 @@ const ExpedienteDetalle = () => {
         <div>
             <div className="page-header">
                 <h1>Expediente: {expediente.nombre_expediente}</h1>
-                <p><strong>Estado:</strong> {expediente.estado}</p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                    <p><strong>Estado:</strong> {expediente.estado}</p>
+                    <p style={{ fontSize: '0.9rem', color: '#666' }}>
+                        <strong>Apertura:</strong> {new Date(expediente.fecha_apertura).toLocaleString()} 
+                        {expediente.fecha_cierre && <span> | <strong>Cierre:</strong> {new Date(expediente.fecha_cierre).toLocaleString()}</span>}
+                    </p>
+                </div>
             </div>
             
-            <div className="action-bar">
+            <div className="action-bar" style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
                 {expediente.vista === 'productor' && expediente.estado === 'En trámite' && (
                     <PermissionGuard permission="cerrar_expedientes">
                     <button onClick={handleCloseExpediente} className="button button-danger">Cerrar Expediente</button>
                     </PermissionGuard>
                 )}
+                
+                <PermissionGuard permission="editar_fechas_expediente">
+                    <button onClick={handleToggleDateModal} className="button" style={{ backgroundColor: '#e2e8f0', color: '#2d3748' }}>
+                        📅 Editar Fechas
+                    </button>
+                </PermissionGuard>
             </div>
 
             {expediente.vista === 'productor' && (
@@ -131,6 +156,13 @@ const ExpedienteDetalle = () => {
                 isOpen={ui.isSignatureModalOpen}
                 onRequestClose={handleCloseModals}
                 onSubmit={handleSignatureSubmit}
+            />
+            
+            <EditarFechasModal
+                isOpen={ui.isDateModalOpen}
+                onRequestClose={handleToggleDateModal}
+                expediente={expediente}
+                onSubmit={handleUpdateFechas}
             />
 
             <Modal 

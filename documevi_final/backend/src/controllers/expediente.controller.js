@@ -260,6 +260,21 @@ exports.validarDuplicados = async (req, res) => {
 };
 
 /**
+ * Actualiza las fechas de un expediente.
+ * PUT /api/expedientes/:id/fechas
+ */
+exports.updateExpedienteFechas = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const resultado = await expedienteService.actualizarFechasExpediente(id, req.body, req.user.id);
+        res.json(resultado);
+    } catch (error) {
+        console.error("Error al actualizar fechas del expediente:", error);
+        res.status(error.statusCode || 500).json({ msg: error.message });
+    }
+};
+
+/**
  * Anexa un documento a un expediente existente por coincidencia de duplicado.
  * POST /api/expedientes/:id/anexar-por-duplicado
  */

@@ -9,7 +9,8 @@ const {
     updateExpedienteCustomData,
     createDocumentoFromPlantillaInExpediente,
     validarDuplicados,
-    anexarPorDuplicado
+    anexarPorDuplicado,
+    updateExpedienteFechas
 } = require('../controllers/expediente.controller');
 
 const protect = require('../middleware/auth.middleware');
@@ -31,6 +32,9 @@ router.route('/validar-duplicados')
 
 router.route('/:id')
     .get(getExpedienteById);  // Todos pueden acceder, la lógica de permisos está en el controlador
+
+router.route('/:id/fechas')
+    .put(authorizePermission('editar_fechas_expediente'), updateExpedienteFechas);
 
 router.route('/:id/cerrar')
     .put(authorizePermission('expedientes_cerrar'), closeExpediente);

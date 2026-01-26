@@ -15,6 +15,7 @@ export const initialState = {
         isViewerModalOpen: false,
         viewingFileUrl: '',
         isSignatureModalOpen: false,
+        isDateModalOpen: false,
         targetDocumentoIdWorkflow: null,
         targetDocumentoIdFirma: null,
     }
@@ -37,6 +38,8 @@ export function expedienteReducer(state, action) {
         // Casos para la UI
         case 'TOGGLE_PRESTAMO_FORM':
             return { ...state, ui: { ...state.ui, showPrestamoForm: !state.ui.showPrestamoForm } };
+        case 'TOGGLE_DATE_MODAL':
+            return { ...state, ui: { ...state.ui, isDateModalOpen: !state.ui.isDateModalOpen } };
         case 'OPEN_VIEWER_MODAL':
             return { ...state, ui: { ...state.ui, isViewerModalOpen: true, viewingFileUrl: action.payload } };
         case 'OPEN_SIGNATURE_MODAL':

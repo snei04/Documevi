@@ -10,15 +10,63 @@ const validacionDuplicadosService = require('../services/validacionDuplicados.se
  * Obtiene todos los expedientes con información enriquecida.
  * Para auditores: solo expedientes cerrados y habilitados
  */
+/**
+ * Obtiene todos los expedientes con información enriquecida (Paginado).
+ * Para auditores: solo expedientes cerrados y habilitados
+ */
 exports.getAllExpedientes = async (req, res) => {
     try {
+        // Parametros de paginacion y filtros
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 20;
+        const offset = (page - 1) * limit;
+        const search = req.query.search || '';
+        const estadoFilter = req.query.estado || '';
+        const serieFilter = req.query.serie || '';
+
         // Verificar si el usuario es auditor (tiene permisos limitados)
         const userPermissions = req.user.permissions || [];
-        const isAuditor = userPermissions.includes('auditoria_ver') && 
-                         !userPermissions.includes('expedientes_crear') && 
-                         !userPermissions.includes('expedientes_editar');
+        const isAuditor = userPermissions.includes('auditoria_ver') &&
+            !userPermissions.includes('expedientes_crear') &&
+            !userPermissions.includes('expedientes_editar');
 
-        let query = `
+        // Construccion de condiciones WHERE
+        let whereConditions = [];
+        let queryParams = [];
+
+        // Filtro de busqueda (nombre, descriptors)
+        if (search) {
+            whereConditions.push(`(
+                e.nombre_expediente LIKE ? OR 
+                e.descriptor_1 LIKE ? OR 
+                e.descriptor_2 LIKE ?
+            )`);
+            const searchParam = `%${search}%`;
+            queryParams.push(searchParam, searchParam, searchParam);
+        }
+
+        // Filtros especificos
+        if (estadoFilter) {
+            whereConditions.push(`e.estado = ?`);
+            queryParams.push(estadoFilter);
+        }
+
+        if (serieFilter) {
+            whereConditions.push(`e.id_serie = ?`);
+            queryParams.push(serieFilter);
+        }
+
+        // Si es auditor, filtrar solo expedientes cerrados y habilitados
+        if (isAuditor) {
+            whereConditions.push(`e.estado = 'cerrado'`);
+            whereConditions.push(`e.activo = 1`);
+        }
+
+        // Armar clausula WHERE
+        const whereClause = whereConditions.length > 0 ? 'WHERE ' + whereConditions.join(' AND ') : '';
+
+        // Query principal de datos
+        let dataQuery = `
             SELECT 
                 e.*, 
                 s.nombre_serie, 
@@ -28,17 +76,35 @@ exports.getAllExpedientes = async (req, res) => {
             LEFT JOIN trd_series s ON e.id_serie = s.id
             LEFT JOIN trd_subseries ss ON e.id_subserie = ss.id
             LEFT JOIN usuarios u ON e.id_usuario_responsable = u.id
+            ${whereClause}
+            ORDER BY e.fecha_apertura DESC
+            LIMIT ? OFFSET ?
         `;
 
-        // Si es auditor, filtrar solo expedientes cerrados y habilitados
-        if (isAuditor) {
-            query += ` WHERE e.estado = 'cerrado' AND e.activo = 1`;
-        }
+        // Query para contar total de registros (para paginacion)
+        let countQuery = `
+            SELECT COUNT(*) as total 
+            FROM expedientes e 
+            ${whereClause}
+        `;
 
-        query += ` ORDER BY e.fecha_apertura DESC`;
+        // Ejecutar queries en paralelo
+        // Spread ...queryParams para el count, y ...queryParams + limit + offset para data
+        const [rows] = await pool.query(dataQuery, [...queryParams, limit, offset]);
+        const [countResult] = await pool.query(countQuery, queryParams);
 
-        const [rows] = await pool.query(query);
-        res.json(rows);
+        const total = countResult[0].total;
+        const totalPages = Math.ceil(total / limit);
+
+        res.json({
+            data: rows,
+            meta: {
+                total,
+                page,
+                limit,
+                totalPages
+            }
+        });
     } catch (error) {
         console.error("Error en getAllExpedientes:", error);
         res.status(500).json({ msg: 'Error en el servidor', error: error.message });
@@ -79,21 +145,21 @@ exports.getExpedienteById = async (req, res) => {
         if (expedientes.length === 0) {
             return res.status(404).json({ msg: 'Expediente no encontrado.' });
         }
-        
+
         const expediente = expedientes[0];
         const esProductor = expediente.id_usuario_responsable === id_usuario_actual;
         const tienePermisoEspecial = permisos_usuario.includes('ver_expedientes_cerrados');
-        
+
         // Verificar si es auditor
-        const isAuditor = permisos_usuario.includes('auditoria_ver') && 
-                         !permisos_usuario.includes('expedientes_crear') && 
-                         !permisos_usuario.includes('expedientes_editar');
-        
+        const isAuditor = permisos_usuario.includes('auditoria_ver') &&
+            !permisos_usuario.includes('expedientes_crear') &&
+            !permisos_usuario.includes('expedientes_editar');
+
         // Si es auditor, solo puede ver expedientes cerrados y habilitados
         if (isAuditor && (expediente.estado !== 'cerrado' || expediente.activo !== 1)) {
             return res.status(403).json({ msg: 'Los auditores solo pueden ver expedientes cerrados y habilitados.' });
         }
-        
+
         const sqlDocumentos = `
             SELECT d.*, ed.orden_foliado, ed.fecha_incorporacion, ed.requiere_firma
             FROM expediente_documentos ed
@@ -107,7 +173,7 @@ exports.getExpedienteById = async (req, res) => {
             let vista = 'auditor';
             if (esProductor) vista = 'productor';
             else if (isAuditor) vista = 'auditor_readonly';
-            
+
             return res.json({ ...expediente, documentos: documentos, vista: vista });
         }
 
@@ -173,7 +239,7 @@ exports.getExpedienteCustomData = async (req, res) => {
         }, {});
         res.json(data);
     } catch (error) {
-        console.error("Error al obtener datos personalizados:", error); 
+        console.error("Error al obtener datos personalizados:", error);
         res.status(500).json({ msg: 'Error en el servidor' });
     }
 };
@@ -241,18 +307,18 @@ exports.createDocumentoFromPlantillaInExpediente = async (req, res) => {
 exports.validarDuplicados = async (req, res) => {
     try {
         const { id_oficina, campos_personalizados } = req.body;
-        
+
         if (!id_oficina) {
             return res.status(400).json({ msg: 'La oficina es obligatoria' });
         }
-        
+
         const resultado = await validacionDuplicadosService.validarDuplicados({
             id_oficina,
             campos_personalizados: campos_personalizados || {}
         });
-        
+
         res.json(resultado);
-        
+
     } catch (error) {
         console.error('Error en validacion de duplicados:', error);
         res.status(500).json({ msg: 'Error en el servidor', error: error.message });
@@ -281,22 +347,22 @@ exports.updateExpedienteFechas = async (req, res) => {
 exports.anexarPorDuplicado = async (req, res) => {
     try {
         const { id: id_expediente } = req.params;
-        const { 
-            id_documento, 
-            fecha_apertura_documento, 
+        const {
+            id_documento,
+            fecha_apertura_documento,
             campo_validacion_id,
             valor_coincidencia,
             tipo_soporte,
-            observaciones 
+            observaciones
         } = req.body;
-        
+
         if (!id_documento) {
             return res.status(400).json({ msg: 'El documento es obligatorio' });
         }
         if (!fecha_apertura_documento) {
             return res.status(400).json({ msg: 'La fecha de apertura del documento es obligatoria' });
         }
-        
+
         const resultado = await validacionDuplicadosService.anexarDocumentoAExpediente({
             id_expediente: parseInt(id_expediente),
             id_documento,
@@ -307,9 +373,9 @@ exports.anexarPorDuplicado = async (req, res) => {
             id_usuario: req.user.id,
             observaciones
         });
-        
+
         res.status(201).json(resultado);
-        
+
     } catch (error) {
         console.error('Error al anexar documento:', error);
         res.status(error.statusCode || 500).json({ msg: error.message });

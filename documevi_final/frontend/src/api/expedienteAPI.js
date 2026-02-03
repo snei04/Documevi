@@ -11,6 +11,28 @@ import api from './axios';
  * @returns {Array} [payload.customFields] - Campos personalizados de la oficina
  * @returns {Object} [payload.customData] - Datos personalizados del expediente
  */
+/**
+ * Obtiene la lista de expedientes con paginación y filtros.
+ * @param {Object} params - Parámetros de consulta (page, limit, search, estado, serie)
+ * @returns {Promise} Respuesta de la API con { data, meta }
+ */
+export const getExpedientes = (params = {}) => {
+    // Convertir objeto de parametros a query string
+    const queryParams = new URLSearchParams(params).toString();
+    return api.get(`/expedientes?${queryParams}`);
+};
+
+/**
+ * Obtiene los datos detallados de un expediente junto con información relacionada.
+ * @param {number|string} id - ID del expediente a consultar
+ * @returns {Object} payload - Objeto con el expediente y datos adicionales
+ * @returns {Object} payload.expediente - Datos del expediente
+ * @returns {Array} [payload.documentosDisponibles] - Lista de documentos (si tiene permisos)
+ * @returns {Array} [payload.workflows] - Lista de workflows disponibles
+ * @returns {Array} [payload.plantillas] - Lista de plantillas disponibles
+ * @returns {Array} [payload.customFields] - Campos personalizados de la oficina
+ * @returns {Object} [payload.customData] - Datos personalizados del expediente
+ */
 export const getExpedienteDetallado = async (id) => {
     // Obtener datos básicos del expediente
     const res = await api.get(`/expedientes/${id}`);
@@ -30,14 +52,14 @@ export const getExpedienteDetallado = async (id) => {
             api.get('/workflows'),
             api.get('/plantillas')
         ]);
-        
+
         // Solo asignar si la petición fue exitosa
         if (results[0].status === 'fulfilled') payload.documentosDisponibles = results[0].value.data;
         else payload.documentosDisponibles = [];
-        
+
         if (results[1].status === 'fulfilled') payload.workflows = results[1].value.data;
         else payload.workflows = [];
-        
+
         if (results[2].status === 'fulfilled') payload.plantillas = results[2].value.data;
         else payload.plantillas = [];
 
@@ -51,10 +73,10 @@ export const getExpedienteDetallado = async (id) => {
                         api.get(`/campos-personalizados/oficina/${serie.id_oficina_productora}`),
                         api.get(`/expedientes/${id}/custom-data`)
                     ]);
-                    
+
                     if (customResults[0].status === 'fulfilled') payload.customFields = customResults[0].value.data;
                     else payload.customFields = [];
-                    
+
                     if (customResults[1].status === 'fulfilled') payload.customData = customResults[1].value.data;
                     else payload.customData = {};
                 }
@@ -69,7 +91,7 @@ export const getExpedienteDetallado = async (id) => {
         payload.workflows = [];
         payload.plantillas = [];
     }
-    
+
     return payload;
 };
 

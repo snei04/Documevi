@@ -4,14 +4,14 @@ import api from '../../api/axios';
 
 const AccionesProductor = ({ state, expediente, onDataChange }) => {
     // --- ESTADO LOCAL PARA LOS FORMULARIOS ---
-    
+
     // Estado para "Añadir Documento" con búsqueda
     const [selectedDocumento, setSelectedDocumento] = useState('');
     const [requiereFirma, setRequiereFirma] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const [showDropdown, setShowDropdown] = useState(false);
     const [selectedDocInfo, setSelectedDocInfo] = useState(null);
-    
+
     // Estado para modal de vista previa
     const [previewDoc, setPreviewDoc] = useState(null);
     const [showPreviewModal, setShowPreviewModal] = useState(false);
@@ -30,7 +30,7 @@ const AccionesProductor = ({ state, expediente, onDataChange }) => {
 
 
     // Filtrar documentos según término de búsqueda
-    const filteredDocumentos = state.documentosDisponibles.filter(doc => 
+    const filteredDocumentos = state.documentosDisponibles.filter(doc =>
         doc.radicado.toLowerCase().includes(searchTerm.toLowerCase()) ||
         doc.asunto.toLowerCase().includes(searchTerm.toLowerCase())
     );
@@ -76,21 +76,21 @@ const AccionesProductor = ({ state, expediente, onDataChange }) => {
     };
 
     const handleSelectPlantilla = (plantillaId) => {
-    console.log('ID de plantilla seleccionado:', plantillaId); // LOG 1
+        console.log('ID de plantilla seleccionado:', plantillaId); // LOG 1
 
-    if (!plantillaId) {
-        setSelectedPlantilla(null);
+        if (!plantillaId) {
+            setSelectedPlantilla(null);
+            setPlantillaData({});
+            return;
+        }
+        // Usamos parseInt para evitar errores de tipo string vs number
+        const plantilla = state.plantillas.find(p => p.id === parseInt(plantillaId));
+
+        console.log('Plantilla encontrada:', plantilla); // LOG 2
+
+        setSelectedPlantilla(plantilla);
         setPlantillaData({});
-        return;
-    }
-    // Usamos parseInt para evitar errores de tipo string vs number
-    const plantilla = state.plantillas.find(p => p.id === parseInt(plantillaId));
-
-    console.log('Plantilla encontrada:', plantilla); // LOG 2
-
-    setSelectedPlantilla(plantilla);
-    setPlantillaData({});
-};
+    };
 
     const handlePlantillaDataChange = (e) => {
         setPlantillaData({ ...plantillaData, [e.target.name]: e.target.value });
@@ -153,8 +153,8 @@ const AccionesProductor = ({ state, expediente, onDataChange }) => {
                                         if (!e.target.value) handleClearSelection();
                                     }}
                                     onFocus={() => setShowDropdown(true)}
-                                    style={{ 
-                                        width: '100%', 
+                                    style={{
+                                        width: '100%',
                                         padding: '10px 12px',
                                         border: selectedDocInfo ? '2px solid #38a169' : '1px solid #ccc',
                                         borderRadius: '6px',
@@ -162,8 +162,8 @@ const AccionesProductor = ({ state, expediente, onDataChange }) => {
                                     }}
                                 />
                                 {selectedDocInfo && (
-                                    <button 
-                                        type="button" 
+                                    <button
+                                        type="button"
                                         onClick={handleClearSelection}
                                         style={{
                                             position: 'absolute',
@@ -243,22 +243,22 @@ const AccionesProductor = ({ state, expediente, onDataChange }) => {
                                     </div>
                                 )}
                             </div>
-                            
+
                             <label style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
                                 <input type="checkbox" checked={requiereFirma} onChange={(e) => setRequiereFirma(e.target.checked)} />
                                 ¿Requiere Firma?
                             </label>
-                            
+
                             <button type="submit" className="button" disabled={!selectedDocumento}>
                                 Añadir
                             </button>
                         </div>
-                        
+
                         {selectedDocInfo && (
-                            <div style={{ 
-                                marginTop: '10px', 
-                                padding: '10px', 
-                                backgroundColor: '#f0fff4', 
+                            <div style={{
+                                marginTop: '10px',
+                                padding: '10px',
+                                backgroundColor: '#f0fff4',
                                 borderRadius: '6px',
                                 border: '1px solid #9ae6b4'
                             }}>
@@ -271,61 +271,66 @@ const AccionesProductor = ({ state, expediente, onDataChange }) => {
 
             {/* Formulario para generar documento desde plantilla */}
             {expediente.estado === 'En trámite' && state.plantillas && state.plantillas.length > 0 && (
-            <div className="content-box">
-                <h3>Generar Documento desde Plantilla</h3>
-                <select onChange={(e) => handleSelectPlantilla(e.target.value)} style={{ marginBottom: '15px' }} value={selectedPlantilla?.id || ''}>
-                    <option value="">-- Seleccione una Plantilla --</option>
-                    {state.plantillas.map(p => <option key={p.id} value={p.id}>{p.nombre}</option>)}
-                </select>
-                
-                {/* Renderizado dinámico de campos según la plantilla seleccionada */}
-                {selectedPlantilla && Array.isArray(selectedPlantilla.campos) && (
-                    <form onSubmit={handleGenerateDocument}>
-                        {selectedPlantilla.campos.sort((a, b) => a.orden - b.orden).map(campo => (
-                            <div key={campo.id} style={{ marginBottom: '10px' }}>
-                                <label>{campo.nombre_campo}:
-                                    <input
-                                        type={campo.tipo_campo === 'fecha' ? 'date' : campo.tipo_campo === 'numero' ? 'number' : 'text'}
-                                        name={campo.nombre_campo}
-                                        value={plantillaData[campo.nombre_campo] || ''}
-                                        onChange={handlePlantillaDataChange}
-                                        required
-                                        style={{ marginLeft: '10px', width: '300px' }}
-                                    />
-                                </label>
-                            </div>
-                        ))}
-                        <button type="submit" className="button button-primary" style={{ marginTop: '10px' }}>Generar y Añadir</button>
-                    </form>
-                )}
-            </div>
+                <div className="content-box">
+                    <h3>Generar Documento desde Plantilla</h3>
+                    <select onChange={(e) => handleSelectPlantilla(e.target.value)} style={{ marginBottom: '15px' }} value={selectedPlantilla?.id || ''}>
+                        <option value="">-- Seleccione una Plantilla --</option>
+                        {state.plantillas.map(p => <option key={p.id} value={p.id}>{p.nombre}</option>)}
+                    </select>
+
+                    {/* Renderizado dinámico de campos según la plantilla seleccionada */}
+                    {selectedPlantilla && Array.isArray(selectedPlantilla.campos) && (
+                        <form onSubmit={handleGenerateDocument}>
+                            {selectedPlantilla.campos.sort((a, b) => a.orden - b.orden).map(campo => (
+                                <div key={campo.id} style={{ marginBottom: '10px' }}>
+                                    <label>{campo.nombre_campo}:
+                                        <input
+                                            type={campo.tipo_campo === 'fecha' ? 'date' : campo.tipo_campo === 'numero' ? 'number' : 'text'}
+                                            name={campo.nombre_campo}
+                                            value={plantillaData[campo.nombre_campo] || ''}
+                                            onChange={handlePlantillaDataChange}
+                                            required
+                                            style={{ marginLeft: '10px', width: '300px' }}
+                                        />
+                                    </label>
+                                </div>
+                            ))}
+                            <button type="submit" className="button button-primary" style={{ marginTop: '10px' }}>Generar y Añadir</button>
+                        </form>
+                    )}
+                </div>
             )}
-            
-            {/* Formulario de metadatos personalizados */}
+
+            {/* Visualización de metadatos personalizados (solo lectura) */}
             {state.customFields && state.customFields.length > 0 && (
                 <div className="content-box">
                     <h3>Metadatos Personalizados del Expediente</h3>
                     {state.customFields.map(field => (
-                        <div key={field.id} style={{ marginBottom: '10px' }}>
-                            <label>{field.nombre_campo}{field.es_obligatorio ? ' *' : ''}:
-                                <input
-                                    type={field.tipo_campo === 'fecha' ? 'date' : field.tipo_campo}
-                                    name={String(field.id)}
-                                    value={customData[field.id] || ''}
-                                    onChange={handleCustomDataChange}
-                                    required={field.es_obligatorio}
-                                    style={{ marginLeft: '10px' }}
-                                />
+                        <div key={field.id} style={{ marginBottom: '10px', display: 'flex', alignItems: 'center' }}>
+                            <label style={{ fontWeight: '500', color: '#4a5568', minWidth: '150px' }}>
+                                {field.nombre_campo}{field.es_obligatorio ? ' *' : ''}:
                             </label>
+                            <span style={{
+                                marginLeft: '10px',
+                                padding: '8px 12px',
+                                backgroundColor: '#f7fafc',
+                                border: '1px solid #e2e8f0',
+                                borderRadius: '4px',
+                                color: '#2d3748',
+                                minWidth: '200px'
+                            }}>
+                                {field.tipo_campo === 'fecha' && customData[field.id]
+                                    ? new Date(customData[field.id]).toLocaleDateString('es-CO')
+                                    : customData[field.id] || '—'}
+                            </span>
                         </div>
                     ))}
-                    <button onClick={handleSaveCustomData} style={{ marginTop: '10px' }} className="button">Guardar Metadatos</button>
                 </div>
             )}
 
             {/* Modal de Vista Previa del Documento */}
             {showPreviewModal && previewDoc && (
-                <div 
+                <div
                     style={{
                         position: 'fixed',
                         top: 0,
@@ -340,7 +345,7 @@ const AccionesProductor = ({ state, expediente, onDataChange }) => {
                     }}
                     onClick={closePreviewModal}
                 >
-                    <div 
+                    <div
                         style={{
                             backgroundColor: '#fff',
                             borderRadius: '12px',
@@ -363,7 +368,7 @@ const AccionesProductor = ({ state, expediente, onDataChange }) => {
                             backgroundColor: '#f7fafc'
                         }}>
                             <h3 style={{ margin: 0, color: '#2d3748' }}>📄 Detalle del Documento</h3>
-                            <button 
+                            <button
                                 onClick={closePreviewModal}
                                 style={{
                                     background: 'none',
@@ -380,7 +385,7 @@ const AccionesProductor = ({ state, expediente, onDataChange }) => {
                         {/* Contenido del Modal */}
                         <div style={{ padding: '20px', overflowY: 'auto', maxHeight: 'calc(80vh - 140px)' }}>
                             <div style={{ marginBottom: '20px' }}>
-                                <div style={{ 
+                                <div style={{
                                     display: 'inline-block',
                                     padding: '4px 12px',
                                     backgroundColor: previewDoc.tipo_soporte === 'Físico' ? '#feebc8' : previewDoc.tipo_soporte === 'Híbrido' ? '#bee3f8' : '#c6f6d5',
@@ -412,9 +417,9 @@ const AccionesProductor = ({ state, expediente, onDataChange }) => {
                                 </div>
 
                                 {(previewDoc.tipo_soporte === 'Físico' || previewDoc.tipo_soporte === 'Híbrido') && (
-                                    <div style={{ 
-                                        backgroundColor: '#e8f4fd', 
-                                        padding: '15px', 
+                                    <div style={{
+                                        backgroundColor: '#e8f4fd',
+                                        padding: '15px',
                                         borderRadius: '8px',
                                         border: '1px solid #bee3f8'
                                     }}>
@@ -445,7 +450,7 @@ const AccionesProductor = ({ state, expediente, onDataChange }) => {
                             gap: '10px',
                             backgroundColor: '#f7fafc'
                         }}>
-                            <button 
+                            <button
                                 onClick={() => {
                                     handleSelectDoc(previewDoc);
                                     closePreviewModal();
@@ -462,7 +467,7 @@ const AccionesProductor = ({ state, expediente, onDataChange }) => {
                             >
                                 ✓ Seleccionar este documento
                             </button>
-                            <button 
+                            <button
                                 onClick={closePreviewModal}
                                 style={{
                                     padding: '10px 20px',

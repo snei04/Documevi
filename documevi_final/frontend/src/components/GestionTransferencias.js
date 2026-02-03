@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import api from '../api/axios';
 import { toast } from 'react-toastify';
-import './Dashboard.css'; 
+import './Dashboard.css';
 
 const GestionTransferencias = () => {
   const [expedientes, setExpedientes] = useState([]);
@@ -11,8 +11,12 @@ const GestionTransferencias = () => {
   useEffect(() => {
     const fetchExpedientes = async () => {
       try {
-        const res = await api.get('/expedientes');
-        setExpedientes(res.data);
+        // Solicitar expedientes filtrados por estado y con un limite alto para la transferencia
+        const res = await api.get('/expedientes?estado=Cerrado en Gestión&limit=100');
+
+        // Manejar nuevo formato de respuesta paginada
+        const expedientesData = res.data.data || res.data;
+        setExpedientes(Array.isArray(expedientesData) ? expedientesData : []);
       } catch (err) {
         toast.error('No se pudieron cargar los expedientes.');
       } finally {
@@ -21,14 +25,12 @@ const GestionTransferencias = () => {
     };
     fetchExpedientes();
   }, []);
-  
-  const expedientesElegibles = useMemo(() => 
-    expedientes.filter(exp => exp.estado === 'Cerrado en Gestión'),
-    [expedientes]
-  );
+
+  /* Al filtrar desde el servidor, 'expedientes' ya contiene solo los elegibles */
+  const expedientesElegibles = expedientes;
 
   const handleSelect = (id) => {
-    setSelectedIds(prev => 
+    setSelectedIds(prev =>
       prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
     );
   };
@@ -41,8 +43,9 @@ const GestionTransferencias = () => {
       try {
         const res = await api.post('/transferencias', { expedientesIds: selectedIds });
         toast.success(res.data.msg);
-        const updatedExpedientes = await api.get('/expedientes');
-        setExpedientes(updatedExpedientes.data);
+        const updatedExpedientes = await api.get('/expedientes?estado=Cerrado en Gestión&limit=100');
+        const expedientesData = updatedExpedientes.data.data || updatedExpedientes.data;
+        setExpedientes(Array.isArray(expedientesData) ? expedientesData : []);
         setSelectedIds([]);
       } catch (err) {
         toast.error(err.response?.data?.msg || 'Error al realizar la transferencia.');
@@ -58,10 +61,10 @@ const GestionTransferencias = () => {
         <h1>Transferencias Documentales Primarias</h1>
         <p>Seleccione los expedientes en estado "Cerrado en Gestión" que desea transferir al Archivo Central.</p>
       </div>
-      
+
       <div className="action-bar" style={{ justifyContent: 'start' }}>
-        <button 
-          onClick={handleTransfer} 
+        <button
+          onClick={handleTransfer}
           disabled={selectedIds.length === 0}
           className="button button-primary"
         >
@@ -82,7 +85,7 @@ const GestionTransferencias = () => {
           {expedientesElegibles.length > 0 ? expedientesElegibles.map(exp => (
             <tr key={exp.id}>
               <td style={{ textAlign: 'center' }}>
-                <input 
+                <input
                   type="checkbox"
                   checked={selectedIds.includes(exp.id)}
                   onChange={() => handleSelect(exp.id)}

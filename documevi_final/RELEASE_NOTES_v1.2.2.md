@@ -114,4 +114,16 @@
 
 ---
 
+## ⚡ Optimizaciones de Rendimiento
+
+### Manejo de Grandes Volúmenes de Datos (1.2.2-patch1)
+
+- **Paginación en Servidor**: Implementada paginación en el listado de expedientes (`GET /api/expedientes`) para cargar solo 20 registros por página en lugar de la colección completa.
+- **Indexación de Base de Datos**: Agregados índices clave en `nombre_expediente`, `fecha_apertura` y `estado` para acelerar consultas y ordenamientos.
+- **Filtrado Optimizado**: Los filtros de búsqueda ahora se ejecutan directamente en la base de datos, reduciendo significativamente la carga de memoria en el servidor.
+- **Mejora**: Soluciona el problema de carga infinita reportado con >115,000 registros.
+- **Corrección en Transferencias**: Actualizado `GestionTransferencias.js` para soportar la paginación del servidor, corrigiendo el error al cargar expedientes para transferir.
+
+---
+
 **Equipo de Desarrollo Documevi**

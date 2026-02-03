@@ -9,7 +9,7 @@ const VistaRestringida = ({ expediente, onSolicitarPrestamo }) => {
     // Manejar el envío del formulario de solicitud de préstamo
     const handleSubmit = (e) => {
         e.preventDefault();
-        onSolicitarPrestamo({ observaciones, tipoPrestamo });
+        onSolicitarPrestamo({ observaciones, tipo_prestamo: tipoPrestamo });
         setShowPrestamoForm(false);
     };
 
@@ -36,11 +36,11 @@ const VistaRestringida = ({ expediente, onSolicitarPrestamo }) => {
                                 <option value="Electrónico">Electrónico</option>
                                 <option value="Físico">Físico</option>
                             </select>
-                            <input 
-                                type="text" 
-                                placeholder="Observaciones (opcional)" 
-                                value={observaciones} 
-                                onChange={(e) => setObservaciones(e.target.value)} 
+                            <input
+                                type="text"
+                                placeholder="Observaciones (opcional)"
+                                value={observaciones}
+                                onChange={(e) => setObservaciones(e.target.value)}
                             />
                             <button type="submit" className="button button-primary">Confirmar</button>
                         </form>

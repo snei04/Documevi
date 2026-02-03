@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../api/axios';
+import { getExpedientes } from '../api/expedienteAPI';
 import { toast } from 'react-toastify';
 import Modal from 'react-modal';
 import PermissionGuard from './auth/PermissionGuard';
@@ -16,7 +17,7 @@ const GestionExpedientes = () => {
     const [subseries, setSubseries] = useState([]);
     const [filteredSubseries, setFilteredSubseries] = useState([]);
     const [loading, setLoading] = useState(true);
-    
+
     // Estados del modal
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [formData, setFormData] = useState({
@@ -27,7 +28,7 @@ const GestionExpedientes = () => {
         descriptor_2: ''
     });
     const [submitting, setSubmitting] = useState(false);
-    
+
     // Estados para campos personalizados y validacion de duplicados
     const [oficinas, setOficinas] = useState([]);
     const [camposPersonalizados, setCamposPersonalizados] = useState([]);
@@ -41,29 +42,83 @@ const GestionExpedientes = () => {
     const [filterEstado, setFilterEstado] = useState('');
     const [filterSerie, setFilterSerie] = useState('');
 
-    // Cargar datos iniciales
+    // Estado de paginación
+    const [pagination, setPagination] = useState({
+        page: 1,
+        limit: 20,
+        total: 0,
+        totalPages: 1
+    });
+
+    // Cargar datos iniciales (Solo catalogos)
     useEffect(() => {
-        fetchData();
+        fetchCatalogos();
     }, []);
 
-    const fetchData = async () => {
-        setLoading(true);
+    // Cargar expedientes cuando cambian filtros o pagina
+    useEffect(() => {
+        const timerId = setTimeout(() => {
+            fetchExpedientes();
+        }, 500); // Debounce de 500ms para busqueda
+
+        return () => clearTimeout(timerId);
+    }, [pagination.page, searchTerm, filterEstado, filterSerie]);
+
+    const fetchCatalogos = async () => {
         try {
-            const [resExp, resSer, resSub, resOfi] = await Promise.all([
-                api.get('/expedientes'),
+            const [resSer, resSub, resOfi] = await Promise.all([
                 api.get('/series'),
                 api.get('/subseries'),
                 api.get('/oficinas')
             ]);
-            setExpedientes(resExp.data);
             setSeries(resSer.data.filter(s => s.activo));
             setSubseries(resSub.data.filter(ss => ss.activo));
             setOficinas(resOfi.data.filter(o => o.activo));
         } catch (err) {
-            toast.error('Error al cargar datos iniciales.');
+            console.error(err);
+            toast.error('Error al cargar catálogos.');
+        }
+    };
+
+    const fetchExpedientes = async () => {
+        setLoading(true);
+        try {
+            const params = {
+                page: pagination.page,
+                limit: pagination.limit,
+                search: searchTerm,
+                estado: filterEstado,
+                serie: filterSerie
+            };
+
+            const res = await getExpedientes(params);
+
+            // Soporte para respuesta antigua (array) por si el backend no ha actualizado o cache
+            if (Array.isArray(res.data)) {
+                setExpedientes(res.data);
+                // Si es array directo, asumimos que no hay paginacion real o es todo
+                setPagination(prev => ({ ...prev, total: res.data.length, totalPages: 1 }));
+            } else {
+                // Nuevo formato { data, meta }
+                setExpedientes(res.data.data);
+                setPagination(prev => ({
+                    ...prev,
+                    total: res.data.meta.total,
+                    totalPages: res.data.meta.totalPages
+                }));
+            }
+        } catch (err) {
+            console.error(err);
+            toast.error('Error al cargar expedientes.');
         } finally {
             setLoading(false);
         }
+    };
+
+    // Función auxiliar para mantener compatibilidad con codigo existente que llama a fetchData
+    const fetchData = () => {
+        fetchExpedientes();
+        fetchCatalogos();
     };
 
     // Cargar campos personalizados cuando se selecciona una serie
@@ -81,17 +136,20 @@ const GestionExpedientes = () => {
         }
     }, []);
 
-    // Filtrar expedientes
-    const filteredExpedientes = useMemo(() => {
-        return expedientes.filter(exp => {
-            const matchSearch = exp.nombre_expediente?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                               exp.nombre_serie?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                               exp.nombre_subserie?.toLowerCase().includes(searchTerm.toLowerCase());
-            const matchEstado = !filterEstado || exp.estado === filterEstado;
-            const matchSerie = !filterSerie || exp.id_serie === parseInt(filterSerie);
-            return matchSearch && matchEstado && matchSerie;
-        });
-    }, [expedientes, searchTerm, filterEstado, filterSerie]);
+    // Cambiar pagina
+    const handlePageChange = (newPage) => {
+        if (newPage >= 1 && newPage <= pagination.totalPages) {
+            setPagination(prev => ({ ...prev, page: newPage }));
+        }
+    };
+
+    // Limpiar filtros
+    const handleClearFilters = () => {
+        setSearchTerm('');
+        setFilterEstado('');
+        setFilterSerie('');
+        setPagination(prev => ({ ...prev, page: 1 }));
+    };
 
     // Estadísticas
     const stats = useMemo(() => ({
@@ -106,7 +164,7 @@ const GestionExpedientes = () => {
         const serieId = e.target.value;
         setFormData({ ...formData, id_serie: serieId, id_subserie: '' });
         setCustomData({});
-        
+
         // Verificar si la serie requiere subserie
         const serieSeleccionada = series.find(s => s.id === parseInt(serieId));
         if (serieSeleccionada && !serieSeleccionada.requiere_subserie) {
@@ -114,7 +172,7 @@ const GestionExpedientes = () => {
         } else {
             setFilteredSubseries(subseries.filter(ss => ss.id_serie === parseInt(serieId)));
         }
-        
+
         // Cargar campos personalizados de la oficina de la serie
         if (serieSeleccionada) {
             fetchCamposPersonalizados(serieSeleccionada.id_oficina_productora);
@@ -161,25 +219,25 @@ const GestionExpedientes = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         setSubmitting(true);
-        
+
         try {
             const serieSeleccionada = series.find(s => s.id === parseInt(formData.id_serie));
             const dataToSend = { ...formData };
-            
+
             if (serieSeleccionada && !serieSeleccionada.requiere_subserie) {
                 dataToSend.id_subserie = null;
             }
-            
+
             // Verificar si hay campos con validacion de duplicidad
             const camposConValidacion = camposPersonalizados.filter(c => c.validar_duplicidad);
-            
+
             if (camposConValidacion.length > 0 && Object.keys(customData).length > 0) {
                 // Validar duplicados antes de crear
                 const validacionRes = await api.post('/expedientes/validar-duplicados', {
                     id_oficina: serieSeleccionada?.id_oficina_productora,
                     campos_personalizados: customData
                 });
-                
+
                 if (validacionRes.data.duplicado) {
                     // Mostrar modal de duplicado
                     setDuplicadoInfo(validacionRes.data);
@@ -188,10 +246,10 @@ const GestionExpedientes = () => {
                     return;
                 }
             }
-            
+
             // No hay duplicados, crear expediente normalmente
             await crearExpedienteConDatos(dataToSend);
-            
+
         } catch (err) {
             toast.error(err.response?.data?.msg || 'Error al crear el expediente.');
             setSubmitting(false);
@@ -203,12 +261,12 @@ const GestionExpedientes = () => {
         try {
             const res = await api.post('/expedientes', dataToSend);
             const nuevoExpedienteId = res.data.id;
-            
+
             // Guardar datos personalizados si existen
             if (Object.keys(customData).length > 0) {
                 await api.put(`/expedientes/${nuevoExpedienteId}/custom-data`, customData);
             }
-            
+
             toast.success('Expediente creado con exito!');
             closeModal();
             fetchData();
@@ -226,15 +284,15 @@ const GestionExpedientes = () => {
             // Aqui se anexaria el documento al expediente existente
             // Por ahora, redirigimos al expediente existente
             const expedienteId = duplicadoInfo.expediente_existente.id;
-            
+
             toast.success(`Redirigiendo al expediente #${expedienteId} para anexar el documento...`);
             setDuplicadoModalOpen(false);
             setDuplicadoInfo(null);
             closeModal();
-            
+
             // Redirigir al detalle del expediente
             window.location.href = `/dashboard/expedientes/${expedienteId}`;
-            
+
         } catch (err) {
             toast.error(err.response?.data?.msg || 'Error al procesar la anexion.');
         } finally {
@@ -354,9 +412,9 @@ const GestionExpedientes = () => {
                         </select>
                     </div>
                     {(searchTerm || filterEstado || filterSerie) && (
-                        <button 
+                        <button
                             className="button button-secondary"
-                            onClick={() => { setSearchTerm(''); setFilterEstado(''); setFilterSerie(''); }}
+                            onClick={handleClearFilters}
                         >
                             Limpiar filtros
                         </button>
@@ -366,60 +424,89 @@ const GestionExpedientes = () => {
 
             {/* Tabla de expedientes */}
             <div className="content-box">
-                <h3>Expedientes ({filteredExpedientes.length})</h3>
-                {filteredExpedientes.length === 0 ? (
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+                    <h3>Expedientes ({pagination.total})</h3>
+                    <span className="text-muted">Página {pagination.page} de {pagination.totalPages}</span>
+                </div>
+
+                {expedientes.length === 0 ? (
                     <p className="empty-message">No se encontraron expedientes.</p>
                 ) : (
-                    <div className="table-responsive">
-                        <table className="styled-table">
-                            <thead>
-                                <tr>
-                                    <th>Nombre del Expediente</th>
-                                    <th>Serie / Subserie</th>
-                                    <th>Fecha Apertura</th>
-                                    <th>Estado</th>
-                                    <th>Disponibilidad</th>
-                                    <th>Responsable</th>
-                                    <th>Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {filteredExpedientes.map(exp => (
-                                    <tr key={exp.id}>
-                                        <td>
-                                            <strong>{exp.nombre_expediente}</strong>
-                                            {exp.descriptor_1 && (
-                                                <><br /><small className="text-muted">{exp.descriptor_1}</small></>
-                                            )}
-                                        </td>
-                                        <td>
-                                            <span className="serie-badge">{exp.nombre_serie}</span>
-                                            {exp.nombre_subserie && (
-                                                <><br /><small>{exp.nombre_subserie}</small></>
-                                            )}
-                                        </td>
-                                        <td>{formatDate(exp.fecha_apertura)}</td>
-                                        <td>
-                                            <span className={`status-badge ${getEstadoClass(exp.estado)}`}>
-                                                {exp.estado}
-                                            </span>
-                                        </td>
-                                        <td>
-                                            <span className={`badge ${exp.disponibilidad === 'Disponible' ? 'badge-success' : 'badge-warning'}`}>
-                                                {exp.disponibilidad || 'Disponible'}
-                                            </span>
-                                        </td>
-                                        <td>{exp.nombre_responsable || '-'}</td>
-                                        <td className="action-cell">
-                                            <Link to={`/dashboard/expedientes/${exp.id}`} className="button button-small">
-                                                Ver Detalles
-                                            </Link>
-                                        </td>
+                    <>
+                        <div className="table-responsive">
+                            <table className="styled-table">
+                                <thead>
+                                    <tr>
+                                        <th>Nombre del Expediente</th>
+                                        <th>Serie / Subserie</th>
+                                        <th>Fecha Apertura</th>
+                                        <th>Estado</th>
+                                        <th>Disponibilidad</th>
+                                        <th>Responsable</th>
+                                        <th>Acciones</th>
                                     </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
+                                </thead>
+                                <tbody>
+                                    {expedientes.map(exp => (
+                                        <tr key={exp.id}>
+                                            <td>
+                                                <strong>{exp.nombre_expediente}</strong>
+                                                {exp.descriptor_1 && (
+                                                    <><br /><small className="text-muted">{exp.descriptor_1}</small></>
+                                                )}
+                                            </td>
+                                            <td>
+                                                <span className="serie-badge">{exp.nombre_serie}</span>
+                                                {exp.nombre_subserie && (
+                                                    <><br /><small>{exp.nombre_subserie}</small></>
+                                                )}
+                                            </td>
+                                            <td>{formatDate(exp.fecha_apertura)}</td>
+                                            <td>
+                                                <span className={`status-badge ${getEstadoClass(exp.estado)}`}>
+                                                    {exp.estado}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <span className={`badge ${exp.disponibilidad === 'Disponible' ? 'badge-success' : 'badge-warning'}`}>
+                                                    {exp.disponibilidad || 'Disponible'}
+                                                </span>
+                                            </td>
+                                            <td>{exp.nombre_responsable || '-'}</td>
+                                            <td className="action-cell">
+                                                <Link to={`/dashboard/expedientes/${exp.id}`} className="button button-small">
+                                                    Ver Detalles
+                                                </Link>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        {/* Paginación */}
+                        <div className="pagination-controls" style={{ display: 'flex', justifyContent: 'center', marginTop: '20px', gap: '10px' }}>
+                            <button
+                                className="button"
+                                disabled={pagination.page === 1}
+                                onClick={() => handlePageChange(pagination.page - 1)}
+                            >
+                                &laquo; Anterior
+                            </button>
+
+                            <span style={{ display: 'flex', alignItems: 'center' }}>
+                                Página {pagination.page} de {pagination.totalPages}
+                            </span>
+
+                            <button
+                                className="button"
+                                disabled={pagination.page === pagination.totalPages}
+                                onClick={() => handlePageChange(pagination.page + 1)}
+                            >
+                                Siguiente &raquo;
+                            </button>
+                        </div>
+                    </>
                 )}
             </div>
 
@@ -478,9 +565,9 @@ const GestionExpedientes = () => {
                                 disabled={!serieRequiereSubserie()}
                             >
                                 <option value="">
-                                    {!formData.id_serie 
-                                        ? '-- Primero seleccione una Serie --' 
-                                        : serieRequiereSubserie() 
+                                    {!formData.id_serie
+                                        ? '-- Primero seleccione una Serie --'
+                                        : serieRequiereSubserie()
                                             ? '-- Seleccione una Subserie --'
                                             : '-- No requiere Subserie --'
                                     }
@@ -572,16 +659,16 @@ const GestionExpedientes = () => {
                     )}
 
                     <div className="modal-actions">
-                        <button 
-                            type="submit" 
+                        <button
+                            type="submit"
                             className="button button-primary"
                             disabled={submitting}
                         >
                             {submitting ? 'Creando...' : 'Crear Expediente'}
                         </button>
-                        <button 
-                            type="button" 
-                            onClick={closeModal} 
+                        <button
+                            type="button"
+                            onClick={closeModal}
                             className="button"
                         >
                             Cancelar

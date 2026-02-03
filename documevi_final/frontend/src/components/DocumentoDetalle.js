@@ -210,7 +210,7 @@ const DocumentoDetalle = () => {
                         </div>
                         <div className="detail-item">
                             <label>Acción</label>
-                            <button 
+                            <button
                                 onClick={() => setShowFileModal(true)}
                                 className="button button-primary"
                             >
@@ -227,9 +227,9 @@ const DocumentoDetalle = () => {
                 const fileName = documento.nombre_archivo_original || documento.path_archivo;
                 const isImage = /\.(jpg|jpeg|png|gif|bmp|webp|svg)$/i.test(fileName);
                 const isPdf = /\.pdf$/i.test(fileName);
-                
+
                 return (
-                    <div 
+                    <div
                         style={{
                             position: 'fixed',
                             top: 0,
@@ -244,7 +244,7 @@ const DocumentoDetalle = () => {
                         }}
                         onClick={() => setShowFileModal(false)}
                     >
-                        <div 
+                        <div
                             style={{
                                 backgroundColor: '#fff',
                                 borderRadius: '12px',
@@ -273,7 +273,7 @@ const DocumentoDetalle = () => {
                                     <small style={{ color: '#718096' }}>Radicado: {documento.radicado}</small>
                                 </div>
                                 <div style={{ display: 'flex', gap: '10px' }}>
-                                    <a 
+                                    <a
                                         href={fileUrl}
                                         target="_blank"
                                         rel="noopener noreferrer"
@@ -288,21 +288,7 @@ const DocumentoDetalle = () => {
                                     >
                                         ↗ Abrir en nueva pestaña
                                     </a>
-                                    <a 
-                                        href={fileUrl}
-                                        download={fileName}
-                                        style={{
-                                            padding: '8px 16px',
-                                            backgroundColor: '#38a169',
-                                            color: '#fff',
-                                            textDecoration: 'none',
-                                            borderRadius: '6px',
-                                            fontSize: '14px'
-                                        }}
-                                    >
-                                        ⬇ Descargar
-                                    </a>
-                                    <button 
+                                    <button
                                         onClick={() => setShowFileModal(false)}
                                         style={{
                                             padding: '8px 16px',
@@ -320,17 +306,17 @@ const DocumentoDetalle = () => {
                             </div>
 
                             {/* Contenido - imagen o iframe según tipo */}
-                            <div style={{ 
-                                flex: 1, 
-                                overflow: 'auto', 
-                                display: 'flex', 
-                                justifyContent: 'center', 
+                            <div style={{
+                                flex: 1,
+                                overflow: 'auto',
+                                display: 'flex',
+                                justifyContent: 'center',
                                 alignItems: 'center',
                                 backgroundColor: '#f0f0f0',
                                 padding: '20px'
                             }}>
                                 {isImage ? (
-                                    <img 
+                                    <img
                                         src={fileUrl}
                                         alt={fileName}
                                         style={{
@@ -342,7 +328,7 @@ const DocumentoDetalle = () => {
                                         }}
                                     />
                                 ) : isPdf ? (
-                                    <iframe 
+                                    <iframe
                                         src={fileUrl}
                                         title="Visor de documento"
                                         style={{
@@ -356,7 +342,7 @@ const DocumentoDetalle = () => {
                                     <div style={{ textAlign: 'center', color: '#666' }}>
                                         <p style={{ fontSize: '48px', marginBottom: '20px' }}>📄</p>
                                         <p>Este tipo de archivo no se puede previsualizar.</p>
-                                        <p>Use los botones de arriba para abrir o descargar.</p>
+                                        <p>Use el botón de arriba para abrirlo en una nueva pestaña.</p>
                                     </div>
                                 )}
                             </div>

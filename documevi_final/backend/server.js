@@ -35,7 +35,9 @@ const app = express();
 // --- Middlewares Esenciales ---
 const allowedOrigins = [
   'http://localhost:3000',
+  'http://localhost:4000',
   'https://documevi.appsimevi.co',
+  'https://documevi.appsimevi.co:9092',
   process.env.FRONTEND_URL
 ].filter(Boolean);
 
@@ -65,7 +67,7 @@ app.get('/api', (req, res) => {
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Conexión de las rutas a sus prefijos en la API
-app.use('/api/auth', authRoutes); 
+app.use('/api/auth', authRoutes);
 app.use('/api/dependencias', dependenciaRoutes);
 app.use('/api/oficinas', oficinaRoutes);
 app.use('/api/series', serieRoutes);
@@ -91,7 +93,7 @@ app.use('/api/retencion', retencionRoutes);
 // Este middleware debe ir DESPUÉS de todas las rutas de la API.
 app.use((err, req, res, next) => {
   // Registra el error completo en la consola del servidor (para ti)
-  console.error(err.stack); 
+  console.error(err.stack);
   // Envía un mensaje genérico y seguro al usuario
   res.status(500).json({ msg: 'Ocurrió un error inesperado en el servidor.' });
 });

@@ -1,9 +1,9 @@
 import axios from 'axios';
 
-// Crear una instancia de axios con la URL base de la API
+// Configuración para usar el proxy de Nginx (location /api/)
+// Esto hará que las peticiones vayan a https://dominio:puerto/api
 const api = axios.create({
-  // Usar la variable de entorno o localhost por defecto
-  baseURL: process.env.REACT_APP_API_URL || 'http://localhost:4000/api',
+  baseURL: '/api'
 });
 
 api.interceptors.request.use(

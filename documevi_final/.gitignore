@@ -21,6 +21,8 @@ pnpm-debug.log*
 frontend/build/
 frontend/dist/
 backend/dist/
+backend/uploads/
+backend/migrations/
 
 # Coverage
 coverage/

@@ -1,6 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { toast } from 'react-toastify';
 import api from '../../api/axios';
+import PermissionGuard from '../auth/PermissionGuard';
+import FileUpload from '../FileUpload';
 
 const AccionesProductor = ({ state, expediente, onDataChange }) => {
     // --- ESTADO LOCAL PARA LOS FORMULARIOS ---
@@ -22,6 +24,20 @@ const AccionesProductor = ({ state, expediente, onDataChange }) => {
 
     // Estado para "Metadatos Personalizados"
     const [customData, setCustomData] = useState({});
+
+    // Estado para "Crear Documento Nuevo"
+    const [showCrearDocForm, setShowCrearDocForm] = useState(false);
+    const [nuevoDocData, setNuevoDocData] = useState({
+        tipo_soporte: 'Electrónico',
+        asunto: '',
+        ubicacion_fisica: '',
+        remitente_nombre: '',
+        remitente_identificacion: '',
+        remitente_direccion: ''
+    });
+    const [archivo, setArchivo] = useState(null);
+    const [creandoDoc, setCreandoDoc] = useState(false);
+    const fileInputRef = useRef(null);
 
     // Sincroniza los metadatos del estado global al estado local cuando se cargan
     useEffect(() => {
@@ -129,6 +145,64 @@ const AccionesProductor = ({ state, expediente, onDataChange }) => {
             onDataChange();
         } catch (err) {
             toast.error(err.response?.data?.msg || 'Error al guardar los metadatos.');
+        }
+    };
+
+    // Handler para crear documento nuevo
+    const handleCrearDocumento = async (e) => {
+        e.preventDefault();
+        if (!nuevoDocData.asunto.trim()) {
+            return toast.error('El asunto del documento es obligatorio.');
+        }
+        if (nuevoDocData.tipo_soporte === 'Electrónico' && !archivo) {
+            return toast.error('Debe adjuntar un archivo para documentos electrónicos.');
+        }
+        if ((nuevoDocData.tipo_soporte === 'Físico' || nuevoDocData.tipo_soporte === 'Híbrido') && !nuevoDocData.ubicacion_fisica.trim()) {
+            return toast.error('La ubicación física es obligatoria para documentos físicos o híbridos.');
+        }
+
+        setCreandoDoc(true);
+        try {
+            const formData = new FormData();
+            formData.append('asunto', nuevoDocData.asunto);
+            formData.append('tipo_soporte', nuevoDocData.tipo_soporte);
+            formData.append('id_serie', expediente.id_serie);
+            formData.append('id_subserie', expediente.id_subserie || '');
+            formData.append('id_oficina_productora', expediente.id_oficina_productora);
+            formData.append('id_expediente', expediente.id); // Para vincular automáticamente
+
+            if (nuevoDocData.ubicacion_fisica) {
+                formData.append('ubicacion_fisica', nuevoDocData.ubicacion_fisica);
+            }
+            if (nuevoDocData.remitente_nombre) {
+                formData.append('remitente_nombre', nuevoDocData.remitente_nombre);
+                formData.append('remitente_identificacion', nuevoDocData.remitente_identificacion || '');
+                formData.append('remitente_direccion', nuevoDocData.remitente_direccion || '');
+            }
+            if (archivo) {
+                formData.append('archivo', archivo);
+            }
+
+            await api.post('/documentos/con-expediente', formData, {
+                headers: { 'Content-Type': 'multipart/form-data' }
+            });
+
+            toast.success('Documento creado y añadido al expediente.');
+            setNuevoDocData({
+                tipo_soporte: 'Electrónico',
+                asunto: '',
+                ubicacion_fisica: '',
+                remitente_nombre: '',
+                remitente_identificacion: '',
+                remitente_direccion: ''
+            });
+            setArchivo(null);
+            setShowCrearDocForm(false);
+            onDataChange();
+        } catch (err) {
+            toast.error(err.response?.data?.msg || 'Error al crear el documento.');
+        } finally {
+            setCreandoDoc(false);
         }
     };
 
@@ -302,6 +376,111 @@ const AccionesProductor = ({ state, expediente, onDataChange }) => {
             )}
 
 
+
+            {/* Formulario para crear documento nuevo - Con permiso expedientes_crear */}
+            {expediente.estado === 'En trámite' && (
+                <PermissionGuard permission="expedientes_crear">
+                    <div className="content-box">
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+                            <h3 style={{ margin: 0 }}>📄 Crear Documento Nuevo</h3>
+                            <button
+                                type="button"
+                                onClick={() => setShowCrearDocForm(!showCrearDocForm)}
+                                className="button"
+                                style={{ backgroundColor: showCrearDocForm ? '#e2e8f0' : '#3182ce', color: showCrearDocForm ? '#4a5568' : '#fff' }}
+                            >
+                                {showCrearDocForm ? '✕ Cerrar' : '+ Nuevo Documento'}
+                            </button>
+                        </div>
+
+                        {showCrearDocForm && (
+                            <form onSubmit={handleCrearDocumento}>
+                                <div style={{ display: 'grid', gap: '15px' }}>
+                                    <div className="form-group">
+                                        <label>Tipo de Soporte *</label>
+                                        <select
+                                            value={nuevoDocData.tipo_soporte}
+                                            onChange={(e) => setNuevoDocData(prev => ({ ...prev, tipo_soporte: e.target.value }))}
+                                        >
+                                            <option value="Electrónico">Electrónico</option>
+                                            <option value="Físico">Físico</option>
+                                            <option value="Híbrido">Híbrido</option>
+                                        </select>
+                                    </div>
+
+                                    <div className="form-group">
+                                        <label>Asunto *</label>
+                                        <input
+                                            type="text"
+                                            value={nuevoDocData.asunto}
+                                            onChange={(e) => setNuevoDocData(prev => ({ ...prev, asunto: e.target.value }))}
+                                            placeholder="Descripción del documento"
+                                        />
+                                    </div>
+
+                                    {(nuevoDocData.tipo_soporte === 'Físico' || nuevoDocData.tipo_soporte === 'Híbrido') && (
+                                        <div className="form-group">
+                                            <label>Ubicación Física *</label>
+                                            <input
+                                                type="text"
+                                                value={nuevoDocData.ubicacion_fisica}
+                                                onChange={(e) => setNuevoDocData(prev => ({ ...prev, ubicacion_fisica: e.target.value }))}
+                                                placeholder="Ej: Archivo Central, Estante 3, Caja 12"
+                                            />
+                                        </div>
+                                    )}
+
+                                    {(nuevoDocData.tipo_soporte === 'Electrónico' || nuevoDocData.tipo_soporte === 'Híbrido') && (
+                                        <div className="form-group">
+                                            <label>Adjuntar Archivo {nuevoDocData.tipo_soporte === 'Electrónico' ? '*' : '(Opcional)'}</label>
+                                            <FileUpload
+                                                onFileChange={(file) => setArchivo(file)}
+                                                ref={fileInputRef}
+                                            />
+                                        </div>
+                                    )}
+
+                                    <details style={{ marginTop: '10px' }}>
+                                        <summary style={{ cursor: 'pointer', color: '#3182ce' }}>+ Datos del Remitente (Opcional)</summary>
+                                        <div style={{ padding: '15px', backgroundColor: '#f7fafc', borderRadius: '6px', marginTop: '10px' }}>
+                                            <div className="form-group">
+                                                <label>Nombre del Remitente</label>
+                                                <input
+                                                    type="text"
+                                                    value={nuevoDocData.remitente_nombre}
+                                                    onChange={(e) => setNuevoDocData(prev => ({ ...prev, remitente_nombre: e.target.value }))}
+                                                />
+                                            </div>
+                                            <div className="form-group">
+                                                <label>Identificación</label>
+                                                <input
+                                                    type="text"
+                                                    value={nuevoDocData.remitente_identificacion}
+                                                    onChange={(e) => setNuevoDocData(prev => ({ ...prev, remitente_identificacion: e.target.value }))}
+                                                />
+                                            </div>
+                                            <div className="form-group">
+                                                <label>Dirección</label>
+                                                <input
+                                                    type="text"
+                                                    value={nuevoDocData.remitente_direccion}
+                                                    onChange={(e) => setNuevoDocData(prev => ({ ...prev, remitente_direccion: e.target.value }))}
+                                                />
+                                            </div>
+                                        </div>
+                                    </details>
+
+                                    <div style={{ marginTop: '15px' }}>
+                                        <button type="submit" className="button button-primary" disabled={creandoDoc}>
+                                            {creandoDoc ? '⏳ Creando...' : '✓ Crear y Añadir al Expediente'}
+                                        </button>
+                                    </div>
+                                </div>
+                            </form>
+                        )}
+                    </div>
+                </PermissionGuard>
+            )}
 
             {/* Modal de Vista Previa del Documento */}
             {showPreviewModal && previewDoc && (

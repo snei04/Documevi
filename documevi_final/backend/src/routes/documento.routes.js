@@ -1,12 +1,13 @@
 const { Router } = require('express');
-const { 
-    createDocumento,
-    getAllDocumentos,
-    getDocumentoById,
-    startWorkflow,   
-    advanceWorkflow,
-    firmarDocumento,
-    createDocumentoFromPlantillaSinExpediente 
+const {
+  createDocumento,
+  getAllDocumentos,
+  getDocumentoById,
+  startWorkflow,
+  advanceWorkflow,
+  firmarDocumento,
+  createDocumentoFromPlantillaSinExpediente,
+  createDocumentoConExpediente
 } = require('../controllers/documento.controller');
 const authMiddleware = require('../middleware/auth.middleware');
 const authorizePermission = require('../middleware/authorizePermission');
@@ -16,12 +17,16 @@ const router = Router();
 router.use(authMiddleware);
 
 // Rutas existentes para crear y listar documentos
+// NOTA: documentos_crear fue deprecado en v1.3.3, ahora usa expedientes_crear
 router.route('/')
   .get(authorizePermission('documentos_ver'), getAllDocumentos)
-  .post(authorizePermission('documentos_crear'), upload.single('archivo'), createDocumento);
+  .post(authorizePermission('expedientes_crear'), upload.single('archivo'), createDocumento);
 
-// Ruta para generar desde plantilla
-router.post('/desde-plantilla', authorizePermission('documentos_crear'), createDocumentoFromPlantillaSinExpediente);
+// Ruta para generar desde plantilla (legacy - usa expedientes_crear)
+router.post('/desde-plantilla', authorizePermission('expedientes_crear'), createDocumentoFromPlantillaSinExpediente);
+
+// Ruta para crear documento y vincularlo a expediente existente
+router.post('/con-expediente', authorizePermission('expedientes_crear'), upload.single('archivo'), createDocumentoConExpediente);
 
 // Ruta para obtener detalle de un documento
 router.get('/:id', authorizePermission('documentos_ver'), getDocumentoById);

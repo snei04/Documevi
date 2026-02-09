@@ -29,9 +29,6 @@ const Sidebar = ({ isOpen }) => {
                             <span>{openMenu === 'gestion' ? '▲' : '▼'}</span>
                         </div>
                         <ul className={`submenu ${openMenu === 'gestion' ? 'open' : ''}`}>
-                            <PermissionGuard permission="expedientes_crear">
-                                <li><NavLink to="/dashboard/captura">Captura de documentos</NavLink></li>
-                            </PermissionGuard>
                             <PermissionGuard permission="expedientes_ver">
                                 <li><NavLink to="/dashboard/expedientes">Gestión de expedientes</NavLink></li>
                             </PermissionGuard>
@@ -45,7 +42,7 @@ const Sidebar = ({ isOpen }) => {
                     </li>
 
                     {/* --- Menú Desplegable: Parametrización --- */}
-            
+
                     {/* Mostrar menú si tiene al menos un permiso de parametrización */}
                     <li>
                         <div onClick={() => handleMenuClick('parametros')} className="menu-title">

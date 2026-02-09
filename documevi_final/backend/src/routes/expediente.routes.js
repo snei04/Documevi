@@ -1,8 +1,9 @@
 const express = require('express');
-const { 
-    getAllExpedientes, 
+const {
+    getAllExpedientes,
     createExpediente,
-    getExpedienteById,         
+    crearExpedienteCompleto,
+    getExpedienteById,
     addDocumentoToExpediente,
     closeExpediente,
     getExpedienteCustomData,
@@ -15,6 +16,7 @@ const {
 
 const protect = require('../middleware/auth.middleware');
 const authorizePermission = require('../middleware/authorizePermission');
+const upload = require('../config/upload');
 
 const router = express.Router();
 
@@ -25,6 +27,13 @@ router.use(protect);
 router.route('/')
     .get(getAllExpedientes)  // Todos los usuarios autenticados pueden ver la lista
     .post(authorizePermission('expedientes_crear'), createExpediente);
+
+// Nuevo endpoint unificado con soporte para archivo
+router.post('/crear-completo',
+    authorizePermission('expedientes_crear'),
+    upload.single('archivo'),
+    crearExpedienteCompleto
+);
 
 router.route('/validar-duplicados')
     .post(authorizePermission('expedientes_crear'), validarDuplicados);

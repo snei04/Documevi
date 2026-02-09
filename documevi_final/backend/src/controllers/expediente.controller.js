@@ -134,6 +134,53 @@ exports.createExpediente = async (req, res) => {
 };
 
 /**
+ * Crea un expediente completo con documento (opcional) en una sola operación atómica.
+ * Soporta: crear documento nuevo, relacionar existente, o ninguno.
+ */
+exports.crearExpedienteCompleto = async (req, res) => {
+    try {
+        // El body viene como JSON string en el campo 'data' cuando se usa multipart
+        let data;
+        if (req.body.data) {
+            data = JSON.parse(req.body.data);
+        } else {
+            data = req.body;
+        }
+
+        const archivo = req.file || null;
+        const userId = req.user.id;
+
+        // Validaciones básicas - Solo serie es obligatoria, el radicado se genera automáticamente
+        if (!data.expediente || !data.expediente.id_serie) {
+            return res.status(400).json({ msg: 'La serie es obligatoria.' });
+        }
+
+        // Validar permisos adicionales según la opción de documento
+        // Coherente con el flujo unificado: 
+        // - expedientes_crear permite crear documentos dentro del wizard
+        // - expedientes_agregar_documentos permite relacionar documentos existentes
+        const userPermissions = req.user.permissions || [];
+        if (data.documento?.opcion === 'relacionar' && !userPermissions.includes('expedientes_agregar_documentos')) {
+            return res.status(403).json({ msg: 'No tienes permiso para relacionar documentos existentes.' });
+        }
+        // No se valida 'crear' porque el permiso expedientes_crear ya lo cubre en la ruta
+
+        const resultado = await expedienteService.crearExpedienteCompleto(data, archivo, userId);
+
+        res.status(201).json(resultado);
+    } catch (error) {
+        console.error("Error en crearExpedienteCompleto:", error);
+
+        // Manejar códigos de error personalizados
+        if (error.statusCode) {
+            return res.status(error.statusCode).json({ msg: error.message });
+        }
+
+        res.status(500).json({ msg: 'Error en el servidor', error: error.message });
+    }
+};
+
+/**
  * Obtiene un expediente por ID con lógica de permisos.
  */
 exports.getExpedienteById = async (req, res) => {

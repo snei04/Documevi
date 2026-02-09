@@ -6,6 +6,7 @@ import { toast } from 'react-toastify';
 import Modal from 'react-modal';
 import PermissionGuard from './auth/PermissionGuard';
 import DuplicadoAlertModal from './DuplicadoAlertModal';
+import WizardCrearExpediente from './WizardCrearExpediente';
 import './Dashboard.css';
 
 Modal.setAppElement('#root');
@@ -36,6 +37,10 @@ const GestionExpedientes = () => {
     const [duplicadoModalOpen, setDuplicadoModalOpen] = useState(false);
     const [duplicadoInfo, setDuplicadoInfo] = useState(null);
     const [documentoParaAnexar, setDocumentoParaAnexar] = useState(null);
+
+    // Estado para el wizard unificado
+    const [isWizardOpen, setIsWizardOpen] = useState(false);
+    const [userPermissions, setUserPermissions] = useState([]);
 
     // Estados de filtros
     const [searchTerm, setSearchTerm] = useState('');
@@ -74,6 +79,13 @@ const GestionExpedientes = () => {
             setSeries(resSer.data.filter(s => s.activo));
             setSubseries(resSub.data.filter(ss => ss.activo));
             setOficinas(resOfi.data.filter(o => o.activo));
+
+            // Cargar permisos del usuario
+            const storedUser = localStorage.getItem('user');
+            if (storedUser) {
+                const userData = JSON.parse(storedUser);
+                setUserPermissions(userData.permissions || []);
+            }
         } catch (err) {
             console.error(err);
             toast.error('Error al cargar catálogos.');
@@ -342,7 +354,7 @@ const GestionExpedientes = () => {
             <div className="page-header">
                 <h1>Gestión de Expedientes</h1>
                 <PermissionGuard permission="expedientes_crear">
-                    <button onClick={openModal} className="button button-primary">
+                    <button onClick={() => setIsWizardOpen(true)} className="button button-primary">
                         + Nuevo Expediente
                     </button>
                 </PermissionGuard>
@@ -684,6 +696,16 @@ const GestionExpedientes = () => {
                 duplicadoInfo={duplicadoInfo}
                 onConfirmarAnexion={handleConfirmarAnexion}
                 loading={submitting}
+            />
+
+            {/* Wizard Unificado de Creación */}
+            <WizardCrearExpediente
+                isOpen={isWizardOpen}
+                onClose={() => setIsWizardOpen(false)}
+                onSuccess={() => fetchExpedientes()}
+                series={series}
+                subseries={subseries}
+                userPermissions={userPermissions}
             />
         </div>
     );

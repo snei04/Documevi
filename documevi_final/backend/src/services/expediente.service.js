@@ -4,7 +4,7 @@ const fs = require('fs/promises');
 const puppeteer = require('puppeteer');
 
 const { withTransaction } = require('../utils/transaction.util');
-const { generarRadicado } = require('../utils/radicado.util');
+const { generarRadicado, generarRadicadoExpediente } = require('../utils/radicado.util');
 const CustomError = require('../utils/CustomError');
 const documentoService = require('./documento.service');
 
@@ -38,12 +38,12 @@ exports.cerrarExpediente = async (id_expediente, id_usuario_accion) => {
 exports.guardarDatosPersonalizados = async (id_expediente, customData) => {
     return withTransaction(pool, async (connection) => {
         await connection.query('DELETE FROM expediente_datos_personalizados WHERE id_expediente = ?', [id_expediente]);
-        
+
         const values = Object.entries(customData).map(([id_campo, valor]) => [id_expediente, id_campo, valor]);
         if (values.length > 0) {
             await connection.query('INSERT INTO expediente_datos_personalizados (id_expediente, id_campo, valor) VALUES ?', [values]);
         }
-        
+
         return { msg: 'Datos personalizados guardados con éxito.' };
     });
 };
@@ -67,7 +67,7 @@ exports.actualizarFechasExpediente = async (id_expediente, fechas, id_usuario_ac
 
         // Obtener datos actuales para historial
         const [actuales] = await connection.query(
-            "SELECT fecha_apertura, fecha_cierre FROM expedientes WHERE id = ?", 
+            "SELECT fecha_apertura, fecha_cierre FROM expedientes WHERE id = ?",
             [id_expediente]
         );
 
@@ -83,7 +83,7 @@ exports.actualizarFechasExpediente = async (id_expediente, fechas, id_usuario_ac
 
         // Auditoría
         const detalles = `Modificación de fechas. Anterior: Inicio=${actuales[0].fecha_apertura}, Cierre=${actuales[0].fecha_cierre}. Nuevo: Inicio=${fecha_apertura}, Cierre=${fecha_cierre}`;
-        
+
         await connection.query(
             'INSERT INTO auditoria (usuario_id, accion, detalles) VALUES (?, ?, ?)',
             [id_usuario_accion, 'EDICION_FECHAS_EXPEDIENTE', detalles]
@@ -95,10 +95,10 @@ exports.actualizarFechasExpediente = async (id_expediente, fechas, id_usuario_ac
 // Generar un documento desde una plantilla y añadirlo a un expediente
 exports.generarYAnadirDocumentoAExpediente = async (expedienteId, data, id_usuario_radicador) => {
     return withTransaction(pool, async (connection) => {
-        
+
         const nuevoDocumento = await documentoService.generarDocumentoDesdePlantilla(data, id_usuario_radicador, connection);
-        
-    
+
+
         const [folioRows] = await connection.query(
             'SELECT MAX(orden_foliado) as max_folio FROM expediente_documentos WHERE id_expediente = ?',
             [expedienteId]
@@ -111,5 +111,200 @@ exports.generarYAnadirDocumentoAExpediente = async (expedienteId, data, id_usuar
         );
 
         return { msg: 'Documento generado y añadido al expediente con éxito.', radicado: nuevoDocumento.radicado };
+    });
+};
+
+/**
+ * Crea un expediente completo con documento (opcional) en una transacción atómica.
+ * @param {Object} data - Datos del expediente y documento
+ * @param {Object} archivo - Archivo subido (multer) si aplica
+ * @param {number} userId - ID del usuario creador
+ * @returns {Object} - Resultado con IDs creados
+ */
+exports.crearExpedienteCompleto = async (data, archivo, userId) => {
+    const validacionService = require('./validacionDuplicados.service');
+
+    return withTransaction(pool, async (connection) => {
+        const { expediente, customData, documento } = data;
+
+        // === PASO 1: Validar duplicados si hay campos personalizados ===
+        if (customData && Object.keys(customData).length > 0) {
+            // Obtener id_oficina desde la serie
+            const [serieData] = await connection.query(
+                'SELECT id_oficina_productora FROM trd_series WHERE id = ?',
+                [expediente.id_serie]
+            );
+
+            if (serieData.length > 0) {
+                const id_oficina = serieData[0].id_oficina_productora;
+
+                // Obtener campos con validación de duplicidad
+                const [camposValidacion] = await connection.query(
+                    'SELECT id, nombre_campo FROM oficina_campos_personalizados WHERE id_oficina = ? AND validar_duplicidad = 1',
+                    [id_oficina]
+                );
+
+                // Validar cada campo
+                for (const campo of camposValidacion) {
+                    const valorIngresado = customData[campo.id];
+                    if (!valorIngresado || String(valorIngresado).trim() === '') continue;
+
+                    const [duplicados] = await connection.query(
+                        `SELECT e.id, e.nombre_expediente 
+                         FROM expedientes e
+                         INNER JOIN expediente_datos_personalizados edp ON e.id = edp.id_expediente
+                         INNER JOIN trd_series s ON e.id_serie = s.id
+                         WHERE edp.id_campo = ? AND edp.valor = ? AND s.id_oficina_productora = ?
+                         LIMIT 1`,
+                        [campo.id, valorIngresado, id_oficina]
+                    );
+
+                    if (duplicados.length > 0) {
+                        throw new CustomError(
+                            `Ya existe un expediente con el valor "${valorIngresado}" en el campo "${campo.nombre_campo}": ${duplicados[0].nombre_expediente}`,
+                            409
+                        );
+                    }
+                }
+            }
+        }
+
+        // === PASO 2: Generar radicado y crear el expediente ===
+        const radicadoExpediente = await generarRadicadoExpediente(connection);
+
+        const [expedienteResult] = await connection.query(
+            `INSERT INTO expedientes (nombre_expediente, id_serie, id_subserie, descriptor_1, descriptor_2, id_usuario_responsable)
+             VALUES (?, ?, ?, ?, ?, ?)`,
+            [
+                radicadoExpediente, // Radicado auto-generado como nombre único
+                expediente.id_serie,
+                expediente.id_subserie || null,
+                expediente.descriptor_1 || null,
+                expediente.descriptor_2 || null,
+                userId
+            ]
+        );
+        const nuevoExpedienteId = expedienteResult.insertId;
+
+        // === PASO 3: Guardar datos personalizados del expediente ===
+        if (customData && Object.keys(customData).length > 0) {
+            const values = Object.entries(customData).map(([id_campo, valor]) => [nuevoExpedienteId, id_campo, valor]);
+            await connection.query(
+                'INSERT INTO expediente_datos_personalizados (id_expediente, id_campo, valor) VALUES ?',
+                [values]
+            );
+        }
+
+        let documentoCreado = null;
+
+        // === PASO 4: Manejo de documento ===
+        if (documento && documento.opcion !== 'ninguno') {
+
+            if (documento.opcion === 'crear') {
+                // Crear nuevo documento
+                const tipo_soporte = documento.tipo_soporte;
+
+                // Validaciones según tipo de soporte
+                if ((tipo_soporte === 'Electrónico' || tipo_soporte === 'Híbrido') && !archivo) {
+                    throw new CustomError('Debe adjuntar un archivo para el soporte electrónico o híbrido.', 400);
+                }
+                if ((tipo_soporte === 'Físico' || tipo_soporte === 'Híbrido') && !documento.ubicacion_fisica) {
+                    throw new CustomError('Debe especificar la ubicación física para el soporte físico o híbrido.', 400);
+                }
+
+                // Generar radicado
+                const today = new Date();
+                const datePrefix = `${today.getFullYear()}${String(today.getMonth() + 1).padStart(2, '0')}${String(today.getDate()).padStart(2, '0')}`;
+                const [lastRadicado] = await connection.query(
+                    "SELECT MAX(CAST(SUBSTRING_INDEX(radicado, '-', -1) AS UNSIGNED)) as last_seq FROM documentos WHERE radicado LIKE ?",
+                    [`${datePrefix}-%`]
+                );
+                const newSequence = (lastRadicado[0].last_seq || 0) + 1;
+                const radicado = `${datePrefix}-${String(newSequence).padStart(4, '0')}`;
+
+                // Obtener id_oficina para el documento desde la serie
+                const [serieDoc] = await connection.query(
+                    'SELECT id_oficina_productora FROM trd_series WHERE id = ?',
+                    [expediente.id_serie]
+                );
+                const id_oficina_productora = serieDoc.length > 0 ? serieDoc[0].id_oficina_productora : null;
+
+                // Insertar documento
+                const [docResult] = await connection.query(
+                    `INSERT INTO documentos (
+                        radicado, asunto, tipo_soporte, ubicacion_fisica, path_archivo,
+                        nombre_archivo_original, id_oficina_productora, id_serie, id_subserie,
+                        remitente_nombre, remitente_identificacion, remitente_direccion, id_usuario_radicador
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                    [
+                        radicado,
+                        documento.asunto || expediente.nombre_expediente,
+                        tipo_soporte,
+                        documento.ubicacion_fisica || null,
+                        archivo ? archivo.path : null,
+                        archivo ? archivo.originalname : null,
+                        id_oficina_productora,
+                        expediente.id_serie,
+                        expediente.id_subserie || null,
+                        documento.remitente_nombre || null,
+                        documento.remitente_identificacion || null,
+                        documento.remitente_direccion || null,
+                        userId
+                    ]
+                );
+
+                documentoCreado = { id: docResult.insertId, radicado };
+
+            } else if (documento.opcion === 'relacionar' && documento.id_documento_existente) {
+                // Relacionar documento existente
+                const docIds = Array.isArray(documento.id_documento_existente)
+                    ? documento.id_documento_existente
+                    : [documento.id_documento_existente];
+
+                for (const docId of docIds) {
+                    // Verificar que el documento existe
+                    const [docExiste] = await connection.query('SELECT id FROM documentos WHERE id = ?', [docId]);
+                    if (docExiste.length === 0) {
+                        throw new CustomError(`El documento con ID ${docId} no existe.`, 404);
+                    }
+                }
+
+                documentoCreado = { ids: docIds, relacionados: true };
+            }
+
+            // === PASO 5: Vincular documento(s) al expediente ===
+            if (documentoCreado) {
+                const docIds = documentoCreado.ids || [documentoCreado.id];
+
+                for (let i = 0; i < docIds.length; i++) {
+                    const [folioRows] = await connection.query(
+                        'SELECT MAX(orden_foliado) as max_folio FROM expediente_documentos WHERE id_expediente = ?',
+                        [nuevoExpedienteId]
+                    );
+                    const nuevoFolio = (folioRows[0].max_folio || 0) + 1;
+
+                    await connection.query(
+                        'INSERT INTO expediente_documentos (id_expediente, id_documento, orden_foliado) VALUES (?, ?, ?)',
+                        [nuevoExpedienteId, docIds[i], nuevoFolio]
+                    );
+                }
+            }
+        }
+
+        // === PASO 6: Auditoría ===
+        const detalles = documentoCreado
+            ? `Expediente ${nuevoExpedienteId} creado con documento ${documentoCreado.radicado || JSON.stringify(documentoCreado.ids)}`
+            : `Expediente ${nuevoExpedienteId} creado sin documentos`;
+
+        await connection.query(
+            'INSERT INTO auditoria (usuario_id, accion, detalles) VALUES (?, ?, ?)',
+            [userId, 'CREACION_EXPEDIENTE_COMPLETO', detalles]
+        );
+
+        return {
+            msg: 'Expediente creado con éxito.',
+            expediente: { id: nuevoExpedienteId, nombre: expediente.nombre_expediente },
+            documento: documentoCreado
+        };
     });
 };

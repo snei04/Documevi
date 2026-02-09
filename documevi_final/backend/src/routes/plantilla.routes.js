@@ -2,10 +2,10 @@
 
 const { Router } = require('express');
 
-const { 
-    getAllPlantillas, 
+const {
+    getAllPlantillas,
     getPlantillaWithCampos,
-    createPlantilla, 
+    createPlantilla,
     addCampoToPlantilla,
     updateDisenoPlantilla,
     uploadBackgroundImage,
@@ -14,21 +14,21 @@ const {
 
 const authMiddleware = require('../middleware/auth.middleware');
 const authorizePermission = require('../middleware/authorizePermission');
-const upload = require('../config/upload'); 
+const upload = require('../config/upload');
 
 const router = Router();
 
 // --- Definición de Rutas ---
 
 // ✅ RUTA PROTEGIDA: Requiere autenticación y permiso para ver plantillas
-router.get('/', authMiddleware, authorizePermission('plantillas_ver'), getAllPlantillas);
+router.get('/', authMiddleware, authorizePermission(['plantillas_ver', 'expedientes_ver']), getAllPlantillas);
 
 // ✅ RUTAS PROTEGIDAS: A partir de aquí, todas las rutas requerirán autenticación.
 // Se añade el 'authMiddleware' a cada una de las rutas que necesitan protección.
 
 // Rutas para ver datos específicos (requiere estar logueado)
-router.get('/:id/variables', authMiddleware, authorizePermission('plantillas_ver'), getVariablesDisponibles);
-router.get('/:id', authMiddleware, authorizePermission('plantillas_ver'), getPlantillaWithCampos);
+router.get('/:id/variables', authMiddleware, authorizePermission(['plantillas_ver', 'expedientes_ver']), getVariablesDisponibles);
+router.get('/:id', authMiddleware, authorizePermission(['plantillas_ver', 'expedientes_ver']), getPlantillaWithCampos);
 
 // Rutas para crear y modificar (requiere estar logueado Y tener permisos)
 router.post('/', [authMiddleware, authorizePermission('plantillas_crear')], createPlantilla);

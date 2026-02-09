@@ -63,23 +63,19 @@ export const getExpedienteDetallado = async (id) => {
         if (results[2].status === 'fulfilled') payload.plantillas = results[2].value.data;
         else payload.plantillas = [];
 
-        // Si el expediente tiene serie asignada, cargar campos personalizados
-        if (expediente.id_serie) {
+        // Si el expediente tiene oficina productora vinculada (vía su serie), cargar campos personalizados
+        if (expediente.id_oficina_productora) {
             try {
-                const resSeries = await api.get('/series');
-                const serie = resSeries.data.find(s => s.id === expediente.id_serie);
-                if (serie) {
-                    const customResults = await Promise.allSettled([
-                        api.get(`/campos-personalizados/oficina/${serie.id_oficina_productora}`),
-                        api.get(`/expedientes/${id}/custom-data`)
-                    ]);
+                const customResults = await Promise.allSettled([
+                    api.get(`/campos-personalizados/oficina/${expediente.id_oficina_productora}`),
+                    api.get(`/expedientes/${id}/custom-data`)
+                ]);
 
-                    if (customResults[0].status === 'fulfilled') payload.customFields = customResults[0].value.data;
-                    else payload.customFields = [];
+                if (customResults[0].status === 'fulfilled') payload.customFields = customResults[0].value.data;
+                else payload.customFields = [];
 
-                    if (customResults[1].status === 'fulfilled') payload.customData = customResults[1].value.data;
-                    else payload.customData = {};
-                }
+                if (customResults[1].status === 'fulfilled') payload.customData = customResults[1].value.data;
+                else payload.customData = {};
             } catch (e) {
                 payload.customFields = [];
                 payload.customData = {};

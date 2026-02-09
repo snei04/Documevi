@@ -141,7 +141,12 @@ exports.getExpedienteById = async (req, res) => {
     const { id: id_usuario_actual, permissions: permisos_usuario = [] } = req.user;
 
     try {
-        const [expedientes] = await pool.query("SELECT * FROM expedientes WHERE id = ?", [id_expediente]);
+        const [expedientes] = await pool.query(`
+            SELECT e.*, s.id_oficina_productora 
+            FROM expedientes e
+            LEFT JOIN trd_series s ON e.id_serie = s.id
+            WHERE e.id = ?
+        `, [id_expediente]);
         if (expedientes.length === 0) {
             return res.status(404).json({ msg: 'Expediente no encontrado.' });
         }

@@ -8,7 +8,7 @@ const router = Router();
 router.use(authMiddleware);
 
 router.route('/oficina/:id_oficina')
-    .get(authorizePermission('campos_ver'), getCamposPorOficina)
+    .get(authorizePermission(['campos_ver', 'expedientes_ver']), getCamposPorOficina)
     .post(authorizePermission('campos_crear'), createCampo);
 
 module.exports = router;

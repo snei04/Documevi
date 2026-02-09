@@ -301,32 +301,7 @@ const AccionesProductor = ({ state, expediente, onDataChange }) => {
                 </div>
             )}
 
-            {/* Visualización de metadatos personalizados (solo lectura) */}
-            {state.customFields && state.customFields.length > 0 && (
-                <div className="content-box">
-                    <h3>Metadatos Personalizados del Expediente</h3>
-                    {state.customFields.map(field => (
-                        <div key={field.id} style={{ marginBottom: '10px', display: 'flex', alignItems: 'center' }}>
-                            <label style={{ fontWeight: '500', color: '#4a5568', minWidth: '150px' }}>
-                                {field.nombre_campo}{field.es_obligatorio ? ' *' : ''}:
-                            </label>
-                            <span style={{
-                                marginLeft: '10px',
-                                padding: '8px 12px',
-                                backgroundColor: '#f7fafc',
-                                border: '1px solid #e2e8f0',
-                                borderRadius: '4px',
-                                color: '#2d3748',
-                                minWidth: '200px'
-                            }}>
-                                {field.tipo_campo === 'fecha' && customData[field.id]
-                                    ? new Date(customData[field.id]).toLocaleDateString('es-CO')
-                                    : customData[field.id] || '—'}
-                            </span>
-                        </div>
-                    ))}
-                </div>
-            )}
+
 
             {/* Modal de Vista Previa del Documento */}
             {showPreviewModal && previewDoc && (

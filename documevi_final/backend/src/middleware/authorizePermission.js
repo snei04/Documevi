@@ -7,12 +7,16 @@ const authorizePermission = (requiredPermission) => {
 
     const userPermissions = req.user.permissions;
 
-    // Comprobamos si la lista de permisos del usuario incluye el permiso requerido
-    if (userPermissions.includes(requiredPermission)) {
-      next(); // El usuario tiene el permiso, continuamos
+    // Si es un array, verificar si tiene AL MENOS UNO de los permisos (OR)
+    if (Array.isArray(requiredPermission)) {
+      const hasPermission = requiredPermission.some(p => userPermissions.includes(p));
+      if (hasPermission) return next();
     } else {
-      res.status(403).json({ msg: 'No tienes permiso para realizar esta acción.' });
+      // Si es un string simple
+      if (userPermissions.includes(requiredPermission)) return next();
     }
+
+    res.status(403).json({ msg: 'No tienes permiso para realizar esta acción.' });
   };
 };
 

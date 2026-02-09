@@ -12,6 +12,7 @@ import VistaRestringida from './expediente/VistaRestringida';
 import FirmaModal from './expediente/FirmaModal';
 import EditarFechasModal from './expediente/EditarFechasModal';
 import PermissionGuard from './auth/PermissionGuard';
+import MetadatosExpediente from './expediente/MetadatosExpediente';
 
 
 import './Dashboard.css';
@@ -115,19 +116,19 @@ const ExpedienteDetalle = () => {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
                     <p><strong>Estado:</strong> {expediente.estado}</p>
                     <p style={{ fontSize: '0.9rem', color: '#666' }}>
-                        <strong>Apertura:</strong> {new Date(expediente.fecha_apertura).toLocaleString()} 
+                        <strong>Apertura:</strong> {new Date(expediente.fecha_apertura).toLocaleString()}
                         {expediente.fecha_cierre && <span> | <strong>Cierre:</strong> {new Date(expediente.fecha_cierre).toLocaleString()}</span>}
                     </p>
                 </div>
             </div>
-            
+
             <div className="action-bar" style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
                 {expediente.vista === 'productor' && expediente.estado === 'En trámite' && (
                     <PermissionGuard permission="cerrar_expedientes">
-                    <button onClick={handleCloseExpediente} className="button button-danger">Cerrar Expediente</button>
+                        <button onClick={handleCloseExpediente} className="button button-danger">Cerrar Expediente</button>
                     </PermissionGuard>
                 )}
-                
+
                 <PermissionGuard permission="editar_fechas_expediente">
                     <button onClick={handleToggleDateModal} className="button" style={{ backgroundColor: '#e2e8f0', color: '#2d3748' }}>
                         📅 Editar Fechas
@@ -135,15 +136,20 @@ const ExpedienteDetalle = () => {
                 </PermissionGuard>
             </div>
 
+            <MetadatosExpediente
+                customFields={state.customFields}
+                customData={state.customData}
+            />
+
             {expediente.vista === 'productor' && (
-                <AccionesProductor 
-                    state={state} 
-                    expediente={expediente} 
+                <AccionesProductor
+                    state={state}
+                    expediente={expediente}
                     onDataChange={fetchData}
                 />
             )}
 
-            <IndiceDocumentos 
+            <IndiceDocumentos
                 expediente={expediente}
                 workflows={workflows}
                 onOpenFile={handleOpenFile}
@@ -157,7 +163,7 @@ const ExpedienteDetalle = () => {
                 onRequestClose={handleCloseModals}
                 onSubmit={handleSignatureSubmit}
             />
-            
+
             <EditarFechasModal
                 isOpen={ui.isDateModalOpen}
                 onRequestClose={handleToggleDateModal}
@@ -165,9 +171,9 @@ const ExpedienteDetalle = () => {
                 onSubmit={handleUpdateFechas}
             />
 
-            <Modal 
-                isOpen={ui.isViewerModalOpen} 
-                onRequestClose={handleCloseModals} 
+            <Modal
+                isOpen={ui.isViewerModalOpen}
+                onRequestClose={handleCloseModals}
                 contentLabel="Visor de Documento"
                 style={{ content: { inset: '5%' }, overlay: { backgroundColor: 'rgba(0, 0, 0, 0.75)' } }}
             >

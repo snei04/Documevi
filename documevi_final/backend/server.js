@@ -28,6 +28,7 @@ const campoRoutes = require('./src/routes/campo_personalizado.routes.js');
 const plantillaRoutes = require('./src/routes/plantilla.routes.js');
 const eliminacionRoutes = require('./src/routes/eliminacion.routes.js');
 const retencionRoutes = require('./src/routes/retencion.routes.js');
+const carpetaRoutes = require('./src/routes/carpeta.routes.js');
 
 // Inicialización de Express
 const app = express();
@@ -88,6 +89,9 @@ app.use('/api/campos-personalizados', campoRoutes);
 app.use('/api/plantillas', plantillaRoutes);
 app.use('/api/eliminacion', eliminacionRoutes);
 app.use('/api/retencion', retencionRoutes);
+app.use('/api/carpetas', carpetaRoutes);
+app.use('/api/cajas', require('./src/routes/caja.routes'));
+app.use('/api/paquetes', require('./src/routes/paquete.routes'));
 
 // --- MIDDLEWARE GLOBAL PARA MANEJO DE ERRORES ---
 // Este middleware debe ir DESPUÉS de todas las rutas de la API.
@@ -102,4 +106,8 @@ app.use((err, req, res, next) => {
 const PORT = process.env.PORT || 4000;
 app.listen(PORT, () => {
   console.log(`🚀 Servidor corriendo en el puerto ${PORT}`);
+
+  // Iniciar Jobs Programados
+  const { iniciarJobRetencion } = require('./src/jobs/retencion.job');
+  iniciarJobRetencion();
 });

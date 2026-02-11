@@ -1,5 +1,5 @@
 import React, { useReducer, useCallback, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import Modal from 'react-modal';
 
@@ -13,12 +13,14 @@ import FirmaModal from './expediente/FirmaModal';
 import EditarFechasModal from './expediente/EditarFechasModal';
 import PermissionGuard from './auth/PermissionGuard';
 import MetadatosExpediente from './expediente/MetadatosExpediente';
+import PaqueteAsignacion from './expediente/PaqueteAsignacion';
 
 
 import './Dashboard.css';
 
 const ExpedienteDetalle = () => {
     const { id } = useParams();
+    const navigate = useNavigate();
     const [state, dispatch] = useReducer(expedienteReducer, initialState);
 
     const fetchData = useCallback(async () => {
@@ -109,8 +111,16 @@ const ExpedienteDetalle = () => {
         return <VistaRestringida expediente={expediente} onSolicitarPrestamo={handleRequestPrestamo} />;
     }
 
+
     return (
         <div>
+            <button
+                onClick={() => navigate('/dashboard/expedientes')}
+                className="button"
+                style={{ marginBottom: '12px', backgroundColor: '#e2e8f0', color: '#2d3748', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+            >
+                ← Volver al listado
+            </button>
             <div className="page-header">
                 <h1>Expediente: {expediente.nombre_expediente}</h1>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
@@ -139,6 +149,11 @@ const ExpedienteDetalle = () => {
             <MetadatosExpediente
                 customFields={state.customFields}
                 customData={state.customData}
+            />
+
+            <PaqueteAsignacion
+                expediente={expediente}
+                onUpdate={fetchData}
             />
 
             {expediente.vista === 'productor' && (

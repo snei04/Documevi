@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import api from '../api/axios';
 import { toast } from 'react-toastify';
 import Modal from 'react-modal';
+import DuplicadoAlertModal from './DuplicadoAlertModal';
 import './Dashboard.css';
 
 /**
@@ -25,7 +26,12 @@ const WizardCrearExpediente = ({ isOpen, onClose, onSuccess, series, subseries, 
     });
     const [filteredSubseries, setFilteredSubseries] = useState([]);
     const [camposPersonalizados, setCamposPersonalizados] = useState([]);
+
     const [customData, setCustomData] = useState({});
+
+    // Estado para alerta de duplicados
+    const [duplicadoModalOpen, setDuplicadoModalOpen] = useState(false);
+    const [duplicadoInfo, setDuplicadoInfo] = useState(null);
 
     // Paso 2: Opción de documento
     const [documentOption, setDocumentOption] = useState('ninguno'); // 'crear', 'relacionar', 'ninguno'
@@ -34,11 +40,23 @@ const WizardCrearExpediente = ({ isOpen, onClose, onSuccess, series, subseries, 
     const [documentoData, setDocumentoData] = useState({
         tipo_soporte: 'Electrónico',
         asunto: '',
-        ubicacion_fisica: '',
+        // Campos de ubicación estructurados
+        id_carpeta: '',
+        paquete: '',
+        tomo: '',
+        modulo: '',
+        estante: '',
+        entrepaño: '',
+        otro: '',
+        // Nuevo flag para crear carpeta
+        crear_carpeta: false,
+        id_caja_seleccionada: '',
         remitente_nombre: '',
         remitente_identificacion: '',
         remitente_direccion: ''
     });
+    const [carpetasDisponibles, setCarpetasDisponibles] = useState([]);
+    const [cajasDisponibles, setCajasDisponibles] = useState([]); // Nueva
     const [archivo, setArchivo] = useState(null);
     const [documentosExistentes, setDocumentosExistentes] = useState([]);
     const [documentosSeleccionados, setDocumentosSeleccionados] = useState([]);
@@ -101,10 +119,11 @@ const WizardCrearExpediente = ({ isOpen, onClose, onSuccess, series, subseries, 
     // Manejar cambio de serie
     const handleSerieChange = (e) => {
         const serieId = e.target.value;
+        const serieSeleccionada = series.find(s => s.id === parseInt(serieId));
+
         setExpedienteData(prev => ({ ...prev, id_serie: serieId, id_subserie: '' }));
         setCustomData({});
 
-        const serieSeleccionada = series.find(s => s.id === parseInt(serieId));
         if (serieSeleccionada && !serieSeleccionada.requiere_subserie) {
             setFilteredSubseries([]);
         } else {
@@ -113,8 +132,60 @@ const WizardCrearExpediente = ({ isOpen, onClose, onSuccess, series, subseries, 
 
         if (serieSeleccionada) {
             fetchCamposPersonalizados(serieSeleccionada.id_oficina_productora);
+            fetchCarpetas(serieSeleccionada.id_oficina_productora);
+            fetchCajas(serieSeleccionada.id_oficina_productora);
         } else {
             setCamposPersonalizados([]);
+            setCarpetasDisponibles([]);
+            setCajasDisponibles([]);
+        }
+    };
+
+    // Cargar carpetas
+    const fetchCarpetas = async (idOficina) => {
+        if (!idOficina) return;
+        try {
+            const res = await api.get('/carpetas', {
+                params: {
+                    id_oficina: idOficina,
+                    estado: 'Abierta'
+                }
+            });
+            setCarpetasDisponibles(Array.isArray(res.data) ? res.data : (res.data.data || []));
+        } catch (err) {
+            console.error("Error cargando carpetas", err);
+        }
+    };
+
+    const fetchCajas = async (idOficina) => {
+        try {
+            const res = await api.get('/cajas');
+            // Filtrar en cliente las abiertas y con capacidad. 
+            // Ideal: endpoint con filtros, pero por compatibilidad usamos esto.
+            const cajasAbiertas = res.data.filter(c => c.estado === 'Abierta' && c.cantidad_actual < c.capacidad_carpetas);
+            setCajasDisponibles(cajasAbiertas);
+        } catch (error) {
+            console.error("Error al cargar cajas:", error);
+        }
+    };
+
+    // Manejar cambio en selección de carpeta para auto-completar ubicación en documento
+    const handleCarpetaChange = (e) => {
+        const carpetaId = e.target.value;
+        const carpeta = carpetasDisponibles.find(c => c.id === parseInt(carpetaId));
+
+        if (carpeta) {
+            setDocumentoData(prev => ({
+                ...prev,
+                id_carpeta: carpetaId,
+                paquete: carpeta.codigo_caja || '',
+                modulo: carpeta.ubicacion_modulo || '',
+                estante: carpeta.ubicacion_estante || '',
+                entrepaño: carpeta.ubicacion_entrepaño || '',
+                otro: ''
+            }));
+        } else {
+            setDocumentoData(prev => ({ ...prev, id_carpeta: '' }));
         }
     };
 
@@ -164,9 +235,21 @@ const WizardCrearExpediente = ({ isOpen, onClose, onSuccess, series, subseries, 
                         toast.error('Debe adjuntar un archivo.');
                         return false;
                     }
-                    if ((tipoSoporte === 'Físico' || tipoSoporte === 'Híbrido') && !documentoData.ubicacion_fisica.trim()) {
-                        toast.error('Debe especificar la ubicación física.');
-                        return false;
+                    if ((tipoSoporte === 'Físico' || tipoSoporte === 'Híbrido')) {
+                        if (documentoData.crear_carpeta) {
+                            if (!documentoData.id_caja_seleccionada) {
+                                toast.error('Debe seleccionar un Paquete para crear la carpeta automática.');
+                                return false;
+                            }
+                        } else {
+                            if (!documentoData.id_carpeta && !documentoData.ubicacion_fisica && !documentoData.otro &&
+                                (!documentoData.paquete && !documentoData.estante)) {
+                                if (!documentoData.paquete && !documentoData.otro && !documentoData.estante) {
+                                    toast.error('Para documentos físicos, debe especificar una Carpeta, crear una nueva, o detalles de Ubicación.');
+                                    return false;
+                                }
+                            }
+                        }
                     }
                 }
                 if (documentOption === 'relacionar' && documentosSeleccionados.length === 0) {
@@ -203,6 +286,25 @@ const WizardCrearExpediente = ({ isOpen, onClose, onSuccess, series, subseries, 
     const handleSubmit = async () => {
         setSubmitting(true);
         try {
+            const serieSeleccionada = series.find(s => s.id === parseInt(expedienteData.id_serie));
+
+            // 1. Validar duplicados antes de proceder
+            const camposConValidacion = camposPersonalizados.filter(c => c.validar_duplicidad);
+            if (camposConValidacion.length > 0 && Object.keys(customData).length > 0) {
+                const validacionRes = await api.post('/expedientes/validar-duplicados', {
+                    id_oficina: serieSeleccionada?.id_oficina_productora,
+                    campos_personalizados: customData
+                });
+
+                if (validacionRes.data.duplicado) {
+                    setDuplicadoInfo(validacionRes.data);
+                    setDuplicadoModalOpen(true);
+                    setSubmitting(false);
+                    return; // Detener flujo para confirmación del usuario
+                }
+            }
+
+            // 2. Si no hay duplicados, proceder con la creación normal
             const formData = new FormData();
 
             const payload = {
@@ -235,6 +337,90 @@ const WizardCrearExpediente = ({ isOpen, onClose, onSuccess, series, subseries, 
         } finally {
             setSubmitting(false);
         }
+    };
+
+    // Manejar confirmación de anexión (si el usuario dice "SÍ" en el modal)
+    const handleConfirmarAnexion = async () => {
+        setSubmitting(true);
+        const existingExpedienteId = duplicadoInfo.expediente_existente.id;
+
+        try {
+            if (documentOption === 'ninguno') {
+                // Solo redirigir
+                toast.success('Redirigiendo al expediente existente...');
+                window.location.href = `/dashboard/expedientes/${existingExpedienteId}`;
+                return;
+            }
+
+            if (documentOption === 'crear') {
+                // Crear documento y vincularlo al existente usando /documentos/con-expediente
+                const formData = new FormData();
+                formData.append('id_expediente', existingExpedienteId);
+                formData.append('asunto', documentoData.asunto);
+                formData.append('tipo_soporte', documentoData.tipo_soporte);
+
+                // Campos de remitente
+                if (documentoData.remitente_nombre) formData.append('remitente_nombre', documentoData.remitente_nombre);
+                if (documentoData.remitente_identificacion) formData.append('remitente_identificacion', documentoData.remitente_identificacion);
+                if (documentoData.remitente_direccion) formData.append('remitente_direccion', documentoData.remitente_direccion);
+
+                if (documentoData.remitente_direccion) formData.append('remitente_direccion', documentoData.remitente_direccion);
+
+                // Campos de ubicación física
+                if (documentoData.id_carpeta) formData.append('id_carpeta', documentoData.id_carpeta);
+                if (documentoData.paquete) formData.append('paquete', documentoData.paquete);
+                if (documentoData.tomo) formData.append('tomo', documentoData.tomo);
+                if (documentoData.modulo) formData.append('modulo', documentoData.modulo);
+                if (documentoData.estante) formData.append('estante', documentoData.estante);
+                if (documentoData.entrepaño) formData.append('entrepaño', documentoData.entrepaño);
+                if (documentoData.otro) formData.append('otro', documentoData.otro);
+
+                // Archivo
+                if (archivo) formData.append('archivo', archivo);
+
+                // Datos necesarios para TRD (se toman del wizard aunque el expediente ya tenga, el doc necesita metadatos)
+                // Usamos los del expediente existente si es posible, o los seleccionados
+                // NOTA: createDocumentoConExpediente requiere id_oficina_productora, serie, subserie.
+                // Deberíamos obtenerlos del expediente existente o usar los del formulario si coinciden.
+                // Usaremos los del formulario, asumiendo que el usuario seleccionó correctamente.
+                const serieSeleccionada = series.find(s => s.id === parseInt(expedienteData.id_serie));
+                formData.append('id_oficina_productora', serieSeleccionada?.id_oficina_productora);
+                formData.append('id_serie', expedienteData.id_serie);
+                if (expedienteData.id_subserie) formData.append('id_subserie', expedienteData.id_subserie);
+
+                await api.post('/documentos/con-expediente', formData, {
+                    headers: { 'Content-Type': 'multipart/form-data' }
+                });
+
+                toast.success('Documento creado y anexado al expediente existente con éxito.');
+                window.location.href = `/dashboard/expedientes/${existingExpedienteId}`;
+            }
+
+            if (documentOption === 'relacionar') {
+                // Vincular documentos existentes
+                const promises = documentosSeleccionados.map(docId =>
+                    api.post(`/expedientes/${existingExpedienteId}/documentos`, { id_documento: docId })
+                );
+
+                await Promise.all(promises);
+                toast.success(`${documentosSeleccionados.length} documento(s) vinculados al expediente existente.`);
+                window.location.href = `/dashboard/expedientes/${existingExpedienteId}`;
+            }
+
+            setDuplicadoModalOpen(false);
+            onClose();
+
+        } catch (err) {
+            console.error('Error al anexar documento:', err);
+            toast.error(err.response?.data?.msg || 'Error al anexar al expediente existente.');
+        } finally {
+            setSubmitting(false);
+        }
+    };
+
+    const handleCloseDuplicadoModal = () => {
+        setDuplicadoModalOpen(false);
+        setDuplicadoInfo(null);
     };
 
     // Obtener nombre de serie seleccionada
@@ -428,14 +614,124 @@ const WizardCrearExpediente = ({ isOpen, onClose, onSuccess, series, subseries, 
                     )}
 
                     {(documentoData.tipo_soporte === 'Físico' || documentoData.tipo_soporte === 'Híbrido') && (
-                        <div className="form-group">
-                            <label>Ubicación Física *</label>
-                            <input
-                                type="text"
-                                value={documentoData.ubicacion_fisica}
-                                onChange={(e) => setDocumentoData(prev => ({ ...prev, ubicacion_fisica: e.target.value }))}
-                                placeholder="Ej: Archivo Central, Estante 3, Caja 12"
-                            />
+                        <div style={{ padding: '15px', backgroundColor: '#fffaf0', borderRadius: '6px', border: '1px solid #fae6b8' }}>
+                            <h4 style={{ marginTop: 0, marginBottom: '10px', color: '#c05621' }}>📍 Ubicación Física</h4>
+
+                            <div className="form-group">
+                                <div style={{ display: 'flex', alignItems: 'center', marginBottom: '10px' }}>
+                                    <input
+                                        type="checkbox"
+                                        id="chkCrearCarpeta"
+                                        checked={documentoData.crear_carpeta}
+                                        onChange={(e) => setDocumentoData(prev => ({
+                                            ...prev,
+                                            crear_carpeta: e.target.checked,
+                                            id_carpeta: '', // Reset carpeta manual si activa auto
+                                            ubicacion_fisica: '',
+                                            paquete: '', modulo: '', estante: '', entrepaño: '' // Limpiar manuales
+                                        }))}
+                                        style={{ width: 'auto', marginRight: '8px' }}
+                                    />
+                                    <label htmlFor="chkCrearCarpeta" style={{ marginBottom: 0, fontWeight: 'bold', color: '#2c5282' }}>
+                                        Crear Carpeta Automática
+                                    </label>
+                                </div>
+
+                                {!documentoData.crear_carpeta ? (
+                                    <>
+                                        <label>Carpeta (Opcional - Autocompleta ubicación)</label>
+                                        <select
+                                            value={documentoData.id_carpeta}
+                                            onChange={handleCarpetaChange}
+                                            style={{ width: '100%' }}
+                                        >
+                                            <option value="">-- Seleccione Carpeta (o ingrese manualmente abajo) --</option>
+                                            {carpetasDisponibles.map(c => (
+                                                <option key={c.id} value={c.id}>
+                                                    {c.codigo_carpeta ? `${c.codigo_carpeta} - ` : ''}{c.nombre_carpeta || `Carpeta #${c.consecutivo} (${c.año})`}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </>
+                                ) : (
+                                    <div style={{ backgroundColor: '#e6fffa', padding: '10px', borderRadius: '4px', border: '1px solid #b2f5ea' }}>
+                                        <label style={{ color: '#285e61' }}>Seleccione el Paquete donde se creará la carpeta *</label>
+                                        <select
+                                            value={documentoData.id_caja_seleccionada}
+                                            onChange={(e) => setDocumentoData(prev => ({ ...prev, id_caja_seleccionada: e.target.value }))}
+                                            style={{ width: '100%', borderColor: '#38b2ac' }}
+                                        >
+                                            <option value="">-- Seleccione Paquete --</option>
+                                            {cajasDisponibles.map(c => (
+                                                <option key={c.id} value={c.id}>
+                                                    {c.codigo_caja} ({c.cantidad_actual}/{c.capacidad_carpetas}) - {c.ubicacion_estante}/{c.ubicacion_entrepaño}
+                                                </option>
+                                            ))}
+                                        </select>
+                                        <small style={{ display: 'block', marginTop: '5px', color: '#2c7a7b' }}>
+                                            Se creará una nueva carpeta consecutiva en esta caja y se asignará al expediente.
+                                        </small>
+                                    </div>
+                                )}
+                            </div>
+
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                                <div className="form-group">
+                                    <label>Paquete</label>
+                                    <input
+                                        type="text"
+                                        value={documentoData.paquete}
+                                        onChange={(e) => setDocumentoData(prev => ({ ...prev, paquete: e.target.value }))}
+                                        placeholder="Paquete 1"
+                                    />
+                                </div>
+                                <div className="form-group">
+                                    <label>Tomo / Legajo</label>
+                                    <input
+                                        type="text"
+                                        value={documentoData.tomo}
+                                        onChange={(e) => setDocumentoData(prev => ({ ...prev, tomo: e.target.value }))}
+                                        placeholder="Tomo 1"
+                                    />
+                                </div>
+                            </div>
+
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px' }}>
+                                <div className="form-group">
+                                    <label>Estante</label>
+                                    <input
+                                        type="text"
+                                        value={documentoData.estante}
+                                        onChange={(e) => setDocumentoData(prev => ({ ...prev, estante: e.target.value }))}
+                                    />
+                                </div>
+                                <div className="form-group">
+                                    <label>Entrepaño</label>
+                                    <input
+                                        type="text"
+                                        value={documentoData.entrepaño}
+                                        onChange={(e) => setDocumentoData(prev => ({ ...prev, entrepaño: e.target.value }))}
+                                    />
+                                </div>
+                                <div className="form-group">
+                                    <label>Módulo</label>
+                                    <input
+                                        type="text"
+                                        value={documentoData.modulo}
+                                        onChange={(e) => setDocumentoData(prev => ({ ...prev, modulo: e.target.value }))}
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="form-group">
+                                <label>Otro (Notas adicionales)</label>
+                                <input
+                                    type="text"
+                                    value={documentoData.otro}
+                                    onChange={(e) => setDocumentoData(prev => ({ ...prev, otro: e.target.value }))}
+                                    placeholder="Ej: Archivo de gestión temporal, gaveta 2..."
+                                />
+                            </div>
                         </div>
                     )}
 
@@ -579,7 +875,13 @@ const WizardCrearExpediente = ({ isOpen, onClose, onSuccess, series, subseries, 
                             <tr><td>Soporte:</td><td>{documentoData.tipo_soporte}</td></tr>
                             <tr><td>Asunto:</td><td>{documentoData.asunto}</td></tr>
                             {archivo && <tr><td>Archivo:</td><td>{archivo.name}</td></tr>}
-                            {documentoData.ubicacion_fisica && <tr><td>Ubicación:</td><td>{documentoData.ubicacion_fisica}</td></tr>}
+                            {archivo && <tr><td>Archivo:</td><td>{archivo.name}</td></tr>}
+                            {documentoData.id_carpeta && <tr><td>Carpeta:</td><td>{carpetasDisponibles.find(c => c.id === parseInt(documentoData.id_carpeta))?.nombre_carpeta || 'ID: ' + documentoData.id_carpeta}</td></tr>}
+                            {documentoData.paquete && <tr><td>Paquete:</td><td>{documentoData.paquete}</td></tr>}
+                            {/* Mostrar ubicación resumida si hay datos manuales */}
+                            {(documentoData.estante || documentoData.entrepaño || documentoData.modulo) && (
+                                <tr><td>Ubicación:</td><td>{`Est: ${documentoData.estante || '-'}, Ent: ${documentoData.entrepaño || '-'}, Mod: ${documentoData.modulo || '-'}`}</td></tr>
+                            )}
                         </tbody>
                     </table>
                 )}
@@ -635,6 +937,14 @@ const WizardCrearExpediente = ({ isOpen, onClose, onSuccess, series, subseries, 
                     )}
                 </div>
             </div>
+            {/* Modal de Alerta de Duplicado */}
+            <DuplicadoAlertModal
+                isOpen={duplicadoModalOpen}
+                onClose={handleCloseDuplicadoModal}
+                duplicadoInfo={duplicadoInfo}
+                onConfirmarAnexion={handleConfirmarAnexion}
+                loading={submitting}
+            />
         </Modal>
     );
 };

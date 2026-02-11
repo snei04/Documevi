@@ -65,9 +65,36 @@ exports.crearNuevoDocumento = async (data, file, id_usuario_radicador) => {
             nombre_archivo_original: file?.originalname || null,
             path_archivo: file?.path || null,
             ubicacion_fisica: documentoData.ubicacion_fisica || null,
+            id_carpeta: documentoData.id_carpeta || null,
+            paquete: documentoData.paquete || null,
+            tomo: documentoData.tomo || null,
+            modulo: documentoData.modulo || null,
+            entrepaño: documentoData.entrepaño || null,
+            estante: documentoData.estante || null,
+            otro: documentoData.otro || null,
             contenido_extraido,
             id_usuario_radicador,
         };
+
+        // Verificación de capacidad de carpeta
+        if (documentoData.id_carpeta) {
+            const [carpetaRows] = await connection.query('SELECT cantidad_actual, capacidad_maxima, estado FROM carpetas WHERE id = ? FOR UPDATE', [documentoData.id_carpeta]);
+
+            if (carpetaRows.length === 0) {
+                throw new Error('La carpeta especificada no existe.');
+            }
+            const carpeta = carpetaRows[0];
+
+            if (carpeta.estado === 'Cerrada') {
+                throw new Error('La carpeta especificada está cerrada.');
+            }
+
+            if (carpeta.cantidad_actual >= carpeta.capacidad_maxima) {
+                throw new Error(`La carpeta ha alcanzado su capacidad máxima (${carpeta.capacidad_maxima}).`);
+            }
+
+            await connection.query('UPDATE carpetas SET cantidad_actual = cantidad_actual + 1 WHERE id = ?', [documentoData.id_carpeta]);
+        }
 
         const [result] = await connection.query('INSERT INTO documentos SET ?', docToInsert);
         const newDocumentId = result.insertId;
@@ -179,7 +206,7 @@ exports.iniciarWorkflow = async (id_documento, id_workflow, id_usuario) => {
         if (pasos.length === 0) {
             throw new Error('El workflow no tiene pasos definidos.');
         }
-        
+
         const id_primer_paso = pasos[0].id;
         await pool.query(
             'INSERT INTO documento_workflows (id_documento, id_workflow, id_paso_actual, id_usuario_actual) VALUES (?, ?, ?, ?)',

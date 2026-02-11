@@ -11,7 +11,8 @@ const {
     createDocumentoFromPlantillaInExpediente,
     validarDuplicados,
     anexarPorDuplicado,
-    updateExpedienteFechas
+    updateExpedienteFechas,
+    searchByCustomField
 } = require('../controllers/expediente.controller');
 
 const protect = require('../middleware/auth.middleware');
@@ -60,6 +61,9 @@ router.route('/:id/documentos-desde-plantilla')
 router.route('/:id/custom-data')
     .get(authorizePermission('expedientes_ver'), getExpedienteCustomData)
     .put(authorizePermission('expedientes_custom_data'), updateExpedienteCustomData);
+
+router.route('/search-custom')
+    .get(authorizePermission('expedientes_ver'), searchByCustomField);
 
 router.route('/:id/anexar-por-duplicado')
     .post(authorizePermission('expedientes_agregar_documentos'), anexarPorDuplicado);

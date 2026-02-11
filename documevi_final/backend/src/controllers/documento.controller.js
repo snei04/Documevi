@@ -22,7 +22,16 @@ exports.getDocumentoById = async (req, res) => {
                 u.nombre_completo as usuario_radicador,
                 e.id as id_expediente,
                 e.nombre_expediente,
-                ed.orden_foliado
+                ed.orden_foliado,
+                COALESCE(car.codigo_carpeta, car_exp.codigo_carpeta) as codigo_carpeta,
+                COALESCE(car.descripcion, car_exp.descripcion) as descripcion_carpeta,
+                COALESCE(car.id, car_exp.id) as carpeta_id,
+                car_exp.paquete as carpeta_paquete,
+                car_exp.tomo as carpeta_tomo,
+                car_exp.modulo as carpeta_modulo,
+                car_exp.estante as carpeta_estante,
+                car_exp.entrepaño as carpeta_entrepaño,
+                car_exp.otro as carpeta_otro
             FROM documentos d
             LEFT JOIN oficinas_productoras o ON d.id_oficina_productora = o.id
             LEFT JOIN dependencias dep ON o.id_dependencia = dep.id
@@ -31,6 +40,8 @@ exports.getDocumentoById = async (req, res) => {
             LEFT JOIN usuarios u ON d.id_usuario_radicador = u.id
             LEFT JOIN expediente_documentos ed ON d.id = ed.id_documento
             LEFT JOIN expedientes e ON ed.id_expediente = e.id
+            LEFT JOIN carpetas car ON d.id_carpeta = car.id
+            LEFT JOIN carpetas car_exp ON car_exp.id_expediente = e.id
             WHERE d.id = ?
         `, [id]);
 
@@ -76,86 +87,53 @@ exports.getAllDocumentos = async (req, res) => {
  * Acepta tipo_soporte: 'Electrónico', 'Físico', o 'Híbrido'.
  */
 exports.createDocumento = async (req, res) => {
-    const connection = await pool.getConnection();
-
     try {
         const {
             asunto, tipo_soporte, ubicacion_fisica,
             id_oficina_productora, id_serie, id_subserie,
             remitente_nombre, remitente_identificacion, remitente_direccion,
-            customData
+            customData,
+            id_carpeta, paquete, tomo, modulo, entrepaño, estante, otro
         } = req.body;
 
         const archivo = req.file;
         const id_usuario_creador = req.user.id;
 
-        await connection.beginTransaction();
-
-        let path_del_archivo = null; // ✅ CORREGIDO: Usamos el nombre de variable correcto
-        let nombre_archivo_original = null;
-
+        // Validaciones básicas antes de llamar al servicio
         if (tipo_soporte === 'Electrónico' || tipo_soporte === 'Híbrido') {
             if (!archivo) {
-                await connection.rollback();
                 return res.status(400).json({ msg: 'Debe adjuntar un archivo para el soporte electrónico o híbrido.' });
             }
-            path_del_archivo = archivo.path;
-            nombre_archivo_original = archivo.originalname;
         }
 
-        if ((tipo_soporte === 'Físico' || tipo_soporte === 'Híbrido') && (!ubicacion_fisica || ubicacion_fisica.trim() === '')) {
-            await connection.rollback();
-            return res.status(400).json({ msg: 'Debe especificar la ubicación física para el soporte físico o híbrido.' });
+        if ((tipo_soporte === 'Físico' || tipo_soporte === 'Híbrido')) {
+            // Validar que se provea AL MENOS UN dato de ubicación
+            const hasLocation = id_carpeta ||
+                (ubicacion_fisica && ubicacion_fisica.trim() !== '') ||
+                (otro && otro.trim() !== '') ||
+                (paquete && paquete.trim() !== '') ||
+                (estante && estante.trim() !== '');
+
+            if (!hasLocation) {
+                return res.status(400).json({ msg: 'Debe especificar la ubicación física (Carpeta, Caja/Paquete, Estante, u Otro).' });
+            }
         }
 
-        // --- Lógica del Radicado (sin cambios) ---
-        const today = new Date();
-        const yyyy = today.getFullYear();
-        const mm = String(today.getMonth() + 1).padStart(2, '0');
-        const dd = String(today.getDate()).padStart(2, '0');
-        const datePrefix = `${yyyy}${mm}${dd}`;
-        const [lastRadicado] = await connection.query(
-            "SELECT MAX(CAST(SUBSTRING_INDEX(radicado, '-', -1) AS UNSIGNED)) as last_seq FROM documentos WHERE radicado LIKE ?",
-            [`${datePrefix}-%`]
-        );
-        const newSequence = (lastRadicado[0].last_seq || 0) + 1;
-        const radicado = `${datePrefix}-${String(newSequence).padStart(4, '0')}`;
+        const data = {
+            asunto, tipo_soporte, ubicacion_fisica,
+            id_oficina_productora, id_serie, id_subserie,
+            remitente_nombre, remitente_identificacion, remitente_direccion,
+            customData: JSON.parse(customData || '{}'),
+            id_carpeta, paquete, tomo, modulo, entrepaño, estante, otro
+        };
 
-        // --- Inserción Principal del Documento ---
-        const [result] = await connection.query(
-            `INSERT INTO documentos (
-                radicado, asunto, tipo_soporte, ubicacion_fisica, path_archivo, /* ✅ CORREGIDO */
-                nombre_archivo_original, id_oficina_productora, id_serie, id_subserie, 
-                remitente_nombre, remitente_identificacion, remitente_direccion, id_usuario_radicador /* Asumo que es el nombre correcto */
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-            [
-                radicado, asunto, tipo_soporte, ubicacion_fisica || null, path_del_archivo,
-                nombre_archivo_original, id_oficina_productora, id_serie, id_subserie,
-                remitente_nombre, remitente_identificacion, remitente_direccion, id_usuario_creador
-            ]
-        );
-        const newDocumentId = result.insertId;
+        const result = await documentoService.crearNuevoDocumento(data, archivo, id_usuario_creador);
 
-        // --- Inserción de Datos Personalizados (sin cambios) ---
-        const customDataParsed = JSON.parse(customData || '{}');
-        const customDataEntries = Object.entries(customDataParsed);
-        if (customDataEntries.length > 0) {
-            const customValues = customDataEntries.map(([id_campo, valor]) => [newDocumentId, id_campo, valor]);
-            await connection.query(
-                'INSERT INTO documento_datos_personalizados (id_documento, id_campo, valor) VALUES ?', // Asegúrate que esta tabla exista
-                [customValues]
-            );
-        }
-
-        await connection.commit();
-        res.status(201).json({ msg: 'Documento radicado con éxito.', radicado: radicado, id: newDocumentId });
+        res.status(201).json({ msg: 'Documento radicado con éxito.', ...result });
 
     } catch (error) {
-        await connection.rollback();
         console.error("Error al crear documento:", error);
-        res.status(500).json({ msg: 'Error en el servidor al procesar la solicitud.' });
-    } finally {
-        connection.release();
+        res.status(500).json({ msg: error.message || 'Error en el servidor al procesar la solicitud.' });
     }
 };
 
@@ -196,7 +174,8 @@ exports.createDocumentoConExpediente = async (req, res) => {
         const {
             asunto, tipo_soporte, ubicacion_fisica,
             id_oficina_productora, id_serie, id_subserie, id_expediente,
-            remitente_nombre, remitente_identificacion, remitente_direccion
+            remitente_nombre, remitente_identificacion, remitente_direccion,
+            id_carpeta, paquete, tomo, modulo, entrepaño, estante, otro
         } = req.body;
 
         const archivo = req.file;
@@ -235,9 +214,77 @@ exports.createDocumentoConExpediente = async (req, res) => {
             nombre_archivo_original = archivo.originalname;
         }
 
-        if ((tipo_soporte === 'Físico' || tipo_soporte === 'Híbrido') && (!ubicacion_fisica || ubicacion_fisica.trim() === '')) {
-            await connection.rollback();
-            return res.status(400).json({ msg: 'Debe especificar la ubicación física para el soporte físico o híbrido.' });
+        if ((tipo_soporte === 'Físico' || tipo_soporte === 'Híbrido')) {
+            const hasLocation = id_carpeta ||
+                (ubicacion_fisica && ubicacion_fisica.trim() !== '') ||
+                (otro && otro.trim() !== '') ||
+                (paquete && paquete.trim() !== '') ||
+                (estante && estante.trim() !== '');
+
+            if (!hasLocation) {
+                await connection.rollback();
+                return res.status(400).json({ msg: 'Debe especificar la ubicación física.' });
+            }
+        }
+
+        // === Auto-asignar carpeta del expediente ===
+        // Buscar carpeta del expediente; si no existe, crearla automáticamente
+        let id_carpeta_final = id_carpeta || null;
+
+        if (!id_carpeta_final) {
+            // Buscar carpeta vinculada al expediente
+            const [carpetaExp] = await connection.query(
+                'SELECT id FROM carpetas WHERE id_expediente = ? AND estado = ? LIMIT 1',
+                [id_expediente, 'Abierta']
+            );
+            if (carpetaExp.length > 0) {
+                id_carpeta_final = carpetaExp[0].id;
+            } else {
+                // No existe carpeta → crearla automáticamente
+                const carpetaService = require('../services/carpeta.service');
+                const [serieData] = await connection.query(
+                    'SELECT s.id_oficina_productora FROM trd_series s JOIN expedientes e ON e.id_serie = s.id WHERE e.id = ?',
+                    [id_expediente]
+                );
+                if (serieData.length > 0) {
+                    const [expInfo] = await connection.query('SELECT nombre_expediente FROM expedientes WHERE id = ?', [id_expediente]);
+                    try {
+                        const nuevaCarpeta = await carpetaService.crearCarpeta({
+                            id_oficina: serieData[0].id_oficina_productora,
+                            descripcion: `Carpeta del expediente ${expInfo[0].nombre_expediente}`,
+                            capacidad_maxima: 200,
+                            id_expediente: id_expediente
+                        }, connection);
+                        id_carpeta_final = nuevaCarpeta.id;
+                        console.log(`Carpeta auto-creada: ${nuevaCarpeta.codigo_carpeta} para expediente ${id_expediente}`);
+                    } catch (err) {
+                        console.error('Error al auto-crear carpeta:', err.message);
+                    }
+                }
+            }
+        }
+
+        // Verificación de carpeta (capacidad y estado)
+        if (id_carpeta_final) {
+            const [carpetaRows] = await connection.query('SELECT cantidad_actual, capacidad_maxima, estado FROM carpetas WHERE id = ? FOR UPDATE', [id_carpeta_final]);
+
+            if (carpetaRows.length === 0) {
+                await connection.rollback();
+                return res.status(400).json({ msg: 'La carpeta especificada no existe.' });
+            }
+            const carpeta = carpetaRows[0];
+
+            if (carpeta.estado === 'Cerrada') {
+                await connection.rollback();
+                return res.status(400).json({ msg: 'La carpeta especificada está cerrada.' });
+            }
+
+            if (carpeta.cantidad_actual >= carpeta.capacidad_maxima) {
+                await connection.rollback();
+                return res.status(400).json({ msg: `La carpeta ha alcanzado su capacidad máxima (${carpeta.capacidad_maxima}).` });
+            }
+
+            await connection.query('UPDATE carpetas SET cantidad_actual = cantidad_actual + 1 WHERE id = ?', [id_carpeta_final]);
         }
 
         // Generar radicado
@@ -258,23 +305,25 @@ exports.createDocumentoConExpediente = async (req, res) => {
             `INSERT INTO documentos (
                 radicado, asunto, tipo_soporte, ubicacion_fisica, path_archivo,
                 nombre_archivo_original, id_oficina_productora, id_serie, id_subserie, 
-                remitente_nombre, remitente_identificacion, remitente_direccion, id_usuario_radicador
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                remitente_nombre, remitente_identificacion, remitente_direccion, id_usuario_radicador,
+                id_carpeta, paquete, tomo, modulo, entrepaño, estante, otro
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [
                 radicado, asunto, tipo_soporte, ubicacion_fisica || null, path_del_archivo,
                 nombre_archivo_original, id_oficina_productora, id_serie, id_subserie || null,
-                remitente_nombre || null, remitente_identificacion || null, remitente_direccion || null, id_usuario_creador
+                remitente_nombre || null, remitente_identificacion || null, remitente_direccion || null, id_usuario_creador,
+                id_carpeta_final || null, paquete || null, tomo || null, modulo || null, entrepaño || null, estante || null, otro || null
             ]
         );
         const newDocumentId = result.insertId;
 
         // Vincular al expediente
         const [maxFolio] = await connection.query(
-            'SELECT COALESCE(MAX(folio), 0) + 1 as next_folio FROM indice_electronico WHERE id_expediente = ?',
+            'SELECT COALESCE(MAX(orden_foliado), 0) + 1 as next_folio FROM expediente_documentos WHERE id_expediente = ?',
             [id_expediente]
         );
         await connection.query(
-            `INSERT INTO indice_electronico (id_expediente, id_documento, folio, requiere_firma)
+            `INSERT INTO expediente_documentos (id_expediente, id_documento, orden_foliado, requiere_firma)
              VALUES (?, ?, ?, ?)`,
             [id_expediente, newDocumentId, maxFolio[0].next_folio, false]
         );

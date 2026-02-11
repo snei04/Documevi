@@ -123,6 +123,7 @@ exports.generarYAnadirDocumentoAExpediente = async (expedienteId, data, id_usuar
  */
 exports.crearExpedienteCompleto = async (data, archivo, userId) => {
     const validacionService = require('./validacionDuplicados.service');
+    const carpetaService = require('./carpeta.service');
 
     return withTransaction(pool, async (connection) => {
         const { expediente, customData, documento } = data;
@@ -195,6 +196,58 @@ exports.crearExpedienteCompleto = async (data, archivo, userId) => {
             );
         }
 
+        // === PASO 3.5: Crear Carpeta Automática (SIEMPRE) ===
+        // Cada expediente DEBE tener exactamente una carpeta con número único.
+        // La carpeta es la llave que almacena la ubicación física.
+        let idCarpetaGenerada = null;
+        let carpetaGeneradaInfo = null;
+
+        {
+            let id_oficina = null;
+            const [serieDoc] = await connection.query(
+                'SELECT id_oficina_productora FROM trd_series WHERE id = ?',
+                [expediente.id_serie]
+            );
+            if (serieDoc.length > 0) id_oficina = serieDoc[0].id_oficina_productora;
+
+            if (id_oficina) {
+                const carpetaData = {
+                    id_oficina: id_oficina,
+                    descripcion: `Carpeta del expediente ${radicadoExpediente}`,
+                    capacidad_maxima: 200,
+                    id_caja: (documento && documento.id_caja_seleccionada) || null,
+                    id_expediente: nuevoExpedienteId
+                };
+
+                try {
+                    const nuevaCarpeta = await carpetaService.crearCarpeta(carpetaData, connection);
+                    idCarpetaGenerada = nuevaCarpeta.id;
+                    carpetaGeneradaInfo = nuevaCarpeta;
+                } catch (err) {
+                    console.error('Error al crear carpeta automática:', err.message);
+                }
+            }
+
+            // === PASO 3.6: Asignar al paquete activo de la oficina automáticamente ===
+            try {
+                const paqueteService = require('./paquete.service');
+                // Ya no requiere id_oficina, obtiene el paquete activo global
+                const paqueteActivo = await paqueteService.obtenerPaqueteActivo();
+                if (paqueteActivo) {
+                    await connection.query(
+                        'UPDATE expedientes SET id_paquete = ? WHERE id = ?',
+                        [paqueteActivo.id, nuevoExpedienteId]
+                    );
+                    await connection.query(
+                        'UPDATE paquetes SET expedientes_actuales = expedientes_actuales + 1 WHERE id = ?',
+                        [paqueteActivo.id]
+                    );
+                }
+            } catch (err) {
+                console.error('Error al asignar paquete automáticamente:', err.message);
+            }
+        }
+
         let documentoCreado = null;
 
         // === PASO 4: Manejo de documento ===
@@ -208,8 +261,12 @@ exports.crearExpedienteCompleto = async (data, archivo, userId) => {
                 if ((tipo_soporte === 'Electrónico' || tipo_soporte === 'Híbrido') && !archivo) {
                     throw new CustomError('Debe adjuntar un archivo para el soporte electrónico o híbrido.', 400);
                 }
-                if ((tipo_soporte === 'Físico' || tipo_soporte === 'Híbrido') && !documento.ubicacion_fisica) {
-                    throw new CustomError('Debe especificar la ubicación física para el soporte físico o híbrido.', 400);
+
+                // Validación de ubicación física: Carpeta o Texto manual
+                if ((tipo_soporte === 'Físico' || tipo_soporte === 'Híbrido')) {
+                    if (!idCarpetaGenerada && !documento.id_carpeta && !documento.ubicacion_fisica) {
+                        throw new CustomError('Debe especificar la ubicación física (o crear carpeta) para el soporte físico o híbrido.', 400);
+                    }
                 }
 
                 // Generar radicado
@@ -234,13 +291,14 @@ exports.crearExpedienteCompleto = async (data, archivo, userId) => {
                     `INSERT INTO documentos (
                         radicado, asunto, tipo_soporte, ubicacion_fisica, path_archivo,
                         nombre_archivo_original, id_oficina_productora, id_serie, id_subserie,
-                        remitente_nombre, remitente_identificacion, remitente_direccion, id_usuario_radicador
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                        remitente_nombre, remitente_identificacion, remitente_direccion, id_usuario_radicador,
+                        id_carpeta, paquete, tomo, modulo, entrepaño, estante, otro
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
                     [
                         radicado,
                         documento.asunto || expediente.nombre_expediente,
                         tipo_soporte,
-                        documento.ubicacion_fisica || null,
+                        documento.ubicacion_fisica || (carpetaGeneradaInfo ? `Carpeta ${carpetaGeneradaInfo.codigo_carpeta}` : null),
                         archivo ? archivo.path : null,
                         archivo ? archivo.originalname : null,
                         id_oficina_productora,
@@ -249,7 +307,14 @@ exports.crearExpedienteCompleto = async (data, archivo, userId) => {
                         documento.remitente_nombre || null,
                         documento.remitente_identificacion || null,
                         documento.remitente_direccion || null,
-                        userId
+                        userId,
+                        idCarpetaGenerada || documento.id_carpeta || null,
+                        carpetaGeneradaInfo ? carpetaGeneradaInfo.paquete : (documento.paquete || null),
+                        documento.tomo || null,
+                        carpetaGeneradaInfo ? carpetaGeneradaInfo.modulo : (documento.modulo || null),
+                        carpetaGeneradaInfo ? carpetaGeneradaInfo.entrepaño : (documento.entrepaño || null),
+                        carpetaGeneradaInfo ? carpetaGeneradaInfo.estante : (documento.estante || null),
+                        documento.otro || null
                     ]
                 );
 
@@ -304,7 +369,8 @@ exports.crearExpedienteCompleto = async (data, archivo, userId) => {
         return {
             msg: 'Expediente creado con éxito.',
             expediente: { id: nuevoExpedienteId, nombre: expediente.nombre_expediente },
-            documento: documentoCreado
+            documento: documentoCreado,
+            carpeta: carpetaGeneradaInfo // Devolver info de carpeta si se creó
         };
     });
 };

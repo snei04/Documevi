@@ -37,14 +37,7 @@ const DocumentoDetalle = () => {
         });
     };
 
-    const parseUbicacionFisica = (ubicacion) => {
-        if (!ubicacion) return null;
-        const parts = ubicacion.split(' | ');
-        return parts.map(part => {
-            const [label, value] = part.split(': ');
-            return { label, value };
-        });
-    };
+
 
     if (loading) {
         return (
@@ -59,7 +52,7 @@ const DocumentoDetalle = () => {
         return <div className="content-box">Documento no encontrado</div>;
     }
 
-    const ubicacionParsed = parseUbicacionFisica(documento.ubicacion_fisica);
+
 
     return (
         <div>
@@ -141,29 +134,62 @@ const DocumentoDetalle = () => {
                 </div>
             )}
 
-            {/* Ubicación Física */}
-            {(documento.tipo_soporte === 'Físico' || documento.tipo_soporte === 'Híbrido') && (
-                <div className="content-box">
-                    <h3>📍 Ubicación Física</h3>
-                    {ubicacionParsed && ubicacionParsed.length > 0 ? (
-                        <div className="ubicacion-fisica-grid">
-                            {ubicacionParsed.map((item, index) => (
-                                <div key={index} className="ubicacion-item">
-                                    <label>{item.label}</label>
-                                    <span className="ubicacion-value">{item.value}</span>
-                                </div>
-                            ))}
-                        </div>
-                    ) : (
-                        <p className="text-muted">Sin ubicación física registrada</p>
-                    )}
-                    {documento.ubicacion_fisica && (
-                        <div className="ubicacion-completa" style={{ marginTop: '15px', padding: '10px', backgroundColor: '#f8f9fa', borderRadius: '5px' }}>
-                            <small><strong>Ubicación completa:</strong> {documento.ubicacion_fisica}</small>
-                        </div>
-                    )}
-                </div>
-            )}
+            {/* Ubicación Física y Carpeta */}
+            <div className="content-box">
+                <h3>📍 Ubicación Física</h3>
+                {(() => {
+                    const locationItems = [];
+
+                    // 1. Siempre mostrar la carpeta si existe (del documento o del expediente)
+                    if (documento.codigo_carpeta) {
+                        locationItems.push({
+                            label: 'Carpeta',
+                            value: documento.codigo_carpeta
+                        });
+                    }
+
+                    // 2. Campos de ubicación del documento o heredados de la carpeta del expediente
+
+                    const tomo = documento.tomo || documento.carpeta_tomo;
+                    const modulo = documento.modulo || documento.carpeta_modulo;
+                    const estante = documento.estante || documento.carpeta_estante;
+                    const entrepaño = documento.entrepaño || documento.carpeta_entrepaño;
+                    const otro = documento.otro || documento.carpeta_otro;
+
+
+                    if (tomo) locationItems.push({ label: 'Tomo / Legajo', value: tomo });
+                    if (modulo) locationItems.push({ label: 'Módulo', value: modulo });
+                    if (estante) locationItems.push({ label: 'Estante', value: estante });
+                    if (entrepaño) locationItems.push({ label: 'Entrepaño', value: entrepaño });
+                    if (otro) locationItems.push({ label: 'Otro', value: otro });
+
+                    // 3. Fallback: parsear ubicacion_fisica legacy
+                    if (locationItems.length === 0 && documento.ubicacion_fisica) {
+                        const parts = documento.ubicacion_fisica.split(' | ');
+                        parts.forEach(part => {
+                            const [label, ...rest] = part.split(': ');
+                            if (label && rest.length > 0) {
+                                locationItems.push({ label: label.trim(), value: rest.join(': ').trim() });
+                            }
+                        });
+                    }
+
+                    if (locationItems.length > 0) {
+                        return (
+                            <div className="ubicacion-fisica-grid">
+                                {locationItems.map((item, index) => (
+                                    <div key={index} className="ubicacion-item">
+                                        <label>{item.label}</label>
+                                        <span className="ubicacion-value">{item.value}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        );
+                    } else {
+                        return <p className="text-muted">Sin ubicación física registrada</p>;
+                    }
+                })()}
+            </div>
 
             {/* Datos del Remitente */}
             <div className="content-box">

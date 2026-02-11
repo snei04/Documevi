@@ -38,6 +38,9 @@ const Sidebar = ({ isOpen }) => {
                             <PermissionGuard permission="busqueda_basica">
                                 <li><NavLink to="/dashboard/search">Búsqueda</NavLink></li>
                             </PermissionGuard>
+                            <PermissionGuard permission="expedientes_crear">
+                                <li><NavLink to="/dashboard/paquetes">📦 Paquetes</NavLink></li>
+                            </PermissionGuard>
                         </ul>
                     </li>
 

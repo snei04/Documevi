@@ -67,6 +67,7 @@ import GestionExpedientes from './components/GestionExpedientes';
 import ExpedienteDetalle from './components/ExpedienteDetalle';
 import CapturaDocumento from './components/CapturaDocumento';
 import DocumentoDetalle from './components/DocumentoDetalle';
+import GestionPaquetes from './components/GestionPaquetes';
 
 /** Gestión de workflows */
 import GestionWorkflows from './components/GestionWorkflows';
@@ -77,6 +78,7 @@ import GestionPrestamos from './components/GestionPrestamos';
 
 /** Administración de usuarios y roles */
 import GestionUsuarios from './components/GestionUsuarios';
+import GestionCajas from './components/GestionCajas';
 import GestionRoles from './components/GestionRoles';
 import GestionPermisos from './components/GestionPermisos';
 import GestionarPermisosMaestro from './components/GestionarPermisosMaestro';
@@ -138,7 +140,7 @@ const UnauthorizedPage = () => (
 const AppContent = () => {
     // Hook para acceder al contexto de permisos
     const { loadPermissions, setLoading } = usePermissionsContext();
-    
+
     // Token JWT almacenado en localStorage
     const token = localStorage.getItem('token');
 
@@ -151,18 +153,18 @@ const AppContent = () => {
         const verifySession = async () => {
             if (token) {
                 // Activar estado de carga mientras se verifica la sesión
-                setLoading(true); 
+                setLoading(true);
                 try {
                     // Obtener perfil del usuario autenticado
                     const response = await api.get('/usuarios/perfil');
-                    
+
                     // Cargar permisos del usuario (esto también desactiva el loading)
-                    loadPermissions(response.data.permissions); 
+                    loadPermissions(response.data.permissions);
                 } catch (error) {
                     // Token inválido o expirado - limpiar sesión
                     console.error("Error al cargar perfil de usuario, token inválido o expirado.", error);
                     localStorage.removeItem('token');
-                    
+
                     // Limpiar permisos y desactivar loading
                     loadPermissions([]);
                 }
@@ -173,7 +175,7 @@ const AppContent = () => {
         };
 
         verifySession();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [token]);
 
     // ============================================
@@ -185,7 +187,7 @@ const AppContent = () => {
                 {/* ========================================
                     RUTAS PÚBLICAS (Sin autenticación)
                    ======================================== */}
-                
+
                 {/* Página de login con logo corporativo */}
                 <Route path="/login" element={
                     <>
@@ -195,12 +197,12 @@ const AppContent = () => {
                         </div>
                     </>
                 } />
-                
+
                 {/* Rutas de recuperación de contraseña */}
                 <Route path="/forgot-password" element={<ForgotPassword />} />
                 <Route path="/reset-password/:token" element={<ResetPassword />} />
                 <Route path="/set-password/:token" element={<SetPassword />} />
-                
+
                 {/* Página de acceso denegado */}
                 <Route path="/unauthorized" element={<UnauthorizedPage />} />
 
@@ -209,7 +211,7 @@ const AppContent = () => {
                    ======================================== */}
                 <Route element={<ProtectedRoute />}>
                     <Route path="/dashboard" element={<DashboardLayout />}>
-                        
+
                         {/* --- Rutas de acceso general (sin permiso específico) --- */}
                         <Route index element={<DashboardHome />} />
                         <Route path="mis-tareas" element={<MisTareas />} />
@@ -223,11 +225,13 @@ const AppContent = () => {
                             <Route path="expedientes" element={<GestionExpedientes />} />
                             <Route path="expedientes/:id" element={<ExpedienteDetalle />} />
                         </Route>
-                        
+
                         <Route element={<ProtectedRoute permission="expedientes_crear" />}>
                             <Route path="captura" element={<CapturaDocumento />} />
+                            <Route path="cajas" element={<GestionCajas />} />
+                            <Route path="paquetes" element={<GestionPaquetes />} />
                         </Route>
-                        
+
                         <Route element={<ProtectedRoute permission="documentos_ver" />}>
                             <Route path="documentos/:id" element={<DocumentoDetalle />} />
                         </Route>
@@ -236,15 +240,15 @@ const AppContent = () => {
                         <Route element={<ProtectedRoute permission="dependencias_ver" />}>
                             <Route path="dependencias" element={<GestionDependencias />} />
                         </Route>
-                        
+
                         <Route element={<ProtectedRoute permission="oficinas_ver" />}>
                             <Route path="oficinas" element={<GestionOficinas />} />
                         </Route>
-                        
+
                         <Route element={<ProtectedRoute permission="series_ver" />}>
                             <Route path="series" element={<GestionSeries />} />
                         </Route>
-                        
+
                         <Route element={<ProtectedRoute permission="subseries_ver" />}>
                             <Route path="subseries" element={<GestionSubseries />} />
                         </Route>
@@ -253,19 +257,19 @@ const AppContent = () => {
                         <Route element={<ProtectedRoute permission="usuarios_ver" />}>
                             <Route path="usuarios" element={<GestionUsuarios />} />
                         </Route>
-                        
+
                         <Route element={<ProtectedRoute permission="roles_ver" />}>
                             <Route path="roles" element={<GestionRoles />} />
                         </Route>
-                        
+
                         <Route element={<ProtectedRoute permission="auditoria_ver" />}>
                             <Route path="auditoria" element={<GestionAuditoria />} />
                         </Route>
-                        
+
                         <Route element={<ProtectedRoute permission="permisos_ver" />}>
                             <Route path="permisos" element={<GestionarPermisosMaestro />} />
                         </Route>
-                        
+
                         <Route element={<ProtectedRoute permission="permisos_asignar" />}>
                             <Route path="roles/:id_rol/permisos" element={<GestionPermisos />} />
                         </Route>
@@ -274,12 +278,12 @@ const AppContent = () => {
                         <Route element={<ProtectedRoute permission="campos_ver" />}>
                             <Route path="campos-personalizados" element={<GestionCamposPersonalizados />} />
                         </Route>
-                        
+
                         <Route element={<ProtectedRoute permission="plantillas_ver" />}>
                             <Route path="plantillas" element={<GestionPlantillas />} />
                             <Route path="plantillas/:id" element={<PlantillaDetalle />} />
                         </Route>
-                        
+
                         <Route element={<ProtectedRoute permission="plantillas_disenar" />}>
                             <Route path="plantillas/:id/disenar" element={<DiseñadorPlantilla />} />
                         </Route>
@@ -288,11 +292,11 @@ const AppContent = () => {
                         <Route element={<ProtectedRoute permission="transferencias_ver" />}>
                             <Route path="transferencias" element={<GestionTransferencias />} />
                         </Route>
-                        
+
                         <Route element={<ProtectedRoute permission="eliminacion_ver" />}>
                             <Route path="eliminacion" element={<GestionEliminacion />} />
                         </Route>
-                        
+
                         <Route element={<ProtectedRoute permission="retencion_ver" />}>
                             <Route path="retencion" element={<RetencionDocumental />} />
                         </Route>
@@ -301,7 +305,7 @@ const AppContent = () => {
                         <Route element={<ProtectedRoute permission="estadisticas_ver" />}>
                             <Route path="estadisticas" element={<Estadisticas />} />
                         </Route>
-                        
+
                         <Route element={<ProtectedRoute permission="reportes_fuid" />}>
                             <Route path="reportes-fuid" element={<ReporteFUID />} />
                         </Route>
@@ -311,7 +315,7 @@ const AppContent = () => {
                             <Route path="workflows" element={<GestionWorkflows />} />
                             <Route path="workflows/:id" element={<WorkflowDetalle />} />
                         </Route>
-                        
+
                         <Route element={<ProtectedRoute permission="prestamos_ver" />}>
                             <Route path="prestamos" element={<GestionPrestamos />} />
                         </Route>

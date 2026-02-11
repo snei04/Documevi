@@ -126,6 +126,22 @@ exports.createExpediente = async (req, res) => {
             'INSERT INTO expedientes (nombre_expediente, id_serie, id_subserie, descriptor_1, descriptor_2, id_usuario_responsable) VALUES (?, ?, ?, ?, ?, ?)',
             [nombre_expediente, id_serie, id_subserie, descriptor_1, descriptor_2, id_usuario_responsable]
         );
+
+        // Auto-asignar paquete activo de la oficina
+        try {
+            const paqueteService = require('../services/paquete.service');
+            const [serie] = await pool.query('SELECT id_oficina_productora FROM trd_series WHERE id = ?', [id_serie]);
+            if (serie.length > 0 && serie[0].id_oficina_productora) {
+                const paquete = await paqueteService.obtenerPaqueteActivo(serie[0].id_oficina_productora);
+                if (paquete) {
+                    await pool.query('UPDATE expedientes SET id_paquete = ? WHERE id = ?', [paquete.id, result.insertId]);
+                    await pool.query('UPDATE paquetes SET expedientes_actuales = expedientes_actuales + 1 WHERE id = ?', [paquete.id]);
+                }
+            }
+        } catch (paqErr) {
+            console.error('Error auto-asignando paquete:', paqErr.message);
+        }
+
         res.status(201).json({ id: result.insertId, ...req.body });
     } catch (error) {
         console.error("Error al crear expediente:", error);
@@ -189,9 +205,13 @@ exports.getExpedienteById = async (req, res) => {
 
     try {
         const [expedientes] = await pool.query(`
-            SELECT e.*, s.id_oficina_productora 
+            SELECT e.*, s.id_oficina_productora,
+                   p.numero_paquete, p.estado as estado_paquete,
+                   c.codigo_carpeta, c.descripcion as descripcion_carpeta
             FROM expedientes e
             LEFT JOIN trd_series s ON e.id_serie = s.id
+            LEFT JOIN paquetes p ON e.id_paquete = p.id
+            LEFT JOIN carpetas c ON c.id_expediente = e.id
             WHERE e.id = ?
         `, [id_expediente]);
         if (expedientes.length === 0) {
@@ -431,5 +451,35 @@ exports.anexarPorDuplicado = async (req, res) => {
     } catch (error) {
         console.error('Error al anexar documento:', error);
         res.status(error.statusCode || 500).json({ msg: error.message });
+    }
+};
+
+/**
+ * Busca expedientes por coincidencia exacta en campos personalizados.
+ * GET /api/expedientes/search-custom?id_campo=X&valor=Y
+ */
+exports.searchByCustomField = async (req, res) => {
+    try {
+        const { id_campo, valor } = req.query;
+
+        if (!id_campo || !valor) {
+            return res.status(400).json({ msg: 'Faltan parámetros de búsqueda (id_campo, valor).' });
+        }
+
+        const query = `
+            SELECT e.id, e.nombre_expediente, e.codigo_expediente, e.estado, edp.valor
+            FROM expedientes e
+            JOIN expediente_datos_personalizados edp ON e.id = edp.id_expediente
+            WHERE edp.id_campo = ? AND edp.valor = ? AND e.estado = 'En trámite'
+            LIMIT 5
+        `;
+
+        const [rows] = await pool.query(query, [id_campo, valor]);
+
+        res.json(rows);
+
+    } catch (error) {
+        console.error("Error al buscar expediente por campo personalizado:", error);
+        res.status(500).json({ msg: 'Error en el servidor', error: error.message });
     }
 };

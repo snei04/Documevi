@@ -30,11 +30,18 @@ const AccionesProductor = ({ state, expediente, onDataChange }) => {
     const [nuevoDocData, setNuevoDocData] = useState({
         tipo_soporte: 'Electrónico',
         asunto: '',
-        ubicacion_fisica: '',
+        // Campos de ubicación estructurados
+        id_carpeta: '',
+        tomo: '',
+        modulo: '',
+        estante: '',
+        entrepaño: '',
+        otro: '',
         remitente_nombre: '',
         remitente_identificacion: '',
         remitente_direccion: ''
     });
+    const [carpetasDisponibles, setCarpetasDisponibles] = useState([]);
     const [archivo, setArchivo] = useState(null);
     const [creandoDoc, setCreandoDoc] = useState(false);
     const fileInputRef = useRef(null);
@@ -43,6 +50,49 @@ const AccionesProductor = ({ state, expediente, onDataChange }) => {
     useEffect(() => {
         setCustomData(state.customData || {});
     }, [state.customData]);
+
+    // Cargar carpetas cuando se abre el formulario de crear doc o cambia la oficina
+    useEffect(() => {
+        if (showCrearDocForm && expediente?.id_oficina_productora) {
+            const fetchCarpetas = async () => {
+                try {
+                    // Obtener carpetas de la oficina (y serie/subserie si aplica, aunque la ubicación física es más de la oficina)
+                    // Podríamos filtrar por año del expediente si fuera necesario, pero mejor mostrar todas las abiertas
+                    const res = await api.get('/carpetas', {
+                        params: {
+                            id_oficina: expediente.id_oficina_productora,
+                            estado: 'Abierta'
+                        }
+                    });
+                    // El endpoint devuelve { data: [...], meta: ... } o [...] según la implementación
+                    setCarpetasDisponibles(Array.isArray(res.data) ? res.data : (res.data.data || []));
+                } catch (err) {
+                    console.error("Error cargando carpetas", err);
+                }
+            };
+            fetchCarpetas();
+        }
+    }, [showCrearDocForm, expediente]);
+
+    // Manejar cambio en selección de carpeta para auto-completar ubicación
+    const handleCarpetaChange = (e) => {
+        const carpetaId = e.target.value;
+        const carpeta = carpetasDisponibles.find(c => c.id === parseInt(carpetaId));
+
+        if (carpeta) {
+            setNuevoDocData(prev => ({
+                ...prev,
+                id_carpeta: carpetaId,
+                modulo: carpeta.ubicacion_modulo || '',
+                estante: carpeta.ubicacion_estante || '',
+                entrepaño: carpeta.ubicacion_entrepaño || '',
+                otro: '' // Limpiar 'otro' si se selecciona carpeta
+            }));
+        } else {
+            // Si se deselecciona, limpiar o mantener? Mejor solo actualizar el ID
+            setNuevoDocData(prev => ({ ...prev, id_carpeta: '' }));
+        }
+    };
 
 
     // Filtrar documentos según término de búsqueda
@@ -133,20 +183,7 @@ const AccionesProductor = ({ state, expediente, onDataChange }) => {
         }
     };
 
-    const handleCustomDataChange = (e) => {
-        const { name, value } = e.target;
-        setCustomData(prev => ({ ...prev, [name]: value }));
-    };
 
-    const handleSaveCustomData = async () => {
-        try {
-            await api.put(`/expedientes/${expediente.id}/custom-data`, customData);
-            toast.success('Metadatos personalizados guardados con éxito.');
-            onDataChange();
-        } catch (err) {
-            toast.error(err.response?.data?.msg || 'Error al guardar los metadatos.');
-        }
-    };
 
     // Handler para crear documento nuevo
     const handleCrearDocumento = async (e) => {
@@ -157,8 +194,23 @@ const AccionesProductor = ({ state, expediente, onDataChange }) => {
         if (nuevoDocData.tipo_soporte === 'Electrónico' && !archivo) {
             return toast.error('Debe adjuntar un archivo para documentos electrónicos.');
         }
-        if ((nuevoDocData.tipo_soporte === 'Físico' || nuevoDocData.tipo_soporte === 'Híbrido') && !nuevoDocData.ubicacion_fisica.trim()) {
-            return toast.error('La ubicación física es obligatoria para documentos físicos o híbridos.');
+        if (nuevoDocData.tipo_soporte === 'Electrónico' && !archivo) {
+            return toast.error('Debe adjuntar un archivo para documentos electrónicos.');
+        }
+
+        // Validación para físico/híbrido: Requiere al menos carpeta O ubicación manual
+        if ((nuevoDocData.tipo_soporte === 'Físico' || nuevoDocData.tipo_soporte === 'Híbrido')) {
+            const hasLocation = nuevoDocData.id_carpeta ||
+                nuevoDocData.ubicacion_fisica ||
+                (nuevoDocData.otro && nuevoDocData.otro.trim()) ||
+                (nuevoDocData.tomo && nuevoDocData.tomo.trim()) ||
+                (nuevoDocData.modulo && nuevoDocData.modulo.trim()) ||
+                (nuevoDocData.estante && nuevoDocData.estante.trim()) ||
+                (nuevoDocData.entrepaño && nuevoDocData.entrepaño.trim());
+
+            if (!hasLocation) {
+                return toast.error('Para documentos físicos, debe especificar una Carpeta o detalles de Ubicación.');
+            }
         }
 
         setCreandoDoc(true);
@@ -171,9 +223,18 @@ const AccionesProductor = ({ state, expediente, onDataChange }) => {
             formData.append('id_oficina_productora', expediente.id_oficina_productora);
             formData.append('id_expediente', expediente.id); // Para vincular automáticamente
 
-            if (nuevoDocData.ubicacion_fisica) {
-                formData.append('ubicacion_fisica', nuevoDocData.ubicacion_fisica);
-            }
+            if (nuevoDocData.id_carpeta) formData.append('id_carpeta', nuevoDocData.id_carpeta);
+            if (nuevoDocData.tomo) formData.append('tomo', nuevoDocData.tomo);
+            if (nuevoDocData.modulo) formData.append('modulo', nuevoDocData.modulo);
+            if (nuevoDocData.estante) formData.append('estante', nuevoDocData.estante);
+            if (nuevoDocData.entrepaño) formData.append('entrepaño', nuevoDocData.entrepaño);
+            if (nuevoDocData.otro) formData.append('otro', nuevoDocData.otro);
+
+            // Mantenemos ubicacion_fisica como string concatenado para compatibilidad o display simple si se desea
+            // Opcional: construirlo si no viene
+            // if (nuevoDocData.ubicacion_fisica) {
+            //     formData.append('ubicacion_fisica', nuevoDocData.ubicacion_fisica);
+            // }
             if (nuevoDocData.remitente_nombre) {
                 formData.append('remitente_nombre', nuevoDocData.remitente_nombre);
                 formData.append('remitente_identificacion', nuevoDocData.remitente_identificacion || '');
@@ -191,7 +252,12 @@ const AccionesProductor = ({ state, expediente, onDataChange }) => {
             setNuevoDocData({
                 tipo_soporte: 'Electrónico',
                 asunto: '',
-                ubicacion_fisica: '',
+                id_carpeta: '',
+                tomo: '',
+                modulo: '',
+                estante: '',
+                entrepaño: '',
+                otro: '',
                 remitente_nombre: '',
                 remitente_identificacion: '',
                 remitente_direccion: ''
@@ -419,14 +485,75 @@ const AccionesProductor = ({ state, expediente, onDataChange }) => {
                                     </div>
 
                                     {(nuevoDocData.tipo_soporte === 'Físico' || nuevoDocData.tipo_soporte === 'Híbrido') && (
-                                        <div className="form-group">
-                                            <label>Ubicación Física *</label>
-                                            <input
-                                                type="text"
-                                                value={nuevoDocData.ubicacion_fisica}
-                                                onChange={(e) => setNuevoDocData(prev => ({ ...prev, ubicacion_fisica: e.target.value }))}
-                                                placeholder="Ej: Archivo Central, Estante 3, Caja 12"
-                                            />
+                                        <div style={{ padding: '15px', backgroundColor: '#fffaf0', borderRadius: '6px', border: '1px solid #fae6b8' }}>
+                                            <h4 style={{ marginTop: 0, marginBottom: '10px', color: '#c05621' }}>📍 Ubicación Física</h4>
+
+                                            <div className="form-group">
+                                                <label>Carpeta (Opcional - Autocompleta ubicación)</label>
+                                                <select
+                                                    value={nuevoDocData.id_carpeta}
+                                                    onChange={handleCarpetaChange}
+                                                    style={{ width: '100%' }}
+                                                >
+                                                    <option value="">-- Seleccione Carpeta (o ingrese manualmente abajo) --</option>
+                                                    {carpetasDisponibles.map(c => (
+                                                        <option key={c.id} value={c.id}>
+                                                            {c.codigo_carpeta ? `${c.codigo_carpeta} - ` : ''}{c.nombre_carpeta || `Carpeta #${c.consecutivo} (${c.año})`}
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                            </div>
+
+                                            <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '10px' }}>
+                                                <div className="form-group">
+                                                    <label>Tomo / Legajo</label>
+                                                    <input
+                                                        type="text"
+                                                        name="tomo"
+                                                        className="form-control"
+                                                        value={nuevoDocData.tomo}
+                                                        onChange={(e) => setNuevoDocData(prev => ({ ...prev, tomo: e.target.value }))}
+                                                        placeholder="Tomo 1"
+                                                    />
+                                                </div>
+                                            </div>
+
+                                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px' }}>
+                                                <div className="form-group">
+                                                    <label>Estante</label>
+                                                    <input
+                                                        type="text"
+                                                        value={nuevoDocData.estante}
+                                                        onChange={(e) => setNuevoDocData(prev => ({ ...prev, estante: e.target.value }))}
+                                                    />
+                                                </div>
+                                                <div className="form-group">
+                                                    <label>Entrepaño</label>
+                                                    <input
+                                                        type="text"
+                                                        value={nuevoDocData.entrepaño}
+                                                        onChange={(e) => setNuevoDocData(prev => ({ ...prev, entrepaño: e.target.value }))}
+                                                    />
+                                                </div>
+                                                <div className="form-group">
+                                                    <label>Módulo</label>
+                                                    <input
+                                                        type="text"
+                                                        value={nuevoDocData.modulo}
+                                                        onChange={(e) => setNuevoDocData(prev => ({ ...prev, modulo: e.target.value }))}
+                                                    />
+                                                </div>
+                                            </div>
+
+                                            <div className="form-group">
+                                                <label>Otro (Notas adicionales)</label>
+                                                <input
+                                                    type="text"
+                                                    value={nuevoDocData.otro}
+                                                    onChange={(e) => setNuevoDocData(prev => ({ ...prev, otro: e.target.value }))}
+                                                    placeholder="Ej: Archivo de gestión temporal, gaveta 2..."
+                                                />
+                                            </div>
                                         </div>
                                     )}
 

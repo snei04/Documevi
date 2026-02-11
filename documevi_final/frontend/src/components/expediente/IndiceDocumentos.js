@@ -53,11 +53,30 @@ const IndiceDocumentos = ({ expediente, workflows, onOpenFile, onSign, onStartWo
                             </td>
                             <td>
                                 {doc.tipo_soporte === 'Físico' || doc.tipo_soporte === 'Híbrido' ? (
-                                    doc.ubicacion_fisica ? (
-                                        <span title={doc.ubicacion_fisica} style={{ cursor: 'help' }}>
-                                            📍 {doc.ubicacion_fisica.length > 30 ? doc.ubicacion_fisica.substring(0, 30) + '...' : doc.ubicacion_fisica}
-                                        </span>
-                                    ) : <span style={{ color: '#999' }}>Sin ubicación</span>
+                                    <div style={{ fontSize: '0.9em', lineHeight: '1.5' }}>
+                                        {expediente.codigo_carpeta && (
+                                            <div>
+                                                <span style={{ color: '#805ad5', fontWeight: '600' }}>
+                                                    📁 Carpeta: {expediente.codigo_carpeta}
+                                                </span>
+                                            </div>
+                                        )}
+                                        {expediente.numero_paquete && (
+                                            <div>
+                                                <span style={{ color: '#2b6cb0', fontWeight: '600' }}>
+                                                    📦 Paquete: {expediente.numero_paquete}
+                                                </span>
+                                            </div>
+                                        )}
+                                        {doc.ubicacion_fisica && (
+                                            <div title={doc.ubicacion_fisica} style={{ cursor: 'help', color: '#718096' }}>
+                                                📍 {doc.ubicacion_fisica.length > 30 ? doc.ubicacion_fisica.substring(0, 30) + '...' : doc.ubicacion_fisica}
+                                            </div>
+                                        )}
+                                        {!expediente.codigo_carpeta && !expediente.numero_paquete && !doc.ubicacion_fisica && (
+                                            <span style={{ color: '#999' }}>Sin ubicación</span>
+                                        )}
+                                    </div>
                                 ) : <span style={{ color: '#999' }}>N/A</span>}
                             </td>
                             <td style={{ textAlign: 'center' }}>{doc.requiere_firma ? 'Sí' : 'No'}</td>

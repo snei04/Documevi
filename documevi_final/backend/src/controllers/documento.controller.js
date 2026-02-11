@@ -417,3 +417,17 @@ exports.advanceWorkflow = async (req, res) => {
         res.status(500).json({ msg: 'Error en el servidor', error: error.message });
     }
 };
+
+/**
+ * Actualiza los datos de ubicación física de un documento.
+ */
+exports.updateDocumentoLocation = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const resultado = await documentoService.actualizarUbicacionDocumento(id, req.body, req.user.id);
+        res.json(resultado);
+    } catch (error) {
+        console.error("Error al actualizar ubicación del documento:", error);
+        res.status(error.statusCode || 500).json({ msg: error.message || 'Error al actualizar ubicación.' });
+    }
+};

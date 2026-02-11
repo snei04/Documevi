@@ -24,6 +24,10 @@ exports.getAllExpedientes = async (req, res) => {
         const estadoFilter = req.query.estado || '';
         const serieFilter = req.query.serie || '';
 
+        const fechaInicio = req.query.fecha_inicio;
+        const fechaFin = req.query.fecha_fin;
+        const customFieldSearch = req.query.custom_search || '';
+
         // Verificar si el usuario es auditor (tiene permisos limitados)
         const userPermissions = req.user.permissions || [];
         const isAuditor = userPermissions.includes('auditoria_ver') &&
@@ -43,6 +47,25 @@ exports.getAllExpedientes = async (req, res) => {
             )`);
             const searchParam = `%${search}%`;
             queryParams.push(searchParam, searchParam, searchParam);
+        }
+
+        // Filtro por rango de fechas
+        if (fechaInicio) {
+            whereConditions.push(`e.fecha_apertura >= ?`);
+            queryParams.push(fechaInicio);
+        }
+        if (fechaFin) {
+            whereConditions.push(`e.fecha_apertura <= ?`);
+            queryParams.push(fechaFin);
+        }
+
+        // Filtro por valor en campos personalizados (búsqueda general en todos los campos)
+        if (customFieldSearch) {
+            whereConditions.push(`EXISTS (
+                SELECT 1 FROM expediente_datos_personalizados edp 
+                WHERE edp.id_expediente = e.id AND edp.valor LIKE ?
+            )`);
+            queryParams.push(`%${customFieldSearch}%`);
         }
 
         // Filtros especificos
@@ -71,7 +94,18 @@ exports.getAllExpedientes = async (req, res) => {
                 e.*, 
                 s.nombre_serie, 
                 ss.nombre_subserie,
-                u.nombre_completo as nombre_responsable
+                u.nombre_completo as nombre_responsable,
+                (
+                    SELECT JSON_ARRAYAGG(
+                        JSON_OBJECT(
+                            'nombre_campo', ocp.nombre_campo, 
+                            'valor', edp.valor
+                        )
+                    )
+                    FROM expediente_datos_personalizados edp
+                    JOIN oficina_campos_personalizados ocp ON edp.id_campo = ocp.id
+                    WHERE edp.id_expediente = e.id
+                ) as datos_personalizados
             FROM expedientes e
             LEFT JOIN trd_series s ON e.id_serie = s.id
             LEFT JOIN trd_subseries ss ON e.id_subserie = ss.id

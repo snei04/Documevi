@@ -36,4 +36,7 @@ router.post('/:id/start-workflow', authorizePermission('documentos_workflow'), s
 router.post('/:id/advance-workflow', authorizePermission('documentos_workflow'), advanceWorkflow);
 router.post('/:id/firmar', authorizePermission('documentos_firmar'), firmarDocumento);
 
+// Ruta para actualizar ubicación física del documento
+router.put('/:id/ubicacion', authorizePermission('documentos_editar'), require('../controllers/documento.controller').updateDocumentoLocation);
+
 module.exports = router;

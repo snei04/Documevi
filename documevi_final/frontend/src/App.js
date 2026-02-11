@@ -90,7 +90,7 @@ import GestionAuditoria from './components/GestionAuditoria';
 
 /** Gestión documental avanzada */
 import GestionTransferencias from './components/GestionTransferencias';
-import GestionEliminacion from './components/GestionEliminacion';
+
 import RetencionDocumental from './components/RetencionDocumental';
 
 /** Configuración del sistema */
@@ -293,9 +293,7 @@ const AppContent = () => {
                             <Route path="transferencias" element={<GestionTransferencias />} />
                         </Route>
 
-                        <Route element={<ProtectedRoute permission="eliminacion_ver" />}>
-                            <Route path="eliminacion" element={<GestionEliminacion />} />
-                        </Route>
+
 
                         <Route element={<ProtectedRoute permission="retencion_ver" />}>
                             <Route path="retencion" element={<RetencionDocumental />} />
@@ -348,7 +346,7 @@ const AppContent = () => {
  */
 function App() {
     return (
-        <Router>
+        <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
             <PermissionsProvider>
                 {/* Sistema de notificaciones toast (react-toastify) */}
                 <ToastContainer

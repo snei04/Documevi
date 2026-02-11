@@ -5,6 +5,7 @@ import { getExpedientes } from '../api/expedienteAPI';
 import { toast } from 'react-toastify';
 import Modal from 'react-modal';
 import PermissionGuard from './auth/PermissionGuard';
+import { usePermissionsContext } from '../context/PermissionsContext';
 import DuplicadoAlertModal from './DuplicadoAlertModal';
 import WizardCrearExpediente from './WizardCrearExpediente';
 import './Dashboard.css';
@@ -31,21 +32,23 @@ const GestionExpedientes = () => {
     const [submitting, setSubmitting] = useState(false);
 
     // Estados para campos personalizados y validacion de duplicados
-    const [oficinas, setOficinas] = useState([]);
     const [camposPersonalizados, setCamposPersonalizados] = useState([]);
     const [customData, setCustomData] = useState({});
     const [duplicadoModalOpen, setDuplicadoModalOpen] = useState(false);
     const [duplicadoInfo, setDuplicadoInfo] = useState(null);
-    const [documentoParaAnexar, setDocumentoParaAnexar] = useState(null);
+    // const [documentoParaAnexar, setDocumentoParaAnexar] = useState(null); // unused
 
     // Estado para el wizard unificado
     const [isWizardOpen, setIsWizardOpen] = useState(false);
-    const [userPermissions, setUserPermissions] = useState([]);
+    const { permissions: userPermissions } = usePermissionsContext();
 
     // Estados de filtros
     const [searchTerm, setSearchTerm] = useState('');
     const [filterEstado, setFilterEstado] = useState('');
     const [filterSerie, setFilterSerie] = useState('');
+    const [filterFechaInicio, setFilterFechaInicio] = useState('');
+    const [filterFechaFin, setFilterFechaFin] = useState('');
+    const [filterCustomField, setFilterCustomField] = useState('');
 
     // Estado de paginación
     const [pagination, setPagination] = useState({
@@ -67,25 +70,17 @@ const GestionExpedientes = () => {
         }, 500); // Debounce de 500ms para busqueda
 
         return () => clearTimeout(timerId);
-    }, [pagination.page, searchTerm, filterEstado, filterSerie]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [pagination.page, searchTerm, filterEstado, filterSerie, filterFechaInicio, filterFechaFin, filterCustomField]);
 
     const fetchCatalogos = async () => {
         try {
-            const [resSer, resSub, resOfi] = await Promise.all([
+            const [resSer, resSub] = await Promise.all([
                 api.get('/series'),
-                api.get('/subseries'),
-                api.get('/oficinas')
+                api.get('/subseries')
             ]);
             setSeries(resSer.data.filter(s => s.activo));
             setSubseries(resSub.data.filter(ss => ss.activo));
-            setOficinas(resOfi.data.filter(o => o.activo));
-
-            // Cargar permisos del usuario
-            const storedUser = localStorage.getItem('user');
-            if (storedUser) {
-                const userData = JSON.parse(storedUser);
-                setUserPermissions(userData.permissions || []);
-            }
         } catch (err) {
             console.error(err);
             toast.error('Error al cargar catálogos.');
@@ -100,7 +95,10 @@ const GestionExpedientes = () => {
                 limit: pagination.limit,
                 search: searchTerm,
                 estado: filterEstado,
-                serie: filterSerie
+                serie: filterSerie,
+                fecha_inicio: filterFechaInicio,
+                fecha_fin: filterFechaFin,
+                custom_search: filterCustomField
             };
 
             const res = await getExpedientes(params);
@@ -156,10 +154,14 @@ const GestionExpedientes = () => {
     };
 
     // Limpiar filtros
+    // Limpiar filtros
     const handleClearFilters = () => {
         setSearchTerm('');
         setFilterEstado('');
         setFilterSerie('');
+        setFilterFechaInicio('');
+        setFilterFechaFin('');
+        setFilterCustomField('');
         setPagination(prev => ({ ...prev, page: 1 }));
     };
 
@@ -206,19 +208,19 @@ const GestionExpedientes = () => {
     };
 
     // Abrir modal
-    const openModal = () => {
-        setFormData({
-            nombre_expediente: '',
-            id_serie: '',
-            id_subserie: '',
-            descriptor_1: '',
-            descriptor_2: ''
-        });
-        setFilteredSubseries([]);
-        setCamposPersonalizados([]);
-        setCustomData({});
-        setIsModalOpen(true);
-    };
+    // const openModal = () => {
+    //     setFormData({
+    //         nombre_expediente: '',
+    //         id_serie: '',
+    //         id_subserie: '',
+    //         descriptor_1: '',
+    //         descriptor_2: ''
+    //     });
+    //     setFilteredSubseries([]);
+    //     setCamposPersonalizados([]);
+    //     setCustomData({});
+    //     setIsModalOpen(true);
+    // };
 
     // Cerrar modal
     const closeModal = () => {
@@ -423,7 +425,7 @@ const GestionExpedientes = () => {
                             ))}
                         </select>
                     </div>
-                    {(searchTerm || filterEstado || filterSerie) && (
+                    {(searchTerm || filterEstado || filterSerie || filterFechaInicio || filterFechaFin || filterCustomField) && (
                         <button
                             className="button button-secondary"
                             onClick={handleClearFilters}
@@ -431,6 +433,34 @@ const GestionExpedientes = () => {
                             Limpiar filtros
                         </button>
                     )}
+                </div>
+                {/* Segunda fila de filtros */}
+                <div className="filters-row" style={{ marginTop: '10px' }}>
+                    <div className="filter-group">
+                        <label>Fecha Apertura (Desde)</label>
+                        <input
+                            type="date"
+                            value={filterFechaInicio}
+                            onChange={(e) => setFilterFechaInicio(e.target.value)}
+                        />
+                    </div>
+                    <div className="filter-group">
+                        <label>Fecha Apertura (Hasta)</label>
+                        <input
+                            type="date"
+                            value={filterFechaFin}
+                            onChange={(e) => setFilterFechaFin(e.target.value)}
+                        />
+                    </div>
+                    <div className="filter-group">
+                        <label>Buscar en Campos Personalizados</label>
+                        <input
+                            type="text"
+                            placeholder="Valor del metadato..."
+                            value={filterCustomField}
+                            onChange={(e) => setFilterCustomField(e.target.value)}
+                        />
+                    </div>
                 </div>
             </div>
 
@@ -464,8 +494,24 @@ const GestionExpedientes = () => {
                                             <td>
                                                 <strong>{exp.nombre_expediente}</strong>
                                                 {exp.descriptor_1 && (
-                                                    <><br /><small className="text-muted">{exp.descriptor_1}</small></>
+                                                    <><br /><small className="text-muted">Descriptor 1: {exp.descriptor_1}</small></>
                                                 )}
+                                                {exp.descriptor_2 && (
+                                                    <><br /><small className="text-muted">Descriptor 2: {exp.descriptor_2}</small></>
+                                                )}
+                                                {(() => {
+                                                    let campos = exp.datos_personalizados;
+                                                    if (typeof campos === 'string') {
+                                                        try { campos = JSON.parse(campos); } catch (e) { campos = []; }
+                                                    }
+                                                    return Array.isArray(campos) && campos.map((campo, idx) => (
+                                                        <div key={idx} style={{ lineHeight: '1.2', marginTop: '2px' }}>
+                                                            <small className="text-muted">
+                                                                <strong>{campo.nombre_campo}:</strong> {campo.valor}
+                                                            </small>
+                                                        </div>
+                                                    ));
+                                                })()}
                                             </td>
                                             <td>
                                                 <span className="serie-badge">{exp.nombre_serie}</span>
@@ -707,7 +753,7 @@ const GestionExpedientes = () => {
                 subseries={subseries}
                 userPermissions={userPermissions}
             />
-        </div>
+        </div >
     );
 };
 

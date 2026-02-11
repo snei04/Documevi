@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
+import EditLocationModal from './EditLocationModal';
+import { usePermissionsContext } from '../../context/PermissionsContext';
 
 // Componente para mostrar el índice de documentos del expediente
 const IndiceDocumentos = ({ expediente, workflows, onOpenFile, onSign, onStartWorkflow }) => {
     const [selectedWorkflow, setSelectedWorkflow] = useState('');
-    const { documentos, vista } = expediente;
+    const { documentos } = expediente;
 
     const handleWorkflowSubmit = (e, docId) => {
         e.preventDefault();
@@ -13,6 +15,35 @@ const IndiceDocumentos = ({ expediente, workflows, onOpenFile, onSign, onStartWo
 
     // Obtiene la URL base del archivo desde .env o usa localhost por defecto
     const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:4000';
+    const { permissions } = usePermissionsContext();
+
+    // Estado para el modal de edición de ubicación
+    const [isEditLocationOpen, setIsEditLocationOpen] = useState(false);
+    const [documentoToEdit, setDocumentoToEdit] = useState(null);
+
+    const handleOpenEditLocation = (doc) => {
+        setDocumentoToEdit(doc);
+        setIsEditLocationOpen(true);
+    };
+
+    const handleCloseEditLocation = () => {
+        setIsEditLocationOpen(false);
+        setDocumentoToEdit(null);
+    };
+
+    const handleLocationUpdated = () => {
+        // Recargar datos si es necesario, o notificar al padre
+        // Idealmente, IndiceDocumentos debería recibir una función refresh
+        if (typeof onOpenFile === 'function' && onOpenFile.name === 'forceUpdate') {
+            // Hack: si onOpenFile fuera un refresh... 
+            // Mejor pedir una prop onRefresh
+        }
+        window.location.reload(); // Simple reload for now
+    };
+
+    // Determina la vista actual, por defecto 'consulta'
+    const vista = expediente?.vista || 'consulta';
+    const canEditLocation = permissions.includes('documentos_editar');
 
     return (
         <div className="content-box">
@@ -53,29 +84,45 @@ const IndiceDocumentos = ({ expediente, workflows, onOpenFile, onSign, onStartWo
                             </td>
                             <td>
                                 {doc.tipo_soporte === 'Físico' || doc.tipo_soporte === 'Híbrido' ? (
-                                    <div style={{ fontSize: '0.9em', lineHeight: '1.5' }}>
-                                        {expediente.codigo_carpeta && (
+                                    <div style={{ fontSize: '0.9em', lineHeight: '1.5', position: 'relative' }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                                             <div>
-                                                <span style={{ color: '#805ad5', fontWeight: '600' }}>
-                                                    📁 Carpeta: {expediente.codigo_carpeta}
-                                                </span>
+                                                {doc.id_carpeta ? (
+                                                    <div>
+                                                        <span style={{ color: '#805ad5', fontWeight: '600' }}>
+                                                            📁 Carpeta ID: {doc.id_carpeta}
+                                                        </span>
+                                                        {doc.paquete && <span style={{ display: 'block', fontSize: '0.85em' }}>📦 Pq: {doc.paquete}</span>}
+                                                    </div>
+                                                ) : expediente.codigo_carpeta ? (
+                                                    <div>
+                                                        <span style={{ color: '#805ad5', fontWeight: '600' }}>
+                                                            📁 Carpeta: {expediente.codigo_carpeta}
+                                                        </span>
+                                                    </div>
+                                                ) : null}
+
+                                                {doc.ubicacion_fisica && (
+                                                    <div title={doc.ubicacion_fisica} style={{ cursor: 'help', color: '#718096' }}>
+                                                        📍 {doc.ubicacion_fisica.length > 30 ? doc.ubicacion_fisica.substring(0, 30) + '...' : doc.ubicacion_fisica}
+                                                    </div>
+                                                )}
+
+                                                {!doc.id_carpeta && !doc.ubicacion_fisica && !expediente.codigo_carpeta && (
+                                                    <span style={{ color: '#999' }}>Sin ubicación</span>
+                                                )}
                                             </div>
-                                        )}
-                                        {expediente.numero_paquete && (
-                                            <div>
-                                                <span style={{ color: '#2b6cb0', fontWeight: '600' }}>
-                                                    📦 Paquete: {expediente.numero_paquete}
-                                                </span>
-                                            </div>
-                                        )}
-                                        {doc.ubicacion_fisica && (
-                                            <div title={doc.ubicacion_fisica} style={{ cursor: 'help', color: '#718096' }}>
-                                                📍 {doc.ubicacion_fisica.length > 30 ? doc.ubicacion_fisica.substring(0, 30) + '...' : doc.ubicacion_fisica}
-                                            </div>
-                                        )}
-                                        {!expediente.codigo_carpeta && !expediente.numero_paquete && !doc.ubicacion_fisica && (
-                                            <span style={{ color: '#999' }}>Sin ubicación</span>
-                                        )}
+                                            {vista === 'productor' && canEditLocation && (
+                                                <button
+                                                    onClick={() => handleOpenEditLocation(doc)}
+                                                    className="button-icon"
+                                                    title="Editar Ubicación Física"
+                                                    style={{ border: 'none', background: 'transparent', cursor: 'pointer', marginLeft: '5px' }}
+                                                >
+                                                    ✏️
+                                                </button>
+                                            )}
+                                        </div>
                                     </div>
                                 ) : <span style={{ color: '#999' }}>N/A</span>}
                             </td>
@@ -99,6 +146,16 @@ const IndiceDocumentos = ({ expediente, workflows, onOpenFile, onSign, onStartWo
                     ))}
                 </tbody>
             </table>
+
+            {isEditLocationOpen && (
+                <EditLocationModal
+                    isOpen={isEditLocationOpen}
+                    onClose={handleCloseEditLocation}
+                    documento={documentoToEdit}
+                    onUpdate={handleLocationUpdated}
+                    idOficina={expediente?.id_oficina_productora}
+                />
+            )}
         </div>
     );
 };

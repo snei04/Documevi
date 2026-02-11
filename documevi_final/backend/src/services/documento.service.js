@@ -254,3 +254,73 @@ exports.avanzarWorkflow = async (id_documento, id_usuario) => {
         return 'Workflow completado con éxito.';
     }
 };
+
+/**
+ * Actualiza la ubicación física de un documento.
+ */
+exports.actualizarUbicacionDocumento = async (id_documento, data, id_usuario) => {
+    const { id_carpeta, paquete, tomo, modulo, estante, entrepaño, otro, ubicacion_fisica } = data;
+    const connection = await pool.getConnection();
+
+    try {
+        await connection.beginTransaction();
+
+        // Validar si el documento existe
+        const [docs] = await connection.query('SELECT tipo_soporte, id_carpeta FROM documentos WHERE id = ? FOR UPDATE', [id_documento]);
+        if (docs.length === 0) {
+            throw new CustomError('Documento no encontrado.', 404);
+        }
+
+        // Validar que sea Físico o Híbrido (opcional, pero recomendado)
+        // if (docs[0].tipo_soporte === 'Electrónico' && !ubicacion_fisica && !id_carpeta) { ... }
+
+        let id_carpeta_final = id_carpeta || null;
+
+        // Si se cambia de carpeta, validar la nueva
+        if (id_carpeta_final && id_carpeta_final !== docs[0].id_carpeta) {
+            const [carpetaRows] = await connection.query('SELECT cantidad_actual, capacidad_maxima, estado FROM carpetas WHERE id = ? FOR UPDATE', [id_carpeta_final]);
+            if (carpetaRows.length === 0) throw new CustomError('La carpeta especificada no existe.', 404);
+            if (carpetaRows[0].estado === 'Cerrada') throw new CustomError('La carpeta está cerrada.', 400);
+            if (carpetaRows[0].cantidad_actual >= carpetaRows[0].capacidad_maxima) throw new CustomError('Carpeta llena.', 400);
+
+            // Incrementar nueva carpeta
+            await connection.query('UPDATE carpetas SET cantidad_actual = cantidad_actual + 1 WHERE id = ?', [id_carpeta_final]);
+            // Decrementar antigua carpeta si existía
+            if (docs[0].id_carpeta) {
+                await connection.query('UPDATE carpetas SET cantidad_actual = GREATEST(cantidad_actual - 1, 0) WHERE id = ?', [docs[0].id_carpeta]);
+            }
+        } else if (!id_carpeta_final && docs[0].id_carpeta) {
+            // Si se quita la carpeta
+            await connection.query('UPDATE carpetas SET cantidad_actual = GREATEST(cantidad_actual - 1, 0) WHERE id = ?', [docs[0].id_carpeta]);
+        }
+
+        // Si se provee una ubicación física en texto, usarla, si no, construirla desde carpeta si aplica
+        let ubicacion_final = ubicacion_fisica;
+        if (!ubicacion_final && id_carpeta_final) {
+            const [c] = await connection.query('SELECT codigo_carpeta FROM carpetas WHERE id = ?', [id_carpeta_final]);
+            if (c.length > 0) ubicacion_final = `Carpeta ${c[0].codigo_carpeta}`;
+        }
+
+        await connection.query(
+            `UPDATE documentos SET 
+                id_carpeta = ?, paquete = ?, tomo = ?, modulo = ?, estante = ?, entrepaño = ?, otro = ?, ubicacion_fisica = ?
+             WHERE id = ?`,
+            [id_carpeta_final, paquete, tomo, modulo, estante, entrepaño, otro, ubicacion_final, id_documento]
+        );
+
+        // Auditoría
+        await connection.query(
+            'INSERT INTO auditoria (usuario_id, accion, detalles) VALUES (?, ?, ?)',
+            [id_usuario, 'EDICION_UBICACION_FISICA', `Se actualizó la ubicación del documento ID ${id_documento}`]
+        );
+
+        await connection.commit();
+        return { msg: 'Ubicación actualizada correctamente.' };
+
+    } catch (error) {
+        await connection.rollback();
+        throw error;
+    } finally {
+        connection.release();
+    }
+};

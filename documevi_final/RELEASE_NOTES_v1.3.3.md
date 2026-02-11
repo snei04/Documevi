@@ -38,6 +38,12 @@ Esta versión unifica el proceso de creación de expedientes y documentos median
 *   **Nuevo endpoint:** `POST /documentos/con-expediente`
 *   **Diseño consistente:** Usa el componente `FileUpload` con estilo drag & drop
 
+### 6. Edición de Ubicación Física de Documentos
+*   **Edición en línea:** Permite modificar la ubicación física (Carpeta, Caja, Estante, etc.) de un documento desde el listado.
+*   **Permiso requerido:** `expedientes_editar`. This was chosen as the most relevant existing permission.
+*   **Validación de Carpeta:** Al cambiar de carpeta, se valida capacidad y estado.
+*   **Modal dedicado:** Interfaz clara para gestionar la ubicación física.
+
 ---
 
 ## 🛠️ Mejoras y Correcciones
@@ -338,6 +344,24 @@ WHERE nombre_permiso = 'documentos_crear';
 #### 16.2 Frontend Warnings
 *   **Linting:** Se corrigieron advertencias de React (`Expected '==='`) para mejorar la estabilidad del código.
 
+### 17. Limpieza de Módulos
+*   **Módulo Eliminado:** Se eliminó el módulo `GestionEliminacion` y su enlace en el menú lateral.
+*   **Razón:** La funcionalidad de eliminación de expedientes ha sido centralizada y mejorada en el nuevo módulo de **Retención Documental**.
+
+---
+
+### 18. Mejoras en Filtros de Expedientes
+*   **Búsqueda por Rango de Fechas:** Nuevos campos "Fecha Apertura (Desde)" y "Fecha Apertura (Hasta)" en el panel de filtros.
+*   **Búsqueda en Metadatos:** Nuevo campo "Buscar en Campos Personalizados" que permite filtrar expedientes por valores específicos de sus metadatos.
+*   **Limpieza de Filtros Mejorada:** El botón "Limpiar filtros" ahora restablece todos los criterios de búsqueda, incluyendo fechas y metadatos.
+
+### 19. Edición Avanzada de Ubicación Física (Documentos)
+*   **Edición en Línea:** Nueva funcionalidad en el Índice Electrónico para modificar la ubicación física de un documento ya radicado.
+*   **Campos Editables:** Permite actualizar Carpeta, Paquete/Caja, Tomo, Módulo, Estante, Entrepaño y Notas (Otro).
+*   **Validación de Carpeta:** Al cambiar la carpeta de un documento, el sistema valida automáticamente la capacidad y estado de la nueva carpeta.
+*   **Permisos:** Funcionalidad protegida por el permiso `documentos_editar`. El botón de edición se oculta automáticamente si el usuario no tiene este permiso, alineándose con la configuración de roles.
+*   **Componentes:** Nuevo modal `EditLocationModal.js` y botón de edición (✏️) en `IndiceDocumentos.js`.
+
 ---
 
 
@@ -356,6 +380,7 @@ WHERE nombre_permiso = 'documentos_crear';
 | `retencion.routes.js` | Backend | Nuevas rutas dashboard/alertas/job |
 | `RetencionDocumental.js` | Frontend | Dashboard con tarjetas y fases |
 | `20260210_retencion_optimizacion.sql` | Migración | Schema de retención (5 columnas + alertas) |
+| `EditLocationModal.js` | Frontend | Modal para editar ubicación física de documentos |
 
 ---
 *Documevi SGDEA - Gestión Documental Avanzada*

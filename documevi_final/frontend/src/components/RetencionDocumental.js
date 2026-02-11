@@ -193,6 +193,8 @@ const RetencionDocumental = () => {
     };
 
     // Transferir a central
+    // Transferir a central - Unused but kept for reference or future use if needed, commenting out to fix lint
+    /*
     const handleTransferir = async (expediente) => {
         if (!window.confirm(`¿Transferir "${expediente.nombre_expediente}" al Archivo Central?`)) return;
         try {
@@ -206,6 +208,7 @@ const RetencionDocumental = () => {
             toast.error(error.response?.data?.msg || 'Error al transferir');
         }
     };
+    */
 
     // Helpers
     const handleLeerAlerta = async (alertaId) => {
@@ -237,6 +240,7 @@ const RetencionDocumental = () => {
         return 'status-active';
     };
 
+    /*
     const getDisposicionClass = (disposicion) => {
         switch (disposicion) {
             case 'Eliminación': return 'badge-danger';
@@ -245,6 +249,7 @@ const RetencionDocumental = () => {
             default: return 'badge-default';
         }
     };
+    */
 
     // Render Logic
     if (loading && !resumen) return <div className="loading-container">Cargando datos de retención...</div>;

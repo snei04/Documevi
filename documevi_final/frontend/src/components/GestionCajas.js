@@ -36,6 +36,7 @@ const GestionCajas = () => {
         } else {
             setCajas([]);
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [selectedOficina]);
 
     const fetchCajas = async () => {

@@ -220,27 +220,34 @@ exports.reabrirPaquete = async (id_paquete, id_usuario = null) => {
 };
 
 /**
- * Lista los paquetes de una oficina.
+ * Lista los paquetes de una oficina. Soporta búsqueda por número de paquete.
  */
-exports.listarPaquetes = async (id_oficina = null, page = 1, limit = 20) => {
+exports.listarPaquetes = async (id_oficina = null, page = 1, limit = 20, search = '') => {
     const offset = (page - 1) * limit;
-    let where = '';
+    let whereConditions = [];
     let params = [];
 
     if (id_oficina) {
-        where = 'WHERE p.id_oficina = ?';
+        whereConditions.push('p.id_oficina = ?');
         params.push(id_oficina);
     }
 
+    if (search && search.trim() !== '') {
+        whereConditions.push('p.numero_paquete LIKE ?');
+        params.push(`%${search.trim()}%`);
+    }
+
+    const whereClause = whereConditions.length > 0 ? 'WHERE ' + whereConditions.join(' AND ') : '';
+
     const [countRows] = await pool.query(
-        `SELECT COUNT(*) as total FROM paquetes p ${where}`, params
+        `SELECT COUNT(*) as total FROM paquetes p ${whereClause}`, params
     );
 
     const [rows] = await pool.query(
         `SELECT p.*, o.nombre_oficina, o.codigo_oficina
          FROM paquetes p
          LEFT JOIN oficinas_productoras o ON p.id_oficina = o.id
-         ${where}
+         ${whereClause}
          ORDER BY p.fecha_creacion DESC
          LIMIT ? OFFSET ?`,
         [...params, limit, offset]

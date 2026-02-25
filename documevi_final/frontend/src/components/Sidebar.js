@@ -111,6 +111,9 @@ const Sidebar = ({ isOpen }) => {
                             <PermissionGuard permission="estadisticas_ver">
                                 <li><NavLink to="/dashboard/estadisticas">Estadísticas</NavLink></li>
                             </PermissionGuard>
+                            <PermissionGuard permission="expedientes_crear">
+                                <li><NavLink to="/dashboard/carga-masiva">📤 Carga Masiva (Migración)</NavLink></li>
+                            </PermissionGuard>
                         </ul>
                     </li>
                 </ul>

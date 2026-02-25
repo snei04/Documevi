@@ -4,12 +4,12 @@ import './Dashboard.css';
 
 Modal.setAppElement('#root');
 
-const DuplicadoAlertModal = ({ 
-    isOpen, 
-    onClose, 
-    duplicadoInfo, 
+const DuplicadoAlertModal = ({
+    isOpen,
+    onClose,
+    duplicadoInfo,
     onConfirmarAnexion,
-    loading 
+    loading
 }) => {
     const [fechaApertura, setFechaApertura] = useState('');
     const [tipoSoporte, setTipoSoporte] = useState('Electronico');
@@ -84,10 +84,10 @@ const DuplicadoAlertModal = ({
                         <strong style={{ color: '#3498db' }}>{campo_duplicado?.valor}</strong>
                     </p>
 
-                    <div style={{ 
-                        background: '#f8f9fa', 
-                        border: '1px solid #dee2e6', 
-                        borderRadius: '8px', 
+                    <div style={{
+                        background: '#f8f9fa',
+                        border: '1px solid #dee2e6',
+                        borderRadius: '8px',
                         padding: '15px',
                         marginBottom: '20px'
                     }}>
@@ -126,6 +126,13 @@ const DuplicadoAlertModal = ({
                                     <td style={{ padding: '5px 0', fontWeight: 'bold' }}>Responsable:</td>
                                     <td>{expediente_existente?.responsable || '-'}</td>
                                 </tr>
+                                <tr>
+                                    <td style={{ padding: '5px 0', fontWeight: 'bold' }}>Ubicación Física:</td>
+                                    <td>
+                                        Paquete: {expediente_existente?.numero_paquete || 'No asignado'} <br />
+                                        Carpeta: {expediente_existente?.codigo_carpeta || 'No asignada'}
+                                    </td>
+                                </tr>
                             </tbody>
                         </table>
                     </div>
@@ -135,16 +142,16 @@ const DuplicadoAlertModal = ({
                     </p>
 
                     <div className="modal-actions" style={{ justifyContent: 'center' }}>
-                        <button 
-                            type="button" 
-                            onClick={handleClose} 
+                        <button
+                            type="button"
+                            onClick={handleClose}
                             className="button"
                         >
                             ❌ No, cancelar
                         </button>
-                        <button 
-                            type="button" 
-                            onClick={handleContinuar} 
+                        <button
+                            type="button"
+                            onClick={handleContinuar}
                             className="button button-primary"
                         >
                             ✅ Si, anexar documento
@@ -164,24 +171,24 @@ const DuplicadoAlertModal = ({
                         <strong>Expediente destino:</strong> {expediente_existente?.nombre_expediente}
                     </p>
 
-                    <div style={{ 
-                        background: '#fff3cd', 
-                        border: '1px solid #ffc107', 
-                        borderRadius: '8px', 
+                    <div style={{
+                        background: '#fff3cd',
+                        border: '1px solid #ffc107',
+                        borderRadius: '8px',
                         padding: '15px',
                         marginBottom: '20px'
                     }}>
                         <p style={{ margin: 0, fontSize: '14px' }}>
-                            ⚠️ <strong>Verificacion de identidad:</strong> Por favor confirme que el documento 
+                            ⚠️ <strong>Verificacion de identidad:</strong> Por favor confirme que el documento
                             corresponde al registro correcto antes de continuar.
                         </p>
                     </div>
 
                     <div className="form-group">
                         <label>
-                            <input 
-                                type="checkbox" 
-                                checked={confirmado} 
+                            <input
+                                type="checkbox"
+                                checked={confirmado}
                                 onChange={(e) => setConfirmado(e.target.checked)}
                                 style={{ marginRight: '8px' }}
                             />
@@ -228,17 +235,17 @@ const DuplicadoAlertModal = ({
                     </div>
 
                     <div className="modal-actions" style={{ justifyContent: 'center' }}>
-                        <button 
-                            type="button" 
-                            onClick={() => setPaso(1)} 
+                        <button
+                            type="button"
+                            onClick={() => setPaso(1)}
                             className="button"
                             disabled={loading}
                         >
                             ← Volver
                         </button>
-                        <button 
-                            type="button" 
-                            onClick={handleAnexar} 
+                        <button
+                            type="button"
+                            onClick={handleAnexar}
                             className="button button-primary"
                             disabled={loading || !confirmado || !fechaApertura}
                         >

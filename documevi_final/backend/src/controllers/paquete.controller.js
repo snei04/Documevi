@@ -3,12 +3,13 @@ const paqueteService = require('../services/paquete.service');
 // GET /api/paquetes?page=1&limit=20
 const getAllPaquetes = async (req, res) => {
     try {
-        const { page = 1, limit = 20 } = req.query;
+        const { page = 1, limit = 20, search = '' } = req.query;
         // Listar paquetes globales (sin filtro de oficina)
         const result = await paqueteService.listarPaquetes(
             null,
             parseInt(page),
-            parseInt(limit)
+            parseInt(limit),
+            search
         );
         res.json(result);
     } catch (error) {

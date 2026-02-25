@@ -92,6 +92,7 @@ app.use('/api/retencion', retencionRoutes);
 app.use('/api/carpetas', carpetaRoutes);
 app.use('/api/cajas', require('./src/routes/caja.routes'));
 app.use('/api/paquetes', require('./src/routes/paquete.routes'));
+app.use('/api/migracion', require('./src/routes/migracion.routes'));
 
 // --- MIDDLEWARE GLOBAL PARA MANEJO DE ERRORES ---
 // Este middleware debe ir DESPUÉS de todas las rutas de la API.

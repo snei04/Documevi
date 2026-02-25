@@ -56,7 +56,7 @@ exports.createWorkflow = async (req, res) => {
       'INSERT INTO workflows (nombre, descripcion) VALUES (?, ?)',
       [nombre, descripcion]
     );
-    
+
     // Retornar el workflow creado con su ID
     res.status(201).json({
       id: result.insertId,
@@ -70,7 +70,7 @@ exports.createWorkflow = async (req, res) => {
     }
     res.status(500).json({ msg: 'Error en el servidor', error: error.message });
   }
-  
+
 };
 
 /**
@@ -87,12 +87,12 @@ exports.getWorkflowById = async (req, res) => {
   const { id } = req.params;
   try {
     const [rows] = await pool.query('SELECT * FROM workflows WHERE id = ?', [id]);
-    
+
     // Verificar que el workflow existe
     if (rows.length === 0) {
       return res.status(404).json({ msg: 'Workflow no encontrado.' });
     }
-    
+
     res.json(rows[0]);
   } catch (error) {
     res.status(500).json({ msg: 'Error en el servidor', error: error.message });
@@ -120,7 +120,7 @@ exports.getWorkflowPasos = async (req, res) => {
   try {
     // Consulta con JOIN para incluir el nombre del rol responsable
     const [rows] = await pool.query(
-      'SELECT wp.*, r.nombre as nombre_rol FROM workflow_pasos wp JOIN roles r ON wp.id_rol_responsable = r.id WHERE id_workflow = ? ORDER BY orden ASC', 
+      'SELECT wp.*, r.nombre as nombre_rol FROM workflow_pasos wp JOIN roles r ON wp.id_rol_responsable = r.id WHERE id_workflow = ? ORDER BY orden ASC',
       [id]
     );
     res.json(rows);
@@ -148,7 +148,7 @@ exports.getWorkflowPasos = async (req, res) => {
 exports.createWorkflowPaso = async (req, res) => {
   // Extraer ID del workflow de los parámetros de URL
   const { id: id_workflow } = req.params;
-  const { nombre_paso, orden, id_rol_responsable, requiere_firma } = req.body; 
+  const { nombre_paso, orden, id_rol_responsable, requiere_firma } = req.body;
 
   // Validar campos obligatorios
   if (!nombre_paso || !orden || !id_rol_responsable) {
@@ -161,7 +161,7 @@ exports.createWorkflowPaso = async (req, res) => {
       'INSERT INTO workflow_pasos (id_workflow, nombre_paso, orden, id_rol_responsable, requiere_firma) VALUES (?, ?, ?, ?, ?)',
       [id_workflow, nombre_paso, orden, id_rol_responsable, requiere_firma || false]
     );
-    
+
     // Retornar el paso creado
     res.status(201).json({
       id: result.insertId,
@@ -233,6 +233,121 @@ exports.getMyTasks = async (req, res) => {
     res.json(tasks);
   } catch (error) {
     console.error("Error al obtener tareas:", error);
+    res.status(500).json({ msg: 'Error en el servidor', error: error.message });
+  }
+};
+
+
+// ============================================
+// EDICIÓN Y ELIMINACIÓN DE WORKFLOWS
+// ============================================
+
+/**
+ * Actualiza un workflow existente.
+ */
+exports.updateWorkflow = async (req, res) => {
+  const { id } = req.params;
+  const { nombre, descripcion } = req.body;
+
+  if (!nombre) {
+    return res.status(400).json({ msg: 'El nombre del workflow es obligatorio.' });
+  }
+
+  try {
+    const [result] = await pool.query(
+      'UPDATE workflows SET nombre = ?, descripcion = ? WHERE id = ?',
+      [nombre, descripcion || null, id]
+    );
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ msg: 'Workflow no encontrado.' });
+    }
+    res.json({ id: parseInt(id), nombre, descripcion });
+  } catch (error) {
+    if (error.code === 'ER_DUP_ENTRY') {
+      return res.status(400).json({ msg: 'Ya existe un workflow con ese nombre.' });
+    }
+    res.status(500).json({ msg: 'Error en el servidor', error: error.message });
+  }
+};
+
+/**
+ * Elimina un workflow y todos sus pasos (CASCADE).
+ */
+exports.deleteWorkflow = async (req, res) => {
+  const { id } = req.params;
+  try {
+    // Verificar si hay documentos usando este workflow
+    const [docs] = await pool.query(
+      'SELECT COUNT(*) as total FROM documento_workflows WHERE id_workflow = ?',
+      [id]
+    );
+    if (docs[0].total > 0) {
+      return res.status(400).json({
+        msg: 'No se puede eliminar: hay documentos asociados a este workflow.'
+      });
+    }
+
+    // Eliminar pasos primero, luego el workflow
+    await pool.query('DELETE FROM workflow_pasos WHERE id_workflow = ?', [id]);
+    const [result] = await pool.query('DELETE FROM workflows WHERE id = ?', [id]);
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ msg: 'Workflow no encontrado.' });
+    }
+    res.json({ msg: 'Workflow eliminado con éxito.' });
+  } catch (error) {
+    res.status(500).json({ msg: 'Error en el servidor', error: error.message });
+  }
+};
+
+
+// ============================================
+// EDICIÓN Y ELIMINACIÓN DE PASOS
+// ============================================
+
+/**
+ * Actualiza un paso de un workflow.
+ */
+exports.updateWorkflowPaso = async (req, res) => {
+  const { id, id_paso } = req.params;
+  const { nombre_paso, orden, id_rol_responsable, requiere_firma } = req.body;
+
+  if (!nombre_paso || !orden || !id_rol_responsable) {
+    return res.status(400).json({ msg: 'Nombre, orden y rol son obligatorios.' });
+  }
+
+  try {
+    const [result] = await pool.query(
+      'UPDATE workflow_pasos SET nombre_paso = ?, orden = ?, id_rol_responsable = ?, requiere_firma = ? WHERE id = ? AND id_workflow = ?',
+      [nombre_paso, orden, id_rol_responsable, requiere_firma || false, id_paso, id]
+    );
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ msg: 'Paso no encontrado.' });
+    }
+    res.json({ id: parseInt(id_paso), nombre_paso, orden, id_rol_responsable, requiere_firma });
+  } catch (error) {
+    if (error.code === 'ER_DUP_ENTRY') {
+      return res.status(400).json({ msg: 'El número de orden ya existe para este workflow.' });
+    }
+    res.status(500).json({ msg: 'Error en el servidor', error: error.message });
+  }
+};
+
+/**
+ * Elimina un paso de un workflow.
+ */
+exports.deleteWorkflowPaso = async (req, res) => {
+  const { id, id_paso } = req.params;
+  try {
+    const [result] = await pool.query(
+      'DELETE FROM workflow_pasos WHERE id = ? AND id_workflow = ?',
+      [id_paso, id]
+    );
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ msg: 'Paso no encontrado.' });
+    }
+    res.json({ msg: 'Paso eliminado con éxito.' });
+  } catch (error) {
     res.status(500).json({ msg: 'Error en el servidor', error: error.message });
   }
 };

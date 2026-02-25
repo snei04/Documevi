@@ -13,11 +13,14 @@ const GestionPaquetes = () => {
     const [showObsModal, setShowObsModal] = useState(null);
     const [observaciones, setObservaciones] = useState('');
     const [showCrearModal, setShowCrearModal] = useState(false);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [searchInput, setSearchInput] = useState('');
 
     const fetchPaquetes = useCallback(async () => {
         setLoading(true);
         try {
             const params = { page, limit: 15 };
+            if (searchTerm.trim()) params.search = searchTerm.trim();
             const res = await axios.get('/paquetes', { params });
             setPaquetes(res.data.paquetes || []);
             setTotalPages(res.data.totalPages || 1);
@@ -26,9 +29,24 @@ const GestionPaquetes = () => {
         } finally {
             setLoading(false);
         }
-    }, [page]);
+    }, [page, searchTerm]);
 
     useEffect(() => { fetchPaquetes(); }, [fetchPaquetes]);
+
+    // Debounce de búsqueda
+    useEffect(() => {
+        const timeout = setTimeout(() => {
+            setPage(1);
+            setSearchTerm(searchInput);
+        }, 400);
+        return () => clearTimeout(timeout);
+    }, [searchInput]);
+
+    const handleSearchClear = () => {
+        setSearchInput('');
+        setSearchTerm('');
+        setPage(1);
+    };
 
     const handleVerExpedientes = async (id_paquete) => {
         if (expandedPaquete === id_paquete) {
@@ -116,6 +134,41 @@ const GestionPaquetes = () => {
                 >
                     + Verificar Paquete Activo
                 </button>
+            </div>
+
+            {/* Barra de búsqueda */}
+            <div className="content-box" style={{ marginBottom: '16px', padding: '12px 16px' }}>
+                <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                    <label style={{ fontWeight: '600', fontSize: '0.9em', color: '#4a5568', whiteSpace: 'nowrap' }}>
+                        🔍 Buscar Paquete:
+                    </label>
+                    <input
+                        type="text"
+                        placeholder="Ingrese número de paquete..."
+                        value={searchInput}
+                        onChange={(e) => setSearchInput(e.target.value)}
+                        style={{
+                            flex: 1,
+                            padding: '8px 12px',
+                            borderRadius: '6px',
+                            border: '1px solid #e2e8f0',
+                            fontSize: '0.9em',
+                            outline: 'none',
+                            transition: 'border-color 0.2s'
+                        }}
+                        onFocus={(e) => e.target.style.borderColor = '#3182ce'}
+                        onBlur={(e) => e.target.style.borderColor = '#e2e8f0'}
+                    />
+                    {searchInput && (
+                        <button
+                            onClick={handleSearchClear}
+                            className="button"
+                            style={{ fontSize: '0.85em', padding: '8px 14px', backgroundColor: '#fed7d7', color: '#c53030', border: '1px solid #feb2b2' }}
+                        >
+                            ✕ Limpiar
+                        </button>
+                    )}
+                </div>
             </div>
 
             {/* Tabla */}
@@ -235,25 +288,43 @@ const GestionPaquetes = () => {
 
                     {/* Paginación */}
                     {totalPages > 1 && (
-                        <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', padding: '16px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '6px', padding: '16px', flexWrap: 'wrap' }}>
+                            <button
+                                onClick={() => setPage(1)}
+                                disabled={page === 1}
+                                className="button"
+                                style={{ fontSize: '0.9em', padding: '6px 12px' }}
+                                title="Ir al inicio"
+                            >
+                                ⏮ Inicio
+                            </button>
                             <button
                                 onClick={() => setPage(p => Math.max(1, p - 1))}
                                 disabled={page === 1}
                                 className="button"
-                                style={{ fontSize: '0.9em' }}
+                                style={{ fontSize: '0.9em', padding: '6px 12px' }}
                             >
                                 ← Anterior
                             </button>
-                            <span style={{ padding: '8px 16px', color: '#4a5568' }}>
+                            <span style={{ padding: '8px 16px', color: '#4a5568', fontWeight: '500' }}>
                                 Página {page} de {totalPages}
                             </span>
                             <button
                                 onClick={() => setPage(p => Math.min(totalPages, p + 1))}
                                 disabled={page === totalPages}
                                 className="button"
-                                style={{ fontSize: '0.9em' }}
+                                style={{ fontSize: '0.9em', padding: '6px 12px' }}
                             >
                                 Siguiente →
+                            </button>
+                            <button
+                                onClick={() => setPage(totalPages)}
+                                disabled={page === totalPages}
+                                className="button"
+                                style={{ fontSize: '0.9em', padding: '6px 12px' }}
+                                title="Ir al final"
+                            >
+                                Final ⏭
                             </button>
                         </div>
                     )}

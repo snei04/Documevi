@@ -12,13 +12,13 @@ import { toast } from 'react-toastify';
 
 const DashboardLayout = () => {
     const [isSidebarOpen, setSidebarOpen] = useState(false);
-    
+
     // States for your data (no changes here)
     const [dependencias, setDependencias] = useState([]);
     const [oficinas, setOficinas] = useState([]);
     const [series, setSeries] = useState([]);
     const [subseries, setSubseries] = useState([]);
-    
+
     // --- 2. PREPARE THE LOGOUT LOGIC ---
     const navigate = useNavigate();
     const { clearPermissions } = usePermissionsContext();
@@ -53,7 +53,7 @@ const DashboardLayout = () => {
                 api.get('/series'),
                 api.get('/subseries')
             ]);
-            
+
             setDependencias(depRes.data);
             setOficinas(ofiRes.data);
             setSeries(serRes.data);
@@ -74,8 +74,8 @@ const DashboardLayout = () => {
             <div className="dashboard-body">
                 <Sidebar isOpen={isSidebarOpen} />
                 <main className="main-content">
-                    <Outlet context={{ 
-                        dependencias, 
+                    <Outlet context={{
+                        dependencias,
                         oficinas,
                         series,
                         subseries,
@@ -86,11 +86,11 @@ const DashboardLayout = () => {
                     }} />
                 </main>
             </div>
-            
+
             {/* Footer del dashboard */}
             <footer className="dashboard-footer">
                 <span>Todos los derechos reservados 2025 | Desarrollado por IMEVISAS desde el equipo de TI</span>
-                <span>Versión: v1.2.2</span>
+                <span>Versión: v1.4.3</span>
             </footer>
         </div>
     );

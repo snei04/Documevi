@@ -101,6 +101,7 @@ import DiseñadorPlantilla from './components/DiseñadorPlantilla';
 
 /** Integraciones externas */
 import OneDriveViewer from './components/OneDriveViewer';
+import CargaMasiva from './components/CargaMasiva';
 
 /** Instancia de API configurada */
 import api from './api/axios';
@@ -316,6 +317,11 @@ const AppContent = () => {
 
                         <Route element={<ProtectedRoute permission="prestamos_ver" />}>
                             <Route path="prestamos" element={<GestionPrestamos />} />
+                        </Route>
+
+                        {/* --- Carga Masiva (Migración) --- */}
+                        <Route element={<ProtectedRoute permission="expedientes_crear" />}>
+                            <Route path="carga-masiva" element={<CargaMasiva />} />
                         </Route>
                     </Route>
                 </Route>

@@ -3,8 +3,12 @@ const { Router } = require('express');
 const {
   getAllWorkflows,
   createWorkflow,
+  updateWorkflow,
+  deleteWorkflow,
   getWorkflowPasos,
   createWorkflowPaso,
+  updateWorkflowPaso,
+  deleteWorkflowPaso,
   getWorkflowById,
   getMyTasks
 } = require('../controllers/workflow.controller');
@@ -28,5 +32,13 @@ router.get('/:id/pasos', authorizePermission(['workflows_ver', 'expedientes_ver'
 // SOLO los usuarios con el permiso específico pueden CREAR workflows y PASOS
 router.post('/', authorizePermission('workflows_crear'), createWorkflow);
 router.post('/:id/pasos', authorizePermission('workflows_crear'), createWorkflowPaso);
+
+// EDITAR workflows y pasos
+router.put('/:id', authorizePermission('workflows_editar'), updateWorkflow);
+router.put('/:id/pasos/:id_paso', authorizePermission('workflows_editar'), updateWorkflowPaso);
+
+// ELIMINAR workflows y pasos
+router.delete('/:id', authorizePermission('workflows_eliminar'), deleteWorkflow);
+router.delete('/:id/pasos/:id_paso', authorizePermission('workflows_eliminar'), deleteWorkflowPaso);
 
 module.exports = router;

@@ -146,14 +146,25 @@ ORDER BY e.id, doc.fecha_radicado;
 
 SET FOREIGN_KEY_CHECKS = 0;
 
--- EJEMPLO DE CARGA PARA EL SQL --
-INSERT INTO expedientes (id, nombre_expediente, id_serie, id_subserie, descriptor_1, descriptor_2, fecha_apertura, fecha_cierre, estado, disponibilidad, id_usuario_responsable) VALUES
-(5, 'Historia clinica', 5, 8, 'EXP-001', NULL, '16-12-13 0:00:00', '16-12-13 0:00:00', 'Cerrado en Central', 'Disponible', 5);
+-- EJEMPLO DE CARGA PARA EL SQL (ACTUALIZADO CON PAQUETES Y CARPETAS) --
+
+-- 1. Crear el paquete (Caja)
+INSERT IGNORE INTO paquetes (id, numero_paquete, id_oficina, estado, observaciones) VALUES
+(1, 'CAJA-15', 5, 'Cerrado', 'Caja 15 de Archivo Central');
+
+-- 2. Crear Expediente y asociarlo al paquete (id_paquete = 1)
+INSERT INTO expedientes (id, nombre_expediente, id_serie, id_subserie, descriptor_1, descriptor_2, fecha_apertura, fecha_cierre, estado, disponibilidad, id_usuario_responsable, id_paquete) VALUES
+(5, 'Historia clinica', 5, 8, 'EXP-001', NULL, '16-12-13 0:00:00', '16-12-13 0:00:00', 'Cerrado en Central', 'Disponible', 5, 1);
+
+-- 3. Crear Carpeta para el Expediente 5
+-- Nota: En v1.3.3 carpetas tiene los campos estante, entrepaño, modulo, paquete, etc.
+INSERT INTO carpetas (id, id_oficina, año, consecutivo, codigo_carpeta, descripcion, estado, id_expediente, estante, paquete, entrepaño, otro) VALUES
+(1, 5, 2013, 1, 'OFC-5-2013-001', 'Carpeta historia clinica EXP-001', 'Cerrada', 5, '3', 'CAJA-15', NULL, 'Carpeta 7');
 
 
-
-INSERT INTO documentos (id, radicado, asunto, tipo_soporte, id_oficina_productora, id_serie, id_subserie, remitente_nombre, ubicacion_fisica, id_usuario_radicador, fecha_radicado) VALUES
-(7, '20130114-0001', 'Documento ingreso paciente', 'Físico', 5, 5, 5, 'PACIENTE', 'Archivo Central - Estante 3 - Caja 15 - Carpeta 7', 5, '2013-12-16 00:00:00');
+-- 4. Crear Documento (ahora asociado a la carpeta a través de id_carpeta = 1)
+INSERT INTO documentos (id, radicado, asunto, tipo_soporte, id_oficina_productora, id_serie, id_subserie, remitente_nombre, ubicacion_fisica, id_carpeta, id_usuario_radicador, fecha_radicado) VALUES
+(7, '20130114-0001', 'Documento ingreso paciente', 'Físico', 5, 5, 5, 'PACIENTE', 'Archivo Central - Estante 3 - Caja 15 - Carpeta 7', 1, 5, '2013-12-16 00:00:00');
 
 
 INSERT INTO expediente_documentos (id_expediente, id_documento, orden_foliado, requiere_firma, fecha_incorporacion) VALUES

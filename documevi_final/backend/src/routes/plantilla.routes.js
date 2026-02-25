@@ -6,7 +6,11 @@ const {
     getAllPlantillas,
     getPlantillaWithCampos,
     createPlantilla,
+    updatePlantilla,
+    deletePlantilla,
     addCampoToPlantilla,
+    updateCampoPlantilla,
+    deleteCampoPlantilla,
     updateDisenoPlantilla,
     uploadBackgroundImage,
     getVariablesDisponibles
@@ -33,6 +37,14 @@ router.get('/:id', authMiddleware, authorizePermission(['plantillas_ver', 'exped
 // Rutas para crear y modificar (requiere estar logueado Y tener permisos)
 router.post('/', [authMiddleware, authorizePermission('plantillas_crear')], createPlantilla);
 router.post('/:id/campos', [authMiddleware, authorizePermission('plantillas_editar')], addCampoToPlantilla);
+
+// Editar y eliminar plantillas
+router.put('/:id', [authMiddleware, authorizePermission('plantillas_editar')], updatePlantilla);
+router.delete('/:id', [authMiddleware, authorizePermission('plantillas_eliminar')], deletePlantilla);
+
+// Editar y eliminar campos de plantilla
+router.put('/:id/campos/:id_campo', [authMiddleware, authorizePermission('plantillas_editar')], updateCampoPlantilla);
+router.delete('/:id/campos/:id_campo', [authMiddleware, authorizePermission('plantillas_eliminar')], deleteCampoPlantilla);
 
 // Rutas para el diseñador visual (requiere estar logueado)
 router.post('/:id/diseno', authMiddleware, authorizePermission('plantillas_disenar'), updateDisenoPlantilla);

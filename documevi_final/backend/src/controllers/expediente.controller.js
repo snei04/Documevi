@@ -253,7 +253,9 @@ exports.getExpedienteById = async (req, res) => {
         }
 
         const expediente = expedientes[0];
-        const esProductor = expediente.id_usuario_responsable === id_usuario_actual;
+        const esProductor = expediente.id_usuario_responsable === id_usuario_actual ||
+            permisos_usuario.includes('expedientes_editar') ||
+            permisos_usuario.includes('documentos_editar');
         const tienePermisoEspecial = permisos_usuario.includes('ver_expedientes_cerrados');
 
         // Verificar si es auditor

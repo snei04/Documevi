@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "Documevi API",
-    "description": "Sistema de Gestión Documental IMEVI - Colección completa de endpoints de la API.\n\n## Autenticación\nLa mayoría de endpoints requieren autenticación Bearer Token. Usa el endpoint Login para obtener el token.\n\n## Variables\n- `baseUrl`: URL base de la API (default: http://localhost:4000/api)\n- `token`: Token JWT de autenticación\n\n## Módulos\n- Auth: Autenticación y gestión de sesión\n- Usuarios: Gestión de usuarios y perfiles\n- Documentos: Gestión documental y workflows",
+    "description": "Sistema de Gesti\u00f3n Documental IMEVI - Colecci\u00f3n completa de endpoints de la API.\n\n## Autenticaci\u00f3n\nLa mayor\u00eda de endpoints requieren autenticaci\u00f3n Bearer Token. Usa el endpoint Login para obtener el token.\n\n## Variables\n- `baseUrl`: URL base de la API (default: http://localhost:4000/api)\n- `token`: Token JWT de autenticaci\u00f3n\n\n## M\u00f3dulos\n- Auth: Autenticaci\u00f3n y gesti\u00f3n de sesi\u00f3n\n- Usuarios: Gesti\u00f3n de usuarios y perfiles\n- Documentos: Gesti\u00f3n documental y workflows",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
     "version": "1.0.0"
   },
@@ -16,7 +16,7 @@
       "key": "token",
       "value": "",
       "type": "string",
-      "description": "Token JWT de autenticación (se obtiene del Login)"
+      "description": "Token JWT de autenticaci\u00f3n (se obtiene del Login)"
     }
   ],
   "auth": {
@@ -31,8 +31,8 @@
   },
   "item": [
     {
-      "name": "🔐 Auth",
-      "description": "Endpoints de autenticación: registro, login, logout y recuperación de contraseña.",
+      "name": "\ud83d\udd10 Auth",
+      "description": "Endpoints de autenticaci\u00f3n: registro, login, logout y recuperaci\u00f3n de contrase\u00f1a.",
       "item": [
         {
           "name": "Register User",
@@ -46,7 +46,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"nombre_completo\": \"Juan Pérez\",\n  \"email\": \"juan@example.com\",\n  \"documento\": \"12345678\",\n  \"password\": \"password123\",\n  \"rol_id\": 1\n}",
+              "raw": "{\n  \"nombre_completo\": \"Juan P\u00e9rez\",\n  \"email\": \"juan@example.com\",\n  \"documento\": \"12345678\",\n  \"password\": \"password123\",\n  \"rol_id\": 1\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -55,10 +55,15 @@
             },
             "url": {
               "raw": "{{baseUrl}}/auth/register",
-              "host": ["{{baseUrl}}"],
-              "path": ["auth", "register"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "register"
+              ]
             },
-            "description": "Registra un nuevo usuario en el sistema. Requiere permisos de administrador.\n\n**Campos requeridos:**\n- `nombre_completo`: Nombre completo del usuario\n- `email`: Correo electrónico único\n- `documento`: Documento de identidad único\n- `password`: Contraseña (mínimo 6 caracteres)\n- `rol_id`: ID del rol a asignar"
+            "description": "Registra un nuevo usuario en el sistema. Requiere permisos de administrador.\n\n**Campos requeridos:**\n- `nombre_completo`: Nombre completo del usuario\n- `email`: Correo electr\u00f3nico \u00fanico\n- `documento`: Documento de identidad \u00fanico\n- `password`: Contrase\u00f1a (m\u00ednimo 6 caracteres)\n- `rol_id`: ID del rol a asignar"
           },
           "response": []
         },
@@ -69,7 +74,7 @@
               "listen": "test",
               "script": {
                 "exec": [
-                  "// Guardar el token automáticamente en las variables de colección",
+                  "// Guardar el token autom\u00e1ticamente en las variables de colecci\u00f3n",
                   "if (pm.response.code === 200) {",
                   "    var jsonData = pm.response.json();",
                   "    if (jsonData.token) {",
@@ -104,10 +109,15 @@
             },
             "url": {
               "raw": "{{baseUrl}}/auth/login",
-              "host": ["{{baseUrl}}"],
-              "path": ["auth", "login"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
             },
-            "description": "Autentica un usuario y devuelve un token JWT.\n\n**Campos requeridos:**\n- `documento`: Documento de identidad\n- `password`: Contraseña\n\n**Response exitosa:**\n- `token`: Token JWT para autenticación\n- `user`: Datos del usuario autenticado\n\n⚡ **Script automático:** El token se guarda automáticamente en las variables de colección."
+            "description": "Autentica un usuario y devuelve un token JWT.\n\n**Campos requeridos:**\n- `documento`: Documento de identidad\n- `password`: Contrase\u00f1a\n\n**Response exitosa:**\n- `token`: Token JWT para autenticaci\u00f3n\n- `user`: Datos del usuario autenticado\n\n\u26a1 **Script autom\u00e1tico:** El token se guarda autom\u00e1ticamente en las variables de colecci\u00f3n."
           },
           "response": []
         },
@@ -117,10 +127,15 @@
             "method": "POST",
             "url": {
               "raw": "{{baseUrl}}/auth/logout",
-              "host": ["{{baseUrl}}"],
-              "path": ["auth", "logout"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "logout"
+              ]
             },
-            "description": "Cierra la sesión del usuario actual y limpia la cookie de autenticación."
+            "description": "Cierra la sesi\u00f3n del usuario actual y limpia la cookie de autenticaci\u00f3n."
           },
           "response": []
         },
@@ -148,10 +163,15 @@
             },
             "url": {
               "raw": "{{baseUrl}}/auth/set-password",
-              "host": ["{{baseUrl}}"],
-              "path": ["auth", "set-password"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "set-password"
+              ]
             },
-            "description": "Establece la contraseña para un usuario invitado usando el token de invitación.\n\n**Campos requeridos:**\n- `token`: Token de invitación recibido por correo\n- `password`: Nueva contraseña (mínimo 6 caracteres)"
+            "description": "Establece la contrase\u00f1a para un usuario invitado usando el token de invitaci\u00f3n.\n\n**Campos requeridos:**\n- `token`: Token de invitaci\u00f3n recibido por correo\n- `password`: Nueva contrase\u00f1a (m\u00ednimo 6 caracteres)"
           },
           "response": []
         },
@@ -161,10 +181,15 @@
             "method": "GET",
             "url": {
               "raw": "{{baseUrl}}/auth/me",
-              "host": ["{{baseUrl}}"],
-              "path": ["auth", "me"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "me"
+              ]
             },
-            "description": "Obtiene los datos del usuario actualmente autenticado.\n\n**Requiere:** Token de autenticación válido."
+            "description": "Obtiene los datos del usuario actualmente autenticado.\n\n**Requiere:** Token de autenticaci\u00f3n v\u00e1lido."
           },
           "response": []
         },
@@ -192,10 +217,15 @@
             },
             "url": {
               "raw": "{{baseUrl}}/auth/forgot-password",
-              "host": ["{{baseUrl}}"],
-              "path": ["auth", "forgot-password"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "forgot-password"
+              ]
             },
-            "description": "Inicia el proceso de recuperación de contraseña. Envía un correo con enlace de recuperación.\n\n**Campos requeridos:**\n- `email`: Correo electrónico registrado\n\n⚠️ Por seguridad, siempre responde con éxito sin importar si el email existe."
+            "description": "Inicia el proceso de recuperaci\u00f3n de contrase\u00f1a. Env\u00eda un correo con enlace de recuperaci\u00f3n.\n\n**Campos requeridos:**\n- `email`: Correo electr\u00f3nico registrado\n\n\u26a0\ufe0f Por seguridad, siempre responde con \u00e9xito sin importar si el email existe."
           },
           "response": []
         },
@@ -223,29 +253,216 @@
             },
             "url": {
               "raw": "{{baseUrl}}/auth/reset-password/:token",
-              "host": ["{{baseUrl}}"],
-              "path": ["auth", "reset-password", ":token"],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "reset-password",
+                ":token"
+              ],
               "variable": [
                 {
                   "key": "token",
                   "value": "",
-                  "description": "Token de recuperación recibido por correo"
+                  "description": "Token de recuperaci\u00f3n recibido por correo"
                 }
               ]
             },
-            "description": "Restablece la contraseña usando el token de recuperación.\n\n**Parámetros URL:**\n- `token`: Token de recuperación (del enlace del correo)\n\n**Campos requeridos:**\n- `password`: Nueva contraseña (mínimo 6 caracteres)"
+            "description": "Restablece la contrase\u00f1a usando el token de recuperaci\u00f3n.\n\n**Par\u00e1metros URL:**\n- `token`: Token de recuperaci\u00f3n (del enlace del correo)\n\n**Campos requeridos:**\n- `password`: Nueva contrase\u00f1a (m\u00ednimo 6 caracteres)"
+          },
+          "response": []
+        },
+        {
+          "name": "Set Password",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/set-password",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "set-password"
+              ],
+              "variable": []
+            },
+            "description": "Ruta para el primer seteo de contrase\u00f1a"
+          },
+          "response": []
+        },
+        {
+          "name": "Me",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "me"
+              ],
+              "variable": []
+            },
+            "description": "Ruta para obtener el usuario autenticado"
+          },
+          "response": []
+        },
+        {
+          "name": "Forgot Password",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/forgot-password",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "forgot-password"
+              ],
+              "variable": []
+            },
+            "description": "Rutas para recuperaci\u00f3n de contrase\u00f1a"
+          },
+          "response": []
+        },
+        {
+          "name": "POST reset-password by ID",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/reset-password/:token",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "reset-password",
+                ":token"
+              ],
+              "variable": [
+                {
+                  "key": "token",
+                  "value": "",
+                  "description": "The token"
+                }
+              ]
+            },
+            "description": ""
+          },
+          "response": []
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/logout",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "logout"
+              ],
+              "variable": []
+            },
+            "description": "Ruta para cerrar sesi\u00f3n"
+          },
+          "response": []
+        },
+        {
+          "name": "Setup Admin",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/setup-admin",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "setup-admin"
+              ],
+              "variable": []
+            },
+            "description": "Ruta temporal para setup inicial (sin autenticaci\u00f3n)"
           },
           "response": []
         }
       ]
     },
     {
-      "name": "👤 Usuarios",
-      "description": "Gestión de usuarios: perfil personal, administración de usuarios e invitaciones.",
+      "name": "\ud83d\udc64 Usuarios",
+      "description": "Gesti\u00f3n de usuarios: perfil personal, administraci\u00f3n de usuarios e invitaciones.",
       "item": [
         {
-          "name": "📋 Perfil",
-          "description": "Endpoints para gestión del perfil del usuario autenticado.",
+          "name": "\ud83d\udccb Perfil",
+          "description": "Endpoints para gesti\u00f3n del perfil del usuario autenticado.",
           "item": [
             {
               "name": "Get Profile",
@@ -253,8 +470,13 @@
                 "method": "GET",
                 "url": {
                   "raw": "{{baseUrl}}/usuarios/perfil",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["usuarios", "perfil"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "usuarios",
+                    "perfil"
+                  ]
                 },
                 "description": "Obtiene el perfil completo del usuario autenticado, incluyendo sus permisos.\n\n**Response incluye:**\n- Datos personales (id, nombre, email, documento)\n- `permissions`: Array de permisos del usuario"
               },
@@ -272,7 +494,7 @@
                 ],
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"nombre_completo\": \"Juan Pérez Actualizado\"\n}",
+                  "raw": "{\n  \"nombre_completo\": \"Juan P\u00e9rez Actualizado\"\n}",
                   "options": {
                     "raw": {
                       "language": "json"
@@ -281,10 +503,15 @@
                 },
                 "url": {
                   "raw": "{{baseUrl}}/usuarios/perfil",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["usuarios", "perfil"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "usuarios",
+                    "perfil"
+                  ]
                 },
-                "description": "Actualiza el perfil del usuario autenticado.\n\n**Campos editables:**\n- `nombre_completo`: Nombre completo\n\n⚠️ **Restricción de seguridad:** Email y documento NO son editables por el usuario."
+                "description": "Actualiza el perfil del usuario autenticado.\n\n**Campos editables:**\n- `nombre_completo`: Nombre completo\n\n\u26a0\ufe0f **Restricci\u00f3n de seguridad:** Email y documento NO son editables por el usuario."
               },
               "response": []
             },
@@ -300,7 +527,7 @@
                 ],
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"currentPassword\": \"contraseñaActual\",\n  \"newPassword\": \"nuevaContraseña123\"\n}",
+                  "raw": "{\n  \"currentPassword\": \"contrase\u00f1aActual\",\n  \"newPassword\": \"nuevaContrase\u00f1a123\"\n}",
                   "options": {
                     "raw": {
                       "language": "json"
@@ -309,18 +536,23 @@
                 },
                 "url": {
                   "raw": "{{baseUrl}}/usuarios/cambiar-password",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["usuarios", "cambiar-password"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "usuarios",
+                    "cambiar-password"
+                  ]
                 },
-                "description": "Cambia la contraseña del usuario autenticado.\n\n**Campos requeridos:**\n- `currentPassword`: Contraseña actual (para verificación)\n- `newPassword`: Nueva contraseña (mínimo 6 caracteres)"
+                "description": "Cambia la contrase\u00f1a del usuario autenticado.\n\n**Campos requeridos:**\n- `currentPassword`: Contrase\u00f1a actual (para verificaci\u00f3n)\n- `newPassword`: Nueva contrase\u00f1a (m\u00ednimo 6 caracteres)"
               },
               "response": []
             }
           ]
         },
         {
-          "name": "⚙️ Administración",
-          "description": "Endpoints administrativos para gestión de usuarios (requieren permisos especiales).",
+          "name": "\u2699\ufe0f Administraci\u00f3n",
+          "description": "Endpoints administrativos para gesti\u00f3n de usuarios (requieren permisos especiales).",
           "item": [
             {
               "name": "Get All Users",
@@ -328,8 +560,12 @@
                 "method": "GET",
                 "url": {
                   "raw": "{{baseUrl}}/usuarios",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["usuarios"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "usuarios"
+                  ]
                 },
                 "description": "Obtiene la lista de todos los usuarios del sistema.\n\n**Requiere permiso:** `usuarios_ver`\n\n**Response incluye:**\n- id, nombre_completo, email, documento, activo, rol"
               },
@@ -356,8 +592,13 @@
                 },
                 "url": {
                   "raw": "{{baseUrl}}/usuarios/:id",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["usuarios", ":id"],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "usuarios",
+                    ":id"
+                  ],
                   "variable": [
                     {
                       "key": "id",
@@ -391,20 +632,204 @@
                 },
                 "url": {
                   "raw": "{{baseUrl}}/usuarios/invite",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["usuarios", "invite"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "usuarios",
+                    "invite"
+                  ]
                 },
-                "description": "Invita a un nuevo usuario enviando un correo con enlace de activación.\n\n**Requiere permiso:** `usuarios_crear`\n\n**Campos requeridos:**\n- `nombre_completo`: Nombre completo\n- `email`: Correo electrónico único\n- `documento`: Documento de identidad único\n- `rol_id`: ID del rol a asignar\n\n📧 El usuario recibirá un correo para establecer su contraseña."
+                "description": "Invita a un nuevo usuario enviando un correo con enlace de activaci\u00f3n.\n\n**Requiere permiso:** `usuarios_crear`\n\n**Campos requeridos:**\n- `nombre_completo`: Nombre completo\n- `email`: Correo electr\u00f3nico \u00fanico\n- `documento`: Documento de identidad \u00fanico\n- `rol_id`: ID del rol a asignar\n\n\ud83d\udce7 El usuario recibir\u00e1 un correo para establecer su contrase\u00f1a."
               },
               "response": []
             }
           ]
+        },
+        {
+          "name": "Perfil",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/usuarios/perfil",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios",
+                "perfil"
+              ],
+              "variable": []
+            },
+            "description": "--- RUTAS QUE SOLO REQUIEREN AUTENTICACI\u00d3N ---\nCualquier usuario logueado puede consultar su propio perfil."
+          },
+          "response": []
+        },
+        {
+          "name": "Perfil",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/usuarios/perfil",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios",
+                "perfil"
+              ],
+              "variable": []
+            },
+            "description": "Ruta para que el usuario actualice sus propios datos (solo nombre)"
+          },
+          "response": []
+        },
+        {
+          "name": "Cambiar Password",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/usuarios/cambiar-password",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios",
+                "cambiar-password"
+              ],
+              "variable": []
+            },
+            "description": "Ruta para que el usuario cambie su propia contrase\u00f1a"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Usuarios",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/usuarios",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios"
+              ],
+              "variable": []
+            },
+            "description": "--- RUTAS QUE REQUIEREN PERMISOS DE ADMINISTRADOR ---\nPara las siguientes rutas, el usuario no solo debe estar autenticado,\nsino que tambi\u00e9n debe tener el permiso 'gestionar_usuarios'."
+          },
+          "response": []
+        },
+        {
+          "name": "PUT :id",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/usuarios/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "",
+                  "description": "The id"
+                }
+              ]
+            },
+            "description": ""
+          },
+          "response": []
+        },
+        {
+          "name": "Invite",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/usuarios/invite",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios",
+                "invite"
+              ],
+              "variable": []
+            },
+            "description": ""
+          },
+          "response": []
         }
       ]
     },
     {
-      "name": "📄 Documentos",
-      "description": "Gestión documental: captura, workflows, firmas y consultas.",
+      "name": "\ud83d\udcc4 Documentos",
+      "description": "Gesti\u00f3n documental: captura, workflows, firmas y consultas.",
       "item": [
         {
           "name": "Get All Documents",
@@ -412,8 +837,12 @@
             "method": "GET",
             "url": {
               "raw": "{{baseUrl}}/documentos",
-              "host": ["{{baseUrl}}"],
-              "path": ["documentos"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "documentos"
+              ]
             },
             "description": "Obtiene la lista de todos los documentos del sistema.\n\n**Requiere permiso:** `documentos_ver`"
           },
@@ -437,7 +866,7 @@
                   "key": "asunto",
                   "value": "Asunto del documento",
                   "type": "text",
-                  "description": "Asunto o título del documento"
+                  "description": "Asunto o t\u00edtulo del documento"
                 },
                 {
                   "key": "id_expediente",
@@ -449,8 +878,12 @@
             },
             "url": {
               "raw": "{{baseUrl}}/documentos",
-              "host": ["{{baseUrl}}"],
-              "path": ["documentos"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "documentos"
+              ]
             },
             "description": "Crea un nuevo documento subiendo un archivo.\n\n**Requiere permiso:** `documentos_crear`\n\n**Campos (form-data):**\n- `archivo`: Archivo a subir (requerido)\n- `asunto`: Asunto del documento\n- `id_expediente`: ID del expediente (opcional)"
           },
@@ -468,7 +901,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"id_plantilla\": 1,\n  \"id_expediente\": 1,\n  \"variables\": {\n    \"nombre_usuario\": \"Juan Pérez\",\n    \"fecha\": \"2024-01-15\"\n  }\n}",
+              "raw": "{\n  \"id_plantilla\": 1,\n  \"id_expediente\": 1,\n  \"variables\": {\n    \"nombre_usuario\": \"Juan P\u00e9rez\",\n    \"fecha\": \"2024-01-15\"\n  }\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -477,8 +910,13 @@
             },
             "url": {
               "raw": "{{baseUrl}}/documentos/desde-plantilla",
-              "host": ["{{baseUrl}}"],
-              "path": ["documentos", "desde-plantilla"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "documentos",
+                "desde-plantilla"
+              ]
             },
             "description": "Genera un documento a partir de una plantilla predefinida.\n\n**Requiere permiso:** `documentos_crear`\n\n**Campos requeridos:**\n- `id_plantilla`: ID de la plantilla a usar\n- `id_expediente`: ID del expediente destino\n- `variables`: Objeto con los valores de las variables de la plantilla"
           },
@@ -505,8 +943,14 @@
             },
             "url": {
               "raw": "{{baseUrl}}/documentos/:id/start-workflow",
-              "host": ["{{baseUrl}}"],
-              "path": ["documentos", ":id", "start-workflow"],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "documentos",
+                ":id",
+                "start-workflow"
+              ],
               "variable": [
                 {
                   "key": "id",
@@ -515,7 +959,7 @@
                 }
               ]
             },
-            "description": "Inicia un workflow para un documento específico.\n\n**Parámetros URL:**\n- `id`: ID del documento\n\n**Campos requeridos:**\n- `id_workflow`: ID del workflow a iniciar"
+            "description": "Inicia un workflow para un documento espec\u00edfico.\n\n**Par\u00e1metros URL:**\n- `id`: ID del documento\n\n**Campos requeridos:**\n- `id_workflow`: ID del workflow a iniciar"
           },
           "response": []
         },
@@ -540,8 +984,14 @@
             },
             "url": {
               "raw": "{{baseUrl}}/documentos/:id/advance-workflow",
-              "host": ["{{baseUrl}}"],
-              "path": ["documentos", ":id", "advance-workflow"],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "documentos",
+                ":id",
+                "advance-workflow"
+              ],
               "variable": [
                 {
                   "key": "id",
@@ -550,7 +1000,7 @@
                 }
               ]
             },
-            "description": "Avanza el workflow de un documento al siguiente paso.\n\n**Parámetros URL:**\n- `id`: ID del documento\n\n**Campos opcionales:**\n- `comentario`: Comentario sobre la acción realizada"
+            "description": "Avanza el workflow de un documento al siguiente paso.\n\n**Par\u00e1metros URL:**\n- `id`: ID del documento\n\n**Campos opcionales:**\n- `comentario`: Comentario sobre la acci\u00f3n realizada"
           },
           "response": []
         },
@@ -575,8 +1025,14 @@
             },
             "url": {
               "raw": "{{baseUrl}}/documentos/:id/firmar",
-              "host": ["{{baseUrl}}"],
-              "path": ["documentos", ":id", "firmar"],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "documentos",
+                ":id",
+                "firmar"
+              ],
               "variable": [
                 {
                   "key": "id",
@@ -585,7 +1041,3594 @@
                 }
               ]
             },
-            "description": "Firma digitalmente un documento.\n\n**Parámetros URL:**\n- `id`: ID del documento\n\n**Campos requeridos:**\n- `firma_imagen`: Imagen de la firma en formato base64"
+            "description": "Firma digitalmente un documento.\n\n**Par\u00e1metros URL:**\n- `id`: ID del documento\n\n**Campos requeridos:**\n- `firma_imagen`: Imagen de la firma en formato base64"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Documentos",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/documentos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "documentos"
+              ],
+              "variable": []
+            },
+            "description": "Rutas existentes para crear y listar documentos\nNOTA: documentos_crear fue deprecado en v1.3.3, ahora usa expedientes_crear"
+          },
+          "response": []
+        },
+        {
+          "name": "Create Documentos",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/documentos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "documentos"
+              ],
+              "variable": []
+            },
+            "description": ""
+          },
+          "response": []
+        },
+        {
+          "name": "Desde Plantilla",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/documentos/desde-plantilla",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "documentos",
+                "desde-plantilla"
+              ],
+              "variable": []
+            },
+            "description": "Ruta para generar desde plantilla (legacy - usa expedientes_crear)"
+          },
+          "response": []
+        },
+        {
+          "name": "Con Expediente",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/documentos/con-expediente",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "documentos",
+                "con-expediente"
+              ],
+              "variable": []
+            },
+            "description": "Ruta para crear documento y vincularlo a expediente existente"
+          },
+          "response": []
+        },
+        {
+          "name": "GET :id",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/documentos/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "documentos",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "",
+                  "description": "The id"
+                }
+              ]
+            },
+            "description": "Ruta para obtener detalle de un documento"
+          },
+          "response": []
+        },
+        {
+          "name": "Start Workflow",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/documentos/:id/start-workflow",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "documentos",
+                ":id",
+                "start-workflow"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "",
+                  "description": "The id"
+                }
+              ]
+            },
+            "description": "--- Rutas nuevas para la ejecuci\u00f3n del workflow ---"
+          },
+          "response": []
+        },
+        {
+          "name": "Advance Workflow",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/documentos/:id/advance-workflow",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "documentos",
+                ":id",
+                "advance-workflow"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "",
+                  "description": "The id"
+                }
+              ]
+            },
+            "description": ""
+          },
+          "response": []
+        },
+        {
+          "name": "Firmar",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/documentos/:id/firmar",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "documentos",
+                ":id",
+                "firmar"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "",
+                  "description": "The id"
+                }
+              ]
+            },
+            "description": ""
+          },
+          "response": []
+        },
+        {
+          "name": "Ubicacion",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/documentos/:id/ubicacion",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "documentos",
+                ":id",
+                "ubicacion"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "",
+                  "description": "The id"
+                }
+              ]
+            },
+            "description": "Ruta para actualizar ubicaci\u00f3n f\u00edsica del documento"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "\ud83d\udce6 Cajas",
+      "item": [
+        {
+          "name": "Get Cajas",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/cajas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "cajas"
+              ],
+              "variable": []
+            },
+            "description": ""
+          },
+          "response": []
+        },
+        {
+          "name": "Create Cajas",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/cajas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "cajas"
+              ],
+              "variable": []
+            },
+            "description": ""
+          },
+          "response": []
+        },
+        {
+          "name": "GET :id",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/cajas/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "cajas",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "",
+                  "description": "The id"
+                }
+              ]
+            },
+            "description": ""
+          },
+          "response": []
+        },
+        {
+          "name": "PUT :id",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/cajas/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "cajas",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "",
+                  "description": "The id"
+                }
+              ]
+            },
+            "description": ""
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "\ud83d\uddd1\ufe0f Eliminaci\u00f3n",
+      "item": [
+        {
+          "name": "Elegibles",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/eliminacion/elegibles",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "eliminacion",
+                "elegibles"
+              ],
+              "variable": []
+            },
+            "description": ""
+          },
+          "response": []
+        },
+        {
+          "name": "Ejecutar",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/eliminacion/ejecutar",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "eliminacion",
+                "ejecutar"
+              ],
+              "variable": []
+            },
+            "description": ""
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "\ud83c\udfe2 Oficinas",
+      "item": [
+        {
+          "name": "Get Oficinas",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/oficinas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "oficinas"
+              ],
+              "variable": []
+            },
+            "description": "Define las rutas"
+          },
+          "response": []
+        },
+        {
+          "name": "Create Oficinas",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/oficinas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "oficinas"
+              ],
+              "variable": []
+            },
+            "description": ""
+          },
+          "response": []
+        },
+        {
+          "name": "PUT :id",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/oficinas/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "oficinas",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "",
+                  "description": "The id"
+                }
+              ]
+            },
+            "description": "Nuevas rutas para editar y cambiar estado"
+          },
+          "response": []
+        },
+        {
+          "name": "Toggle Status",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/oficinas/:id/toggle-status",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "oficinas",
+                ":id",
+                "toggle-status"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "",
+                  "description": "The id"
+                }
+              ]
+            },
+            "description": ""
+          },
+          "response": []
+        },
+        {
+          "name": "Bulk",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/oficinas/bulk",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "oficinas",
+                "bulk"
+              ],
+              "variable": []
+            },
+            "description": "POST /api/oficinas/bulk - Carga masiva de oficinas desde Excel\n\u2705 v1.2.0: Requiere el permiso 'oficinas_crear'"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "\ud83d\udcda Subseries",
+      "item": [
+        {
+          "name": "Get Subseries",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/subseries",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "subseries"
+              ],
+              "variable": []
+            },
+            "description": ""
+          },
+          "response": []
+        },
+        {
+          "name": "Create Subseries",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/subseries",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "subseries"
+              ],
+              "variable": []
+            },
+            "description": ""
+          },
+          "response": []
+        },
+        {
+          "name": "PUT :id",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/subseries/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "subseries",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "",
+                  "description": "The id"
+                }
+              ]
+            },
+            "description": "Rutas para editar y cambiar estado"
+          },
+          "response": []
+        },
+        {
+          "name": "Toggle Status",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/subseries/:id/toggle-status",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "subseries",
+                ":id",
+                "toggle-status"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "",
+                  "description": "The id"
+                }
+              ]
+            },
+            "description": ""
+          },
+          "response": []
+        },
+        {
+          "name": "Bulk",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/subseries/bulk",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "subseries",
+                "bulk"
+              ],
+              "variable": []
+            },
+            "description": "POST /api/subseries/bulk - Carga masiva de subseries desde Excel\n\u2705 v1.2.0: Requiere el permiso 'subseries_crear'"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "\ud83c\udfe2 Dependencias",
+      "item": [
+        {
+          "name": "Get Dependencias",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/dependencias",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "dependencias"
+              ],
+              "variable": []
+            },
+            "description": "@route   GET /api/dependencias\n@desc    Obtiene la lista de todas las dependencias\n@access  Privado - Requiere permiso 'dependencias_ver'"
+          },
+          "response": []
+        },
+        {
+          "name": "Create Dependencias",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/dependencias",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "dependencias"
+              ],
+              "variable": []
+            },
+            "description": "@route   POST /api/dependencias\n@desc    Crea una nueva dependencia\n@access  Privado - Requiere permiso 'dependencias_crear'"
+          },
+          "response": []
+        },
+        {
+          "name": "Bulk",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/dependencias/bulk",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "dependencias",
+                "bulk"
+              ],
+              "variable": []
+            },
+            "description": "@route   POST /api/dependencias/bulk\n@desc    Carga masiva de dependencias desde archivo Excel\n@access  Privado - Requiere permiso 'dependencias_crear'"
+          },
+          "response": []
+        },
+        {
+          "name": "PUT :id",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/dependencias/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "dependencias",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "",
+                  "description": "The id"
+                }
+              ]
+            },
+            "description": "@route   PUT /api/dependencias/:id\n@desc    Actualiza una dependencia existente\n@param   {string} id - ID de la dependencia a actualizar\n@access  Privado - Requiere permiso 'dependencias_editar'"
+          },
+          "response": []
+        },
+        {
+          "name": "Toggle Status",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/dependencias/:id/toggle-status",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "dependencias",
+                ":id",
+                "toggle-status"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "",
+                  "description": "The id"
+                }
+              ]
+            },
+            "description": "@route   PATCH /api/dependencias/:id/toggle-status\n@desc    Cambia el estado activo/inactivo de una dependencia\n@param   {string} id - ID de la dependencia\n@access  Privado - Requiere permiso 'dependencias_inactivar'"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "\ud83d\udcda Series",
+      "item": [
+        {
+          "name": "Get Series",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/series",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "series"
+              ],
+              "variable": []
+            },
+            "description": ""
+          },
+          "response": []
+        },
+        {
+          "name": "Create Series",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/series",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "series"
+              ],
+              "variable": []
+            },
+            "description": ""
+          },
+          "response": []
+        },
+        {
+          "name": "PUT :id",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/series/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "series",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "",
+                  "description": "The id"
+                }
+              ]
+            },
+            "description": "\u2705 Rutas para editar y cambiar estado"
+          },
+          "response": []
+        },
+        {
+          "name": "Toggle Status",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/series/:id/toggle-status",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "series",
+                ":id",
+                "toggle-status"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "",
+                  "description": "The id"
+                }
+              ]
+            },
+            "description": ""
+          },
+          "response": []
+        },
+        {
+          "name": "Bulk",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/series/bulk",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "series",
+                "bulk"
+              ],
+              "variable": []
+            },
+            "description": "POST /api/series/bulk - Carga masiva de series desde Excel\n\u2705 v1.2.0: Requiere el permiso 'series_crear'"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "\ud83d\udcc8 Estad\u00edsticas",
+      "item": [
+        {
+          "name": "Get Stats",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/stats",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "stats"
+              ],
+              "variable": []
+            },
+            "description": "Proteger la ruta"
+          },
+          "response": []
+        },
+        {
+          "name": "Docs Por Oficina",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/stats/docs-por-oficina",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "stats",
+                "docs-por-oficina"
+              ],
+              "variable": []
+            },
+            "description": ""
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "\ud83d\udd11 Permisos",
+      "item": [
+        {
+          "name": "Tree",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/permisos/tree",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "permisos",
+                "tree"
+              ],
+              "variable": []
+            },
+            "description": "Ruta para obtener el \u00e1rbol de permisos"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Permisos",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/permisos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "permisos"
+              ],
+              "variable": []
+            },
+            "description": "Rutas para la gesti\u00f3n de permisos individuales"
+          },
+          "response": []
+        },
+        {
+          "name": "Create Permisos",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/permisos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "permisos"
+              ],
+              "variable": []
+            },
+            "description": ""
+          },
+          "response": []
+        },
+        {
+          "name": "PUT :id",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/permisos/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "permisos",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "",
+                  "description": "The id"
+                }
+              ]
+            },
+            "description": ""
+          },
+          "response": []
+        },
+        {
+          "name": "GET rol by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/permisos/rol/:id_rol",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "permisos",
+                "rol",
+                ":id_rol"
+              ],
+              "variable": [
+                {
+                  "key": "id_rol",
+                  "value": "",
+                  "description": "The id_rol"
+                }
+              ]
+            },
+            "description": "Rutas para la asignaci\u00f3n de permisos a roles"
+          },
+          "response": []
+        },
+        {
+          "name": "PUT rol by ID",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/permisos/rol/:id_rol",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "permisos",
+                "rol",
+                ":id_rol"
+              ],
+              "variable": [
+                {
+                  "key": "id_rol",
+                  "value": "",
+                  "description": "The id_rol"
+                }
+              ]
+            },
+            "description": ""
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "\u23f3 Retenci\u00f3n",
+      "item": [
+        {
+          "name": "Expedientes",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/retencion/expedientes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "retencion",
+                "expedientes"
+              ],
+              "variable": []
+            },
+            "description": "GET /api/retencion/expedientes - Obtener expedientes vencidos o pr\u00f3ximos a vencer"
+          },
+          "response": []
+        },
+        {
+          "name": "Resumen",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/retencion/resumen",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "retencion",
+                "resumen"
+              ],
+              "variable": []
+            },
+            "description": "GET /api/retencion/resumen - Obtener estad\u00edsticas de retenci\u00f3n"
+          },
+          "response": []
+        },
+        {
+          "name": "Dashboard",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/retencion/dashboard",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "retencion",
+                "dashboard"
+              ],
+              "variable": []
+            },
+            "description": "GET /api/retencion/dashboard - Dashboard completo de retenci\u00f3n"
+          },
+          "response": []
+        },
+        {
+          "name": "Alertas",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/retencion/alertas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "retencion",
+                "alertas"
+              ],
+              "variable": []
+            },
+            "description": "GET /api/retencion/alertas - Obtener alertas de retenci\u00f3n"
+          },
+          "response": []
+        },
+        {
+          "name": "Leer",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/retencion/alertas/:id/leer",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "retencion",
+                "alertas",
+                ":id",
+                "leer"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "",
+                  "description": "The id"
+                }
+              ]
+            },
+            "description": "POST /api/retencion/alertas/:id/leer - Marcar alerta como le\u00edda"
+          },
+          "response": []
+        },
+        {
+          "name": "Historial",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/retencion/historial",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "retencion",
+                "historial"
+              ],
+              "variable": []
+            },
+            "description": "GET /api/retencion/historial - Obtener historial de procesamientos"
+          },
+          "response": []
+        },
+        {
+          "name": "POST procesar by ID",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/retencion/procesar/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "retencion",
+                "procesar",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "",
+                  "description": "The id"
+                }
+              ]
+            },
+            "description": "POST /api/retencion/procesar/:id - Procesar un expediente (conservar/eliminar)"
+          },
+          "response": []
+        },
+        {
+          "name": "Procesar Masivo",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/retencion/procesar-masivo",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "retencion",
+                "procesar-masivo"
+              ],
+              "variable": []
+            },
+            "description": "POST /api/retencion/procesar-masivo - Procesamiento masivo"
+          },
+          "response": []
+        },
+        {
+          "name": "POST transferir by ID",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/retencion/transferir/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "retencion",
+                "transferir",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "",
+                  "description": "The id"
+                }
+              ]
+            },
+            "description": "POST /api/retencion/transferir/:id - Transferir expediente a archivo central"
+          },
+          "response": []
+        },
+        {
+          "name": "Ejecutar Job",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/retencion/ejecutar-job",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "retencion",
+                "ejecutar-job"
+              ],
+              "variable": []
+            },
+            "description": "POST /api/retencion/ejecutar-job - Ejecutar job de retenci\u00f3n manualmente"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "\ud83d\udc41\ufe0f Auditor\u00eda",
+      "item": [
+        {
+          "name": "Get Auditoria",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auditoria",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auditoria"
+              ],
+              "variable": []
+            },
+            "description": "Ruta para obtener el registro de auditor\u00eda"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "\ud83d\udcca Reportes",
+      "item": [
+        {
+          "name": "Fuid",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/reportes/fuid",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reportes",
+                "fuid"
+              ],
+              "variable": []
+            },
+            "description": "Generar reporte FUID"
+          },
+          "response": []
+        },
+        {
+          "name": "GET trazabilidad by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/reportes/fuid/trazabilidad/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reportes",
+                "fuid",
+                "trazabilidad",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "",
+                  "description": "The id"
+                }
+              ]
+            },
+            "description": "Obtener trazabilidad de expediente"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "\ud83d\uddc2\ufe0f Expedientes",
+      "item": [
+        {
+          "name": "Get Expedientes",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/expedientes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "expedientes"
+              ],
+              "variable": []
+            },
+            "description": ""
+          },
+          "response": []
+        },
+        {
+          "name": "Create Expedientes",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/expedientes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "expedientes"
+              ],
+              "variable": []
+            },
+            "description": ""
+          },
+          "response": []
+        },
+        {
+          "name": "Crear Completo",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/expedientes/crear-completo",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "expedientes",
+                "crear-completo"
+              ],
+              "variable": []
+            },
+            "description": "Nuevo endpoint unificado con soporte para archivo"
+          },
+          "response": []
+        },
+        {
+          "name": "Validar Duplicados",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/expedientes/validar-duplicados",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "expedientes",
+                "validar-duplicados"
+              ],
+              "variable": []
+            },
+            "description": ""
+          },
+          "response": []
+        },
+        {
+          "name": "GET :id",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/expedientes/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "expedientes",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "",
+                  "description": "The id"
+                }
+              ]
+            },
+            "description": ""
+          },
+          "response": []
+        },
+        {
+          "name": "Fechas",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/expedientes/:id/fechas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "expedientes",
+                ":id",
+                "fechas"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "",
+                  "description": "The id"
+                }
+              ]
+            },
+            "description": ""
+          },
+          "response": []
+        },
+        {
+          "name": "Cerrar",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/expedientes/:id/cerrar",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "expedientes",
+                ":id",
+                "cerrar"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "",
+                  "description": "The id"
+                }
+              ]
+            },
+            "description": ""
+          },
+          "response": []
+        },
+        {
+          "name": "Documentos",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/expedientes/:id_expediente/documentos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "expedientes",
+                ":id_expediente",
+                "documentos"
+              ],
+              "variable": [
+                {
+                  "key": "id_expediente",
+                  "value": "",
+                  "description": "The id_expediente"
+                }
+              ]
+            },
+            "description": ""
+          },
+          "response": []
+        },
+        {
+          "name": "Documentos Desde Plantilla",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/expedientes/:id/documentos-desde-plantilla",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "expedientes",
+                ":id",
+                "documentos-desde-plantilla"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "",
+                  "description": "The id"
+                }
+              ]
+            },
+            "description": ""
+          },
+          "response": []
+        },
+        {
+          "name": "Custom Data",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/expedientes/:id/custom-data",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "expedientes",
+                ":id",
+                "custom-data"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "",
+                  "description": "The id"
+                }
+              ]
+            },
+            "description": ""
+          },
+          "response": []
+        },
+        {
+          "name": "Custom Data",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/expedientes/:id/custom-data",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "expedientes",
+                ":id",
+                "custom-data"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "",
+                  "description": "The id"
+                }
+              ]
+            },
+            "description": ""
+          },
+          "response": []
+        },
+        {
+          "name": "Search Custom",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/expedientes/search-custom",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "expedientes",
+                "search-custom"
+              ],
+              "variable": []
+            },
+            "description": ""
+          },
+          "response": []
+        },
+        {
+          "name": "Anexar Por Duplicado",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/expedientes/:id/anexar-por-duplicado",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "expedientes",
+                ":id",
+                "anexar-por-duplicado"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "",
+                  "description": "The id"
+                }
+              ]
+            },
+            "description": ""
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "\ud83d\udee1\ufe0f Roles",
+      "item": [
+        {
+          "name": "Get Roles",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/roles",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "roles"
+              ],
+              "variable": []
+            },
+            "description": "3. Aplicamos la autorizaci\u00f3n (saber qu\u00e9 puede hacer) a cada ruta espec\u00edfica\nUsamos el permiso que ya existe en tu base de datos."
+          },
+          "response": []
+        },
+        {
+          "name": "Create Roles",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/roles",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "roles"
+              ],
+              "variable": []
+            },
+            "description": ""
+          },
+          "response": []
+        },
+        {
+          "name": "PUT :id",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/roles/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "roles",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "",
+                  "description": "The id"
+                }
+              ]
+            },
+            "description": ""
+          },
+          "response": []
+        },
+        {
+          "name": "DELETE :id",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/roles/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "roles",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "",
+                  "description": "The id"
+                }
+              ]
+            },
+            "description": ""
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "\ud83d\udccb Campos Personalizados",
+      "item": [
+        {
+          "name": "GET oficina by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/campos-personalizados/oficina/:id_oficina",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "campos-personalizados",
+                "oficina",
+                ":id_oficina"
+              ],
+              "variable": [
+                {
+                  "key": "id_oficina",
+                  "value": "",
+                  "description": "The id_oficina"
+                }
+              ]
+            },
+            "description": ""
+          },
+          "response": []
+        },
+        {
+          "name": "POST oficina by ID",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/campos-personalizados/oficina/:id_oficina",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "campos-personalizados",
+                "oficina",
+                ":id_oficina"
+              ],
+              "variable": [
+                {
+                  "key": "id_oficina",
+                  "value": "",
+                  "description": "The id_oficina"
+                }
+              ]
+            },
+            "description": ""
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "\ud83d\udcd6 Pr\u00e9stamos",
+      "item": [
+        {
+          "name": "Create Prestamos",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/prestamos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "prestamos"
+              ],
+              "variable": []
+            },
+            "description": "Rutas para la colecci\u00f3n de pr\u00e9stamos"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Prestamos",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/prestamos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "prestamos"
+              ],
+              "variable": []
+            },
+            "description": ""
+          },
+          "response": []
+        },
+        {
+          "name": "Approve",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/prestamos/:id/approve",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "prestamos",
+                ":id",
+                "approve"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "",
+                  "description": "The id"
+                }
+              ]
+            },
+            "description": "Rutas para acciones espec\u00edficas del administrador"
+          },
+          "response": []
+        },
+        {
+          "name": "Return",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/prestamos/:id/return",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "prestamos",
+                ":id",
+                "return"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "",
+                  "description": "The id"
+                }
+              ]
+            },
+            "description": ""
+          },
+          "response": []
+        },
+        {
+          "name": "Approve Prorroga",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/prestamos/:id/approve-prorroga",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "prestamos",
+                ":id",
+                "approve-prorroga"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "",
+                  "description": "The id"
+                }
+              ]
+            },
+            "description": ""
+          },
+          "response": []
+        },
+        {
+          "name": "Request Prorroga",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/prestamos/:id/request-prorroga",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "prestamos",
+                ":id",
+                "request-prorroga"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "",
+                  "description": "The id"
+                }
+              ]
+            },
+            "description": "Ruta para que un usuario solicite una pr\u00f3rroga"
+          },
+          "response": []
+        },
+        {
+          "name": "Mis Prestamos",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/prestamos/mis-prestamos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "prestamos",
+                "mis-prestamos"
+              ],
+              "variable": []
+            },
+            "description": ""
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "\ud83d\udcc2 Carpetas",
+      "item": [
+        {
+          "name": "Create Carpetas",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/carpetas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "carpetas"
+              ],
+              "variable": []
+            },
+            "description": "Rutas"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Carpetas",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/carpetas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "carpetas"
+              ],
+              "variable": []
+            },
+            "description": ""
+          },
+          "response": []
+        },
+        {
+          "name": "GET :id",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/carpetas/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "carpetas",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "",
+                  "description": "The id"
+                }
+              ]
+            },
+            "description": ""
+          },
+          "response": []
+        },
+        {
+          "name": "Cerrar",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/carpetas/:id/cerrar",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "carpetas",
+                ":id",
+                "cerrar"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "",
+                  "description": "The id"
+                }
+              ]
+            },
+            "description": ""
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "\ud83d\udd04 Workflows",
+      "item": [
+        {
+          "name": "Get Workflows",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/workflows",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "workflows"
+              ],
+              "variable": []
+            },
+            "description": "Rutas que solo requieren autenticaci\u00f3n (cualquier usuario logueado puede ver)"
+          },
+          "response": []
+        },
+        {
+          "name": "Tareas",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/workflows/tareas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "workflows",
+                "tareas"
+              ],
+              "variable": []
+            },
+            "description": ""
+          },
+          "response": []
+        },
+        {
+          "name": "GET :id",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/workflows/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "workflows",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "",
+                  "description": "The id"
+                }
+              ]
+            },
+            "description": ""
+          },
+          "response": []
+        },
+        {
+          "name": "Pasos",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/workflows/:id/pasos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "workflows",
+                ":id",
+                "pasos"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "",
+                  "description": "The id"
+                }
+              ]
+            },
+            "description": ""
+          },
+          "response": []
+        },
+        {
+          "name": "Create Workflows",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/workflows",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "workflows"
+              ],
+              "variable": []
+            },
+            "description": "SOLO los usuarios con el permiso espec\u00edfico pueden CREAR workflows y PASOS"
+          },
+          "response": []
+        },
+        {
+          "name": "Pasos",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/workflows/:id/pasos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "workflows",
+                ":id",
+                "pasos"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "",
+                  "description": "The id"
+                }
+              ]
+            },
+            "description": ""
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "\ud83d\udd0d B\u00fasqueda",
+      "item": [
+        {
+          "name": "Get Search",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/search",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "search"
+              ],
+              "variable": []
+            },
+            "description": "B\u00fasqueda b\u00e1sica"
+          },
+          "response": []
+        },
+        {
+          "name": "Avanzada",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/search/avanzada",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "search",
+                "avanzada"
+              ],
+              "variable": []
+            },
+            "description": "B\u00fasqueda avanzada con filtros"
+          },
+          "response": []
+        },
+        {
+          "name": "Campos Personalizados",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/search/campos-personalizados",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "search",
+                "campos-personalizados"
+              ],
+              "variable": []
+            },
+            "description": "Obtener campos personalizados disponibles para b\u00fasqueda"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "\ud83d\udcdd Plantillas",
+      "item": [
+        {
+          "name": "Get Plantillas",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/plantillas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "plantillas"
+              ],
+              "variable": []
+            },
+            "description": "\u2705 RUTA PROTEGIDA: Requiere autenticaci\u00f3n y permiso para ver plantillas"
+          },
+          "response": []
+        },
+        {
+          "name": "Variables",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/plantillas/:id/variables",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "plantillas",
+                ":id",
+                "variables"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "",
+                  "description": "The id"
+                }
+              ]
+            },
+            "description": "Rutas para ver datos espec\u00edficos (requiere estar logueado)"
+          },
+          "response": []
+        },
+        {
+          "name": "GET :id",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/plantillas/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "plantillas",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "",
+                  "description": "The id"
+                }
+              ]
+            },
+            "description": ""
+          },
+          "response": []
+        },
+        {
+          "name": "Create Plantillas",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/plantillas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "plantillas"
+              ],
+              "variable": []
+            },
+            "description": "Rutas para crear y modificar (requiere estar logueado Y tener permisos)"
+          },
+          "response": []
+        },
+        {
+          "name": "Campos",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/plantillas/:id/campos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "plantillas",
+                ":id",
+                "campos"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "",
+                  "description": "The id"
+                }
+              ]
+            },
+            "description": ""
+          },
+          "response": []
+        },
+        {
+          "name": "Diseno",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/plantillas/:id/diseno",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "plantillas",
+                ":id",
+                "diseno"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "",
+                  "description": "The id"
+                }
+              ]
+            },
+            "description": "Rutas para el dise\u00f1ador visual (requiere estar logueado)"
+          },
+          "response": []
+        },
+        {
+          "name": "Background",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/plantillas/:id/background",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "plantillas",
+                ":id",
+                "background"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "",
+                  "description": "The id"
+                }
+              ]
+            },
+            "description": ""
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "\ud83d\udce6 Transferencias",
+      "item": [
+        {
+          "name": "Create Transferencias",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/transferencias",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "transferencias"
+              ],
+              "variable": []
+            },
+            "description": "Rutas para transferencias documentales"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "\ud83d\udce6 Paquetes",
+      "item": [
+        {
+          "name": "Get Paquetes",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/paquetes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "paquetes"
+              ],
+              "variable": []
+            },
+            "description": "Listar todos los paquetes (filtrar por oficina con ?id_oficina=X)"
+          },
+          "response": []
+        },
+        {
+          "name": "GET activo by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/paquetes/activo/:id_oficina",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "paquetes",
+                "activo",
+                ":id_oficina"
+              ],
+              "variable": [
+                {
+                  "key": "id_oficina",
+                  "value": "",
+                  "description": "The id_oficina"
+                }
+              ]
+            },
+            "description": "Obtener paquete activo de una oficina (crea uno si no existe)"
+          },
+          "response": []
+        },
+        {
+          "name": "Asignar Expediente",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/paquetes/asignar-expediente",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "paquetes",
+                "asignar-expediente"
+              ],
+              "variable": []
+            },
+            "description": "Asignar expediente a paquete"
+          },
+          "response": []
+        },
+        {
+          "name": "Marcar Lleno",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/paquetes/:id/marcar-lleno",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "paquetes",
+                ":id",
+                "marcar-lleno"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "",
+                  "description": "The id"
+                }
+              ]
+            },
+            "description": "Marcar paquete como lleno (crea el siguiente autom\u00e1ticamente)"
+          },
+          "response": []
+        },
+        {
+          "name": "Reabrir",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/paquetes/:id/reabrir",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "paquetes",
+                ":id",
+                "reabrir"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "",
+                  "description": "The id"
+                }
+              ]
+            },
+            "description": "Reabrir un paquete cerrado"
+          },
+          "response": []
+        },
+        {
+          "name": "Expedientes",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/paquetes/:id/expedientes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "paquetes",
+                ":id",
+                "expedientes"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "",
+                  "description": "The id"
+                }
+              ]
+            },
+            "description": "Ver expedientes de un paquete"
           },
           "response": []
         }

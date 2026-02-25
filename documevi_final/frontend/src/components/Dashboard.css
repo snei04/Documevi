@@ -395,8 +395,34 @@
   color: white;
   padding: 1rem;
   transition: width 0.3s ease-in-out, padding 0.3s ease-in-out;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
   flex-shrink: 0;
+}
+
+/* Scrollbar personalizada para el sidebar (Webkit - Chrome, Safari, Edge) */
+.sidebar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.sidebar::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+}
+
+.sidebar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 3px;
+}
+
+.sidebar::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.5);
+}
+
+/* Scrollbar para Firefox */
+.sidebar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.3) rgba(255, 255, 255, 0.1);
 }
 
 .sidebar-nav ul {

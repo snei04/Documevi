@@ -34,8 +34,8 @@ const DashboardHome = () => {
     <div>
       <h1>Estadísticas Generales</h1>
       <div className="stats-container">
-        
-        <Link to="/dashboard/captura" className="stat-card-link">
+
+        <Link to="/dashboard/expedientes" className="stat-card-link">
           <div className="stat-card">
             <h3>📄 Documentos Capturados</h3>
             <p className="stat-number">{stats.totalDocumentos}</p>
@@ -55,7 +55,7 @@ const DashboardHome = () => {
             <p className="stat-number">{stats.prestamosActivos}</p>
           </div>
         </Link>
-        
+
         <Link to="/dashboard/usuarios" className="stat-card-link">
           <div className="stat-card">
             <h3>👤 Usuarios Activos</h3>

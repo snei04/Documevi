@@ -65,7 +65,6 @@ import GestionSubseries from './components/GestionSubseries';
 /** Gestión de expedientes y documentos */
 import GestionExpedientes from './components/GestionExpedientes';
 import ExpedienteDetalle from './components/ExpedienteDetalle';
-import CapturaDocumento from './components/CapturaDocumento';
 import DocumentoDetalle from './components/DocumentoDetalle';
 import GestionPaquetes from './components/GestionPaquetes';
 
@@ -228,7 +227,6 @@ const AppContent = () => {
                         </Route>
 
                         <Route element={<ProtectedRoute permission="expedientes_crear" />}>
-                            <Route path="captura" element={<CapturaDocumento />} />
                             <Route path="cajas" element={<GestionCajas />} />
                             <Route path="paquetes" element={<GestionPaquetes />} />
                         </Route>

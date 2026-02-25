@@ -66,6 +66,11 @@ Esta versión incluye mejoras significativas en la gestión de módulos de param
     *   Validación de campos personalizados obligatorios.
 *   **📊 Resultados Detallados:** Después de la carga, se muestra un resumen con conteo de filas exitosas/fallidas y detalle por fila con radicado generado o error específico.
 
+### 7. Mejoras de Navegación y Limpieza
+*   **🗑️ Ruta Eliminada:** Se eliminó la ruta `/dashboard/captura` (`CapturaDocumento`) que no correspondía a ninguna funcionalidad existente.
+*   **🔗 Enlace Corregido:** La tarjeta "Documentos Capturados" en el Dashboard ahora redirige a `/dashboard/expedientes` en lugar de la ruta inexistente.
+*   **📜 Scroll en Sidebar:** Se agregó barra de desplazamiento vertical al menú lateral para que todos los elementos sean accesibles cuando exceden la altura de la pantalla, con scrollbar personalizada acorde al diseño.
+
 ---
 
 ## 📑 Cambios Técnicos
@@ -118,6 +123,9 @@ Esta versión incluye mejoras significativas en la gestión de módulos de param
 | `GestionPlantillas.js` | Edición inline, eliminación con modal, PermissionGuard |
 | `PlantillaDetalle.js` | Edición/eliminación inline de campos, botón "Volver al listado" |
 | `CargaMasiva.js` | Nuevo componente: selección de oficina, descarga de plantilla, carga de archivo Excel, panel de instrucciones con fechas/estado, resultados detallados |
+| `DashboardHome.js` | Enlace "Documentos Capturados" redirige a `/dashboard/expedientes` en lugar de `/dashboard/captura` |
+| `App.js` | Eliminada ruta `/dashboard/captura` e importación de `CapturaDocumento` |
+| `Dashboard.css` | Sidebar con `overflow-y: auto` y scrollbar personalizada semitransparente |
 | `DashboardLayout.js` | Versión actualizada a v1.4.3 |
 
 ### Permisos Utilizados (ya existentes en BD)

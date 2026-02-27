@@ -115,22 +115,28 @@ exports.generarYAnadirDocumentoAExpediente = async (expedienteId, data, id_usuar
 };
 
 /**
- * Crea un expediente completo con documento (opcional) en una transacción atómica.
- * @param {Object} data - Datos del expediente y documento
- * @param {Object} archivo - Archivo subido (multer) si aplica
+ * Crea un expediente con el nuevo flujo optimizado de 3 pasos.
+ * Opcionalmente crea un documento vinculado al expediente (para soporte Físico).
+ * 
+ * Reglas de negocio:
+ * BR-01: Display Name = [Serie] - [Subserie] - [CampoPersonalizado]
+ * BR-02: Fechas según tipo de soporte (Físico=libre, Electrónico=CURRENT_TIMESTAMP + auditoría)
+ * BR-03: Carpeta/Paquete solo para tipo Físico
+ * 
+ * @param {Object} data - Datos del expediente + customData + documento (opcional)
  * @param {number} userId - ID del usuario creador
+ * @param {Object|null} archivo - Archivo subido (req.file), null si no aplica
  * @returns {Object} - Resultado con IDs creados
  */
-exports.crearExpedienteCompleto = async (data, archivo, userId) => {
-    const validacionService = require('./validacionDuplicados.service');
+exports.crearExpedienteCompleto = async (data, userId, archivo = null) => {
     const carpetaService = require('./carpeta.service');
 
     return withTransaction(pool, async (connection) => {
         const { expediente, customData, documento } = data;
+        const tipo_soporte = expediente.tipo_soporte || 'Electrónico';
 
-        // === PASO 1: Validar duplicados si hay campos personalizados ===
+        // === PASO 1: Validar duplicados (segunda capa de seguridad en backend) ===
         if (customData && Object.keys(customData).length > 0) {
-            // Obtener id_oficina desde la serie
             const [serieData] = await connection.query(
                 'SELECT id_oficina_productora FROM trd_series WHERE id = ?',
                 [expediente.id_serie]
@@ -139,13 +145,11 @@ exports.crearExpedienteCompleto = async (data, archivo, userId) => {
             if (serieData.length > 0) {
                 const id_oficina = serieData[0].id_oficina_productora;
 
-                // Obtener campos con validación de duplicidad
                 const [camposValidacion] = await connection.query(
                     'SELECT id, nombre_campo FROM oficina_campos_personalizados WHERE id_oficina = ? AND validar_duplicidad = 1',
                     [id_oficina]
                 );
 
-                // Validar cada campo
                 for (const campo of camposValidacion) {
                     const valorIngresado = customData[campo.id];
                     if (!valorIngresado || String(valorIngresado).trim() === '') continue;
@@ -156,11 +160,12 @@ exports.crearExpedienteCompleto = async (data, archivo, userId) => {
                          INNER JOIN expediente_datos_personalizados edp ON e.id = edp.id_expediente
                          INNER JOIN trd_series s ON e.id_serie = s.id
                          WHERE edp.id_campo = ? AND edp.valor = ? AND s.id_oficina_productora = ?
+                         AND e.estado != 'Cerrado en Central'
                          LIMIT 1`,
                         [campo.id, valorIngresado, id_oficina]
                     );
 
-                    if (duplicados.length > 0) {
+                    if (duplicados.length > 0 && !expediente.forzar_creacion) {
                         throw new CustomError(
                             `Ya existe un expediente con el valor "${valorIngresado}" en el campo "${campo.nombre_campo}": ${duplicados[0].nombre_expediente}`,
                             409
@@ -170,24 +175,98 @@ exports.crearExpedienteCompleto = async (data, archivo, userId) => {
             }
         }
 
-        // === PASO 2: Generar radicado y crear el expediente ===
-        const radicadoExpediente = await generarRadicadoExpediente(connection);
+        // === PASO 2: Generar radicado (BR-01) ===
+        const codigoExpediente = await generarRadicadoExpediente(connection);
 
-        const [expedienteResult] = await connection.query(
-            `INSERT INTO expedientes (nombre_expediente, id_serie, id_subserie, descriptor_1, descriptor_2, id_usuario_responsable)
-             VALUES (?, ?, ?, ?, ?, ?)`,
-            [
-                radicadoExpediente, // Radicado auto-generado como nombre único
-                expediente.id_serie,
-                expediente.id_subserie || null,
-                expediente.descriptor_1 || null,
-                expediente.descriptor_2 || null,
-                userId
-            ]
+        // BR-01: Display Name = [Serie] - [Subserie] - [CampoPersonalizado]
+        let displayName = codigoExpediente; // Fallback
+        const [serieInfo] = await connection.query(
+            'SELECT nombre_serie FROM trd_series WHERE id = ?', [expediente.id_serie]
         );
+        const serieName = serieInfo.length > 0 ? serieInfo[0].nombre_serie : '';
+
+        let subserieName = '';
+        if (expediente.id_subserie) {
+            const [subserieInfo] = await connection.query(
+                'SELECT nombre_subserie FROM trd_subseries WHERE id = ?', [expediente.id_subserie]
+            );
+            subserieName = subserieInfo.length > 0 ? subserieInfo[0].nombre_subserie : '';
+        }
+
+        // Obtener el primer campo personalizado con valor para el display name
+        let campoPersonalizadoValor = '';
+        if (customData && Object.keys(customData).length > 0) {
+            const primerCampoId = Object.keys(customData)[0];
+            campoPersonalizadoValor = customData[primerCampoId] || '';
+        }
+
+        // Construir display name: [Serie] - [Subserie] - [CampoPersonalizado]
+        const partes = [serieName, subserieName, campoPersonalizadoValor].filter(p => p.trim());
+        displayName = partes.length > 0 ? partes.join(' - ') : codigoExpediente;
+
+        // === PASO 3: BR-02 — Resolver fechas según tipo de soporte ===
+        let fechaApertura = null;
+        let fechaCierre = null;
+        let registrarAuditoriaFecha = false;
+        let fechaOriginalServidor = null;
+
+        if (tipo_soporte === 'Físico') {
+            fechaApertura = expediente.fecha_apertura || null;
+            fechaCierre = expediente.fecha_cierre || null;
+        } else {
+            fechaOriginalServidor = new Date();
+
+            if (expediente.fecha_apertura) {
+                const fechaUsuario = new Date(expediente.fecha_apertura);
+                const hoy = new Date();
+                hoy.setHours(0, 0, 0, 0);
+                fechaUsuario.setHours(0, 0, 0, 0);
+
+                if (fechaUsuario.getTime() !== hoy.getTime()) {
+                    registrarAuditoriaFecha = true;
+                    fechaApertura = expediente.fecha_apertura;
+                } else {
+                    fechaApertura = null;
+                }
+            }
+        }
+
+        // === PASO 4: Crear el expediente ===
+        let insertQuery, insertParams;
+
+        if (fechaApertura) {
+            insertQuery = `INSERT INTO expedientes 
+                (nombre_expediente, codigo_expediente, id_serie, id_subserie, 
+                 descriptor_1, descriptor_2, tipo_soporte, asunto, 
+                 fecha_apertura, fecha_cierre, observaciones, id_usuario_responsable)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+            insertParams = [
+                displayName, codigoExpediente,
+                expediente.id_serie, expediente.id_subserie || null,
+                expediente.descriptor_1 || null, expediente.descriptor_2 || null,
+                tipo_soporte, expediente.asunto || null,
+                fechaApertura, fechaCierre,
+                expediente.observaciones || null, userId
+            ];
+        } else {
+            insertQuery = `INSERT INTO expedientes 
+                (nombre_expediente, codigo_expediente, id_serie, id_subserie, 
+                 descriptor_1, descriptor_2, tipo_soporte, asunto, 
+                 fecha_cierre, observaciones, id_usuario_responsable)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+            insertParams = [
+                displayName, codigoExpediente,
+                expediente.id_serie, expediente.id_subserie || null,
+                expediente.descriptor_1 || null, expediente.descriptor_2 || null,
+                tipo_soporte, expediente.asunto || null,
+                fechaCierre, expediente.observaciones || null, userId
+            ];
+        }
+
+        const [expedienteResult] = await connection.query(insertQuery, insertParams);
         const nuevoExpedienteId = expedienteResult.insertId;
 
-        // === PASO 3: Guardar datos personalizados del expediente ===
+        // === PASO 5: Guardar datos personalizados del expediente ===
         if (customData && Object.keys(customData).length > 0) {
             const values = Object.entries(customData).map(([id_campo, valor]) => [nuevoExpedienteId, id_campo, valor]);
             await connection.query(
@@ -196,13 +275,11 @@ exports.crearExpedienteCompleto = async (data, archivo, userId) => {
             );
         }
 
-        // === PASO 3.5: Crear Carpeta Automática (SIEMPRE) ===
-        // Cada expediente DEBE tener exactamente una carpeta con número único.
-        // La carpeta es la llave que almacena la ubicación física.
-        let idCarpetaGenerada = null;
+        // === PASO 6: BR-03 — Ubicación física solo para soporte Físico ===
         let carpetaGeneradaInfo = null;
+        let paqueteAsignado = null;
 
-        {
+        if (tipo_soporte === 'Físico') {
             let id_oficina = null;
             const [serieDoc] = await connection.query(
                 'SELECT id_oficina_productora FROM trd_series WHERE id = ?',
@@ -210,28 +287,25 @@ exports.crearExpedienteCompleto = async (data, archivo, userId) => {
             );
             if (serieDoc.length > 0) id_oficina = serieDoc[0].id_oficina_productora;
 
+            // Crear carpeta automática
             if (id_oficina) {
                 const carpetaData = {
                     id_oficina: id_oficina,
-                    descripcion: `Carpeta del expediente ${radicadoExpediente}`,
+                    descripcion: `Carpeta del expediente ${codigoExpediente}`,
                     capacidad_maxima: 200,
-                    id_caja: (documento && documento.id_caja_seleccionada) || null,
                     id_expediente: nuevoExpedienteId
                 };
 
                 try {
-                    const nuevaCarpeta = await carpetaService.crearCarpeta(carpetaData, connection);
-                    idCarpetaGenerada = nuevaCarpeta.id;
-                    carpetaGeneradaInfo = nuevaCarpeta;
+                    carpetaGeneradaInfo = await carpetaService.crearCarpeta(carpetaData, connection);
                 } catch (err) {
                     console.error('Error al crear carpeta automática:', err.message);
                 }
             }
 
-            // === PASO 3.6: Asignar al paquete activo de la oficina automáticamente ===
+            // Asignar al paquete activo automáticamente
             try {
                 const paqueteService = require('./paquete.service');
-                // Ya no requiere id_oficina, obtiene el paquete activo global
                 const paqueteActivo = await paqueteService.obtenerPaqueteActivo();
                 if (paqueteActivo) {
                     await connection.query(
@@ -242,135 +316,113 @@ exports.crearExpedienteCompleto = async (data, archivo, userId) => {
                         'UPDATE paquetes SET expedientes_actuales = expedientes_actuales + 1 WHERE id = ?',
                         [paqueteActivo.id]
                     );
+                    paqueteAsignado = paqueteActivo;
                 }
             } catch (err) {
                 console.error('Error al asignar paquete automáticamente:', err.message);
             }
         }
 
+        // === PASO 7: Crear documento si se incluyó ===
         let documentoCreado = null;
 
-        // === PASO 4: Manejo de documento ===
-        if (documento && documento.opcion !== 'ninguno') {
+        if (documento && documento.asunto) {
+            const radicadoDoc = await generarRadicado();
 
-            if (documento.opcion === 'crear') {
-                // Crear nuevo documento
-                const tipo_soporte = documento.tipo_soporte;
+            let pathArchivo = null;
+            let nombreArchivoOriginal = null;
 
-                // Validaciones según tipo de soporte
-                if ((tipo_soporte === 'Electrónico' || tipo_soporte === 'Híbrido') && !archivo) {
-                    throw new CustomError('Debe adjuntar un archivo para el soporte electrónico o híbrido.', 400);
-                }
-
-                // Validación de ubicación física: Carpeta o Texto manual
-                if ((tipo_soporte === 'Físico' || tipo_soporte === 'Híbrido')) {
-                    if (!idCarpetaGenerada && !documento.id_carpeta && !documento.ubicacion_fisica) {
-                        throw new CustomError('Debe especificar la ubicación física (o crear carpeta) para el soporte físico o híbrido.', 400);
-                    }
-                }
-
-                // Generar radicado
-                const today = new Date();
-                const datePrefix = `${today.getFullYear()}${String(today.getMonth() + 1).padStart(2, '0')}${String(today.getDate()).padStart(2, '0')}`;
-                const [lastRadicado] = await connection.query(
-                    "SELECT MAX(CAST(SUBSTRING_INDEX(radicado, '-', -1) AS UNSIGNED)) as last_seq FROM documentos WHERE radicado LIKE ?",
-                    [`${datePrefix}-%`]
-                );
-                const newSequence = (lastRadicado[0].last_seq || 0) + 1;
-                const radicado = `${datePrefix}-${String(newSequence).padStart(4, '0')}`;
-
-                // Obtener id_oficina para el documento desde la serie
-                const [serieDoc] = await connection.query(
-                    'SELECT id_oficina_productora FROM trd_series WHERE id = ?',
-                    [expediente.id_serie]
-                );
-                const id_oficina_productora = serieDoc.length > 0 ? serieDoc[0].id_oficina_productora : null;
-
-                // Insertar documento
-                const [docResult] = await connection.query(
-                    `INSERT INTO documentos (
-                        radicado, asunto, tipo_soporte, ubicacion_fisica, path_archivo,
-                        nombre_archivo_original, id_oficina_productora, id_serie, id_subserie,
-                        remitente_nombre, remitente_identificacion, remitente_direccion, id_usuario_radicador,
-                        id_carpeta, paquete, tomo, modulo, entrepaño, estante, otro
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-                    [
-                        radicado,
-                        documento.asunto || expediente.nombre_expediente,
-                        tipo_soporte,
-                        documento.ubicacion_fisica || (carpetaGeneradaInfo ? `Carpeta ${carpetaGeneradaInfo.codigo_carpeta}` : null),
-                        archivo ? archivo.path : null,
-                        archivo ? archivo.originalname : null,
-                        id_oficina_productora,
-                        expediente.id_serie,
-                        expediente.id_subserie || null,
-                        documento.remitente_nombre || null,
-                        documento.remitente_identificacion || null,
-                        documento.remitente_direccion || null,
-                        userId,
-                        idCarpetaGenerada || documento.id_carpeta || null,
-                        carpetaGeneradaInfo ? carpetaGeneradaInfo.paquete : (documento.paquete || null),
-                        documento.tomo || null,
-                        carpetaGeneradaInfo ? carpetaGeneradaInfo.modulo : (documento.modulo || null),
-                        carpetaGeneradaInfo ? carpetaGeneradaInfo.entrepaño : (documento.entrepaño || null),
-                        carpetaGeneradaInfo ? carpetaGeneradaInfo.estante : (documento.estante || null),
-                        documento.otro || null
-                    ]
-                );
-
-                documentoCreado = { id: docResult.insertId, radicado };
-
-            } else if (documento.opcion === 'relacionar' && documento.id_documento_existente) {
-                // Relacionar documento existente
-                const docIds = Array.isArray(documento.id_documento_existente)
-                    ? documento.id_documento_existente
-                    : [documento.id_documento_existente];
-
-                for (const docId of docIds) {
-                    // Verificar que el documento existe
-                    const [docExiste] = await connection.query('SELECT id FROM documentos WHERE id = ?', [docId]);
-                    if (docExiste.length === 0) {
-                        throw new CustomError(`El documento con ID ${docId} no existe.`, 404);
-                    }
-                }
-
-                documentoCreado = { ids: docIds, relacionados: true };
+            if (archivo) {
+                pathArchivo = archivo.path;
+                nombreArchivoOriginal = archivo.originalname;
             }
 
-            // === PASO 5: Vincular documento(s) al expediente ===
-            if (documentoCreado) {
-                const docIds = documentoCreado.ids || [documentoCreado.id];
+            // Obtener id_oficina para el documento
+            const [serieOficina] = await connection.query(
+                'SELECT id_oficina_productora FROM trd_series WHERE id = ?',
+                [expediente.id_serie]
+            );
+            const idOficinaDoc = serieOficina.length > 0 ? serieOficina[0].id_oficina_productora : null;
 
-                for (let i = 0; i < docIds.length; i++) {
-                    const [folioRows] = await connection.query(
-                        'SELECT MAX(orden_foliado) as max_folio FROM expediente_documentos WHERE id_expediente = ?',
-                        [nuevoExpedienteId]
-                    );
-                    const nuevoFolio = (folioRows[0].max_folio || 0) + 1;
+            // Insertar documento
+            const [docResult] = await connection.query(
+                `INSERT INTO documentos 
+                (radicado, asunto, tipo_soporte, path_archivo, nombre_archivo_original,
+                 id_oficina_productora, id_serie, id_subserie, id_usuario_radicador,
+                 id_carpeta)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                [
+                    radicadoDoc,
+                    documento.asunto,
+                    documento.tipo_soporte || 'Físico',
+                    pathArchivo,
+                    nombreArchivoOriginal,
+                    idOficinaDoc,
+                    expediente.id_serie,
+                    expediente.id_subserie || null,
+                    userId,
+                    carpetaGeneradaInfo ? carpetaGeneradaInfo.id : null
+                ]
+            );
 
-                    await connection.query(
-                        'INSERT INTO expediente_documentos (id_expediente, id_documento, orden_foliado) VALUES (?, ?, ?)',
-                        [nuevoExpedienteId, docIds[i], nuevoFolio]
-                    );
-                }
+            const nuevoDocId = docResult.insertId;
+
+            // Vincular documento al expediente con folio #1
+            await connection.query(
+                'INSERT INTO expediente_documentos (id_expediente, id_documento, orden_foliado) VALUES (?, ?, ?)',
+                [nuevoExpedienteId, nuevoDocId, 1]
+            );
+
+            // Incrementar cantidad de la carpeta si existe
+            if (carpetaGeneradaInfo) {
+                await connection.query(
+                    'UPDATE carpetas SET cantidad_actual = cantidad_actual + 1 WHERE id = ?',
+                    [carpetaGeneradaInfo.id]
+                );
             }
+
+            documentoCreado = {
+                id: nuevoDocId,
+                radicado: radicadoDoc,
+                asunto: documento.asunto,
+                tipo_soporte: documento.tipo_soporte || 'Físico'
+            };
         }
 
-        // === PASO 6: Auditoría ===
-        const detalles = documentoCreado
-            ? `Expediente ${nuevoExpedienteId} creado con documento ${documentoCreado.radicado || JSON.stringify(documentoCreado.ids)}`
-            : `Expediente ${nuevoExpedienteId} creado sin documentos`;
+        // === PASO 8: Auditoría ===
+        let detallesAuditoria = `Expediente ${nuevoExpedienteId} (${codigoExpediente}) creado. Tipo: ${tipo_soporte}. Display: ${displayName}`;
+        if (documentoCreado) {
+            detallesAuditoria += `. Documento ${documentoCreado.radicado} vinculado con folio #1.`;
+        }
 
         await connection.query(
             'INSERT INTO auditoria (usuario_id, accion, detalles) VALUES (?, ?, ?)',
-            [userId, 'CREACION_EXPEDIENTE_COMPLETO', detalles]
+            [userId, 'CREACION_EXPEDIENTE_COMPLETO', detallesAuditoria]
         );
+
+        // BR-02: Auditoría si el usuario modificó la fecha de apertura en soporte Electrónico
+        if (registrarAuditoriaFecha) {
+            await connection.query(
+                'INSERT INTO auditoria (usuario_id, accion, detalles) VALUES (?, ?, ?)',
+                [userId, 'MODIFICACION_FECHA_APERTURA',
+                    `Usuario modificó fecha de apertura del expediente ${nuevoExpedienteId}. Fecha servidor: ${fechaOriginalServidor.toISOString()}. Fecha ingresada: ${fechaApertura}`]
+            );
+        }
 
         return {
             msg: 'Expediente creado con éxito.',
-            expediente: { id: nuevoExpedienteId, nombre: expediente.nombre_expediente },
-            documento: documentoCreado,
-            carpeta: carpetaGeneradaInfo // Devolver info de carpeta si se creó
+            expediente: {
+                id: nuevoExpedienteId,
+                nombre: displayName,
+                codigo: codigoExpediente,
+                tipo_soporte
+            },
+            carpeta: carpetaGeneradaInfo,
+            paquete: paqueteAsignado ? {
+                id: paqueteAsignado.id,
+                numero_paquete: paqueteAsignado.numero_paquete
+            } : null,
+            documento: documentoCreado
         };
     });
 };

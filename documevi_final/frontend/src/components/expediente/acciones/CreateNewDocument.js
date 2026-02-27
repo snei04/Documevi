@@ -148,11 +148,27 @@ const CreateNewDocument = ({ expediente, onDataChange }) => {
         }
     };
 
-    if (expediente.estado !== 'En trámite') return null;
+    // Permitir crear documentos si está en trámite o si es expediente físico (incluso cerrado)
+    const esCerrado = expediente.estado === 'Cerrado en Gestión' || expediente.estado === 'Cerrado en Central';
+    const esFisico = expediente.tipo_soporte === 'Físico';
+    if (expediente.estado !== 'En trámite' && !(esFisico && esCerrado)) return null;
 
     return (
         <PermissionGuard permission="expedientes_crear">
             <div className="content-box">
+                {esCerrado && (
+                    <div style={{
+                        background: '#fff3cd',
+                        border: '1px solid #ffc107',
+                        borderRadius: '6px',
+                        padding: '10px',
+                        marginBottom: '15px',
+                        fontSize: '13px'
+                    }}>
+                        ⚠️ <strong>Expediente cerrado ({expediente.estado}):</strong> Se permite crear documentos porque es de soporte físico.
+                        Esta acción quedará registrada en auditoría.
+                    </div>
+                )}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
                     <h3 style={{ margin: 0 }}>📄 Crear Documento Nuevo</h3>
                     <button

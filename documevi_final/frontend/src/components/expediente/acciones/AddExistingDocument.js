@@ -63,11 +63,27 @@ const AddExistingDocument = ({ expediente, onDataChange, documentosDisponibles }
         }
     };
 
-    if (expediente.estado !== 'En trámite') return null;
+    // Permitir agregar documentos si está en trámite o si es expediente físico (incluso cerrado)
+    const esCerrado = expediente.estado === 'Cerrado en Gestión' || expediente.estado === 'Cerrado en Central';
+    const esFisico = expediente.tipo_soporte === 'Físico';
+    if (expediente.estado !== 'En trámite' && !(esFisico && esCerrado)) return null;
 
     return (
         <div className="content-box">
             <h3>Añadir Documento al Expediente</h3>
+            {esCerrado && (
+                <div style={{
+                    background: '#fff3cd',
+                    border: '1px solid #ffc107',
+                    borderRadius: '6px',
+                    padding: '10px',
+                    marginBottom: '15px',
+                    fontSize: '13px'
+                }}>
+                    ⚠️ <strong>Expediente cerrado ({expediente.estado}):</strong> Se permite anexar documentos porque es de soporte físico.
+                    Esta acción quedará registrada en auditoría.
+                </div>
+            )}
             <form onSubmit={handleAddDocumento}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
                     <div style={{ position: 'relative', flex: '1', minWidth: '300px' }}>

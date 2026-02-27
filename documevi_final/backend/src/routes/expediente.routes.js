@@ -29,7 +29,7 @@ router.route('/')
     .get(getAllExpedientes)  // Todos los usuarios autenticados pueden ver la lista
     .post(authorizePermission('expedientes_crear'), createExpediente);
 
-// Nuevo endpoint unificado con soporte para archivo
+// Endpoint optimizado de creación (JSON o multipart si incluye documento)
 router.post('/crear-completo',
     authorizePermission('expedientes_crear'),
     upload.single('archivo'),

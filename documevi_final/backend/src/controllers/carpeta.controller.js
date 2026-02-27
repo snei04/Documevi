@@ -22,10 +22,9 @@ exports.getCarpetas = async (req, res) => {
     try {
         const { id_oficina, estado } = req.query;
         let query = `
-            SELECT c.*, o.nombre_oficina, cx.codigo_caja as nombre_caja
+            SELECT c.*, o.nombre_oficina
             FROM carpetas c
             JOIN oficinas_productoras o ON c.id_oficina = o.id
-            LEFT JOIN cajas cx ON c.id_caja = cx.id
         `;
         const params = [];
         const conditions = [];
@@ -60,9 +59,8 @@ exports.getCarpetaById = async (req, res) => {
     try {
         const { id } = req.params;
         const [rows] = await pool.query(`
-            SELECT c.*, cx.codigo_caja, cx.ubicacion_estante, cx.ubicacion_entrepaño, cx.ubicacion_modulo 
+            SELECT c.*
             FROM carpetas c
-            LEFT JOIN cajas cx ON c.id_caja = cx.id
             WHERE c.id = ?
         `, [id]);
 

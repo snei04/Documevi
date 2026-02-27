@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../api/axios';
 import { getExpedientes } from '../api/expedienteAPI';
@@ -6,7 +6,6 @@ import { toast } from 'react-toastify';
 import Modal from 'react-modal';
 import PermissionGuard from './auth/PermissionGuard';
 import { usePermissionsContext } from '../context/PermissionsContext';
-import DuplicadoAlertModal from './DuplicadoAlertModal';
 import WizardCrearExpediente from './WizardCrearExpediente';
 import './Dashboard.css';
 
@@ -17,28 +16,9 @@ const GestionExpedientes = () => {
     const [expedientes, setExpedientes] = useState([]);
     const [series, setSeries] = useState([]);
     const [subseries, setSubseries] = useState([]);
-    const [filteredSubseries, setFilteredSubseries] = useState([]);
     const [loading, setLoading] = useState(true);
 
-    // Estados del modal
-    const [isModalOpen, setIsModalOpen] = useState(false);
-    const [formData, setFormData] = useState({
-        nombre_expediente: '',
-        id_serie: '',
-        id_subserie: '',
-        descriptor_1: '',
-        descriptor_2: ''
-    });
-    const [submitting, setSubmitting] = useState(false);
-
-    // Estados para campos personalizados y validacion de duplicados
-    const [camposPersonalizados, setCamposPersonalizados] = useState([]);
-    const [customData, setCustomData] = useState({});
-    const [duplicadoModalOpen, setDuplicadoModalOpen] = useState(false);
-    const [duplicadoInfo, setDuplicadoInfo] = useState(null);
-    // const [documentoParaAnexar, setDocumentoParaAnexar] = useState(null); // unused
-
-    // Estado para el wizard unificado
+    // Estado para el wizard de creación
     const [isWizardOpen, setIsWizardOpen] = useState(false);
     const { permissions: userPermissions } = usePermissionsContext();
 
@@ -125,27 +105,6 @@ const GestionExpedientes = () => {
         }
     };
 
-    // Función auxiliar para mantener compatibilidad con codigo existente que llama a fetchData
-    const fetchData = () => {
-        fetchExpedientes();
-        fetchCatalogos();
-    };
-
-    // Cargar campos personalizados cuando se selecciona una serie
-    const fetchCamposPersonalizados = useCallback(async (idOficina) => {
-        if (!idOficina) {
-            setCamposPersonalizados([]);
-            return;
-        }
-        try {
-            const res = await api.get(`/campos-personalizados/oficina/${idOficina}`);
-            setCamposPersonalizados(res.data);
-        } catch (err) {
-            console.error('Error al cargar campos personalizados:', err);
-            setCamposPersonalizados([]);
-        }
-    }, []);
-
     // Cambiar pagina
     const handlePageChange = (newPage) => {
         if (newPage >= 1 && newPage <= pagination.totalPages) {
@@ -153,7 +112,6 @@ const GestionExpedientes = () => {
         }
     };
 
-    // Limpiar filtros
     // Limpiar filtros
     const handleClearFilters = () => {
         setSearchTerm('');
@@ -173,153 +131,6 @@ const GestionExpedientes = () => {
         cerradosCentral: expedientes.filter(e => e.estado === 'Cerrado en Central').length
     }), [expedientes]);
 
-    // Manejar cambio de serie en el formulario
-    const handleSerieChange = (e) => {
-        const serieId = e.target.value;
-        setFormData({ ...formData, id_serie: serieId, id_subserie: '' });
-        setCustomData({});
-
-        // Verificar si la serie requiere subserie
-        const serieSeleccionada = series.find(s => s.id === parseInt(serieId));
-        if (serieSeleccionada && !serieSeleccionada.requiere_subserie) {
-            setFilteredSubseries([]);
-        } else {
-            setFilteredSubseries(subseries.filter(ss => ss.id_serie === parseInt(serieId)));
-        }
-
-        // Cargar campos personalizados de la oficina de la serie
-        if (serieSeleccionada) {
-            fetchCamposPersonalizados(serieSeleccionada.id_oficina_productora);
-        } else {
-            setCamposPersonalizados([]);
-        }
-    };
-
-    // Manejar cambio en campos personalizados
-    const handleCustomDataChange = (campoId, valor) => {
-        setCustomData(prev => ({
-            ...prev,
-            [campoId]: valor
-        }));
-    };
-
-    const handleChange = (e) => {
-        setFormData({ ...formData, [e.target.name]: e.target.value });
-    };
-
-    // Abrir modal
-    // const openModal = () => {
-    //     setFormData({
-    //         nombre_expediente: '',
-    //         id_serie: '',
-    //         id_subserie: '',
-    //         descriptor_1: '',
-    //         descriptor_2: ''
-    //     });
-    //     setFilteredSubseries([]);
-    //     setCamposPersonalizados([]);
-    //     setCustomData({});
-    //     setIsModalOpen(true);
-    // };
-
-    // Cerrar modal
-    const closeModal = () => {
-        setIsModalOpen(false);
-        setCamposPersonalizados([]);
-        setCustomData({});
-    };
-
-    // Crear expediente
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        setSubmitting(true);
-
-        try {
-            const serieSeleccionada = series.find(s => s.id === parseInt(formData.id_serie));
-            const dataToSend = { ...formData };
-
-            if (serieSeleccionada && !serieSeleccionada.requiere_subserie) {
-                dataToSend.id_subserie = null;
-            }
-
-            // Verificar si hay campos con validacion de duplicidad
-            const camposConValidacion = camposPersonalizados.filter(c => c.validar_duplicidad);
-
-            if (camposConValidacion.length > 0 && Object.keys(customData).length > 0) {
-                // Validar duplicados antes de crear
-                const validacionRes = await api.post('/expedientes/validar-duplicados', {
-                    id_oficina: serieSeleccionada?.id_oficina_productora,
-                    campos_personalizados: customData
-                });
-
-                if (validacionRes.data.duplicado) {
-                    // Mostrar modal de duplicado
-                    setDuplicadoInfo(validacionRes.data);
-                    setDuplicadoModalOpen(true);
-                    setSubmitting(false);
-                    return;
-                }
-            }
-
-            // No hay duplicados, crear expediente normalmente
-            await crearExpedienteConDatos(dataToSend);
-
-        } catch (err) {
-            toast.error(err.response?.data?.msg || 'Error al crear el expediente.');
-            setSubmitting(false);
-        }
-    };
-
-    // Funcion auxiliar para crear expediente con datos personalizados
-    const crearExpedienteConDatos = async (dataToSend) => {
-        try {
-            const res = await api.post('/expedientes', dataToSend);
-            const nuevoExpedienteId = res.data.id;
-
-            // Guardar datos personalizados si existen
-            if (Object.keys(customData).length > 0) {
-                await api.put(`/expedientes/${nuevoExpedienteId}/custom-data`, customData);
-            }
-
-            toast.success('Expediente creado con exito!');
-            closeModal();
-            fetchData();
-        } catch (err) {
-            toast.error(err.response?.data?.msg || 'Error al crear el expediente.');
-        } finally {
-            setSubmitting(false);
-        }
-    };
-
-    // Manejar confirmacion de anexion por duplicado
-    const handleConfirmarAnexion = async (anexionData) => {
-        setSubmitting(true);
-        try {
-            // Aqui se anexaria el documento al expediente existente
-            // Por ahora, redirigimos al expediente existente
-            const expedienteId = duplicadoInfo.expediente_existente.id;
-
-            toast.success(`Redirigiendo al expediente #${expedienteId} para anexar el documento...`);
-            setDuplicadoModalOpen(false);
-            setDuplicadoInfo(null);
-            closeModal();
-
-            // Redirigir al detalle del expediente
-            window.location.href = `/dashboard/expedientes/${expedienteId}`;
-
-        } catch (err) {
-            toast.error(err.response?.data?.msg || 'Error al procesar la anexion.');
-        } finally {
-            setSubmitting(false);
-        }
-    };
-
-    // Cerrar modal de duplicado
-    const handleCloseDuplicadoModal = () => {
-        setDuplicadoModalOpen(false);
-        setDuplicadoInfo(null);
-    };
-
     // Obtener clase de estado
     const getEstadoClass = (estado) => {
         switch (estado) {
@@ -338,13 +149,6 @@ const GestionExpedientes = () => {
     const formatDate = (dateStr) => {
         if (!dateStr) return '-';
         return new Date(dateStr).toLocaleDateString('es-CO');
-    };
-
-    // Verificar si la serie seleccionada requiere subserie
-    const serieRequiereSubserie = () => {
-        if (!formData.id_serie) return true;
-        const serie = series.find(s => s.id === parseInt(formData.id_serie));
-        return serie ? serie.requiere_subserie : true;
     };
 
     if (loading) {
@@ -568,183 +372,7 @@ const GestionExpedientes = () => {
                 )}
             </div>
 
-            {/* Modal de creación */}
-            <Modal
-                isOpen={isModalOpen}
-                onRequestClose={closeModal}
-                contentLabel="Crear Nuevo Expediente"
-                className="modal"
-                overlayClassName="modal-overlay"
-            >
-                <h2>Crear Nuevo Expediente</h2>
-                <form onSubmit={handleSubmit}>
-                    <div className="form-group">
-                        <label htmlFor="nombre_expediente">Nombre del Expediente *</label>
-                        <input
-                            type="text"
-                            id="nombre_expediente"
-                            name="nombre_expediente"
-                            value={formData.nombre_expediente}
-                            onChange={handleChange}
-                            placeholder="Ej: Contrato de prestación de servicios 2024"
-                            required
-                        />
-                    </div>
-
-                    <div className="form-row">
-                        <div className="form-group">
-                            <label htmlFor="id_serie">Serie Documental *</label>
-                            <select
-                                id="id_serie"
-                                name="id_serie"
-                                value={formData.id_serie}
-                                onChange={handleSerieChange}
-                                required
-                            >
-                                <option value="">-- Seleccione una Serie --</option>
-                                {series.map(s => (
-                                    <option key={s.id} value={s.id}>
-                                        {s.codigo_serie} - {s.nombre_serie}
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
-
-                        <div className="form-group">
-                            <label htmlFor="id_subserie">
-                                Subserie Documental {serieRequiereSubserie() ? '*' : '(No aplica)'}
-                            </label>
-                            <select
-                                id="id_subserie"
-                                name="id_subserie"
-                                value={formData.id_subserie}
-                                onChange={handleChange}
-                                required={serieRequiereSubserie()}
-                                disabled={!serieRequiereSubserie()}
-                            >
-                                <option value="">
-                                    {!formData.id_serie
-                                        ? '-- Primero seleccione una Serie --'
-                                        : serieRequiereSubserie()
-                                            ? '-- Seleccione una Subserie --'
-                                            : '-- No requiere Subserie --'
-                                    }
-                                </option>
-                                {filteredSubseries.map(ss => (
-                                    <option key={ss.id} value={ss.id}>
-                                        {ss.codigo_subserie} - {ss.nombre_subserie}
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
-                    </div>
-
-                    <div className="form-row">
-                        <div className="form-group">
-                            <label htmlFor="descriptor_1">Descriptor 1 (Opcional)</label>
-                            <input
-                                type="text"
-                                id="descriptor_1"
-                                name="descriptor_1"
-                                value={formData.descriptor_1}
-                                onChange={handleChange}
-                                placeholder="Ej: Número de contrato, NIT, etc."
-                            />
-                        </div>
-
-                        <div className="form-group">
-                            <label htmlFor="descriptor_2">Descriptor 2 (Opcional)</label>
-                            <input
-                                type="text"
-                                id="descriptor_2"
-                                name="descriptor_2"
-                                value={formData.descriptor_2}
-                                onChange={handleChange}
-                                placeholder="Ej: Año, Departamento, etc."
-                            />
-                        </div>
-                    </div>
-
-                    {/* Campos Personalizados */}
-                    {camposPersonalizados.length > 0 && (
-                        <div style={{ borderTop: '1px solid #eee', paddingTop: '15px', marginTop: '15px' }}>
-                            <h4 style={{ marginBottom: '15px' }}>
-                                Campos Personalizados
-                                {camposPersonalizados.some(c => c.validar_duplicidad) && (
-                                    <span style={{ fontSize: '12px', color: '#6c757d', marginLeft: '10px' }}>
-                                        (🔍 = valida duplicidad)
-                                    </span>
-                                )}
-                            </h4>
-                            <div className="form-row" style={{ flexWrap: 'wrap' }}>
-                                {camposPersonalizados.map(campo => (
-                                    <div className="form-group" key={campo.id} style={{ flex: '1 1 45%', minWidth: '200px' }}>
-                                        <label htmlFor={`campo_${campo.id}`}>
-                                            {campo.nombre_campo}
-                                            {campo.es_obligatorio && ' *'}
-                                            {campo.validar_duplicidad && ' 🔍'}
-                                        </label>
-                                        {campo.tipo_campo === 'fecha' ? (
-                                            <input
-                                                type="date"
-                                                id={`campo_${campo.id}`}
-                                                value={customData[campo.id] || ''}
-                                                onChange={(e) => handleCustomDataChange(campo.id, e.target.value)}
-                                                required={campo.es_obligatorio}
-                                            />
-                                        ) : campo.tipo_campo === 'numero' ? (
-                                            <input
-                                                type="number"
-                                                id={`campo_${campo.id}`}
-                                                value={customData[campo.id] || ''}
-                                                onChange={(e) => handleCustomDataChange(campo.id, e.target.value)}
-                                                required={campo.es_obligatorio}
-                                            />
-                                        ) : (
-                                            <input
-                                                type="text"
-                                                id={`campo_${campo.id}`}
-                                                value={customData[campo.id] || ''}
-                                                onChange={(e) => handleCustomDataChange(campo.id, e.target.value)}
-                                                required={campo.es_obligatorio}
-                                                placeholder={campo.validar_duplicidad ? 'Se validará si ya existe...' : ''}
-                                            />
-                                        )}
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    )}
-
-                    <div className="modal-actions">
-                        <button
-                            type="submit"
-                            className="button button-primary"
-                            disabled={submitting}
-                        >
-                            {submitting ? 'Creando...' : 'Crear Expediente'}
-                        </button>
-                        <button
-                            type="button"
-                            onClick={closeModal}
-                            className="button"
-                        >
-                            Cancelar
-                        </button>
-                    </div>
-                </form>
-            </Modal>
-
-            {/* Modal de Alerta de Duplicado */}
-            <DuplicadoAlertModal
-                isOpen={duplicadoModalOpen}
-                onClose={handleCloseDuplicadoModal}
-                duplicadoInfo={duplicadoInfo}
-                onConfirmarAnexion={handleConfirmarAnexion}
-                loading={submitting}
-            />
-
-            {/* Wizard Unificado de Creación */}
+            {/* Wizard de Creación de Expediente */}
             <WizardCrearExpediente
                 isOpen={isWizardOpen}
                 onClose={() => setIsWizardOpen(false)}

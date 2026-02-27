@@ -87,7 +87,7 @@ exports.anexarDocumentoAExpediente = async ({
         await connection.beginTransaction();
 
         const [expediente] = await connection.query(
-            'SELECT id, estado, nombre_expediente FROM expedientes WHERE id = ?',
+            'SELECT id, estado, nombre_expediente, tipo_soporte FROM expedientes WHERE id = ?',
             [id_expediente]
         );
 
@@ -95,8 +95,13 @@ exports.anexarDocumentoAExpediente = async ({
             throw { statusCode: 404, message: 'Expediente no encontrado' };
         }
 
-        if (expediente[0].estado === 'Cerrado en Central') {
-            throw { statusCode: 400, message: 'No se pueden anexar documentos a expedientes cerrados en archivo central' };
+        const estadoExp = expediente[0].estado;
+        const soporteExp = expediente[0].tipo_soporte || 'Electrónico';
+        const esCerrado = estadoExp === 'Cerrado en Gestión' || estadoExp === 'Cerrado en Central';
+
+        // Expedientes electrónicos cerrados NO permiten anexar
+        if (esCerrado && soporteExp !== 'Físico') {
+            throw { statusCode: 400, message: 'No se pueden anexar documentos a expedientes electrónicos cerrados.' };
         }
 
         const [folioRows] = await connection.query(
@@ -118,11 +123,21 @@ exports.anexarDocumentoAExpediente = async ({
         `, [id_expediente, id_documento, fecha_apertura_documento, campo_validacion_id,
             valor_coincidencia, tipo_soporte || 'Electronico', id_usuario, observaciones]);
 
+        // Auditoría estándar de anexo
         await connection.query(
             'INSERT INTO auditoria (usuario_id, accion, detalles) VALUES (?, ?, ?)',
             [id_usuario, 'ANEXO_DOCUMENTO_DUPLICADO',
                 `Documento ${id_documento} anexado al expediente ${id_expediente} por coincidencia en campo ${campo_validacion_id}`]
         );
+
+        // Auditoría especial si se anexó a un expediente cerrado (solo físico)
+        if (esCerrado) {
+            await connection.query(
+                'INSERT INTO auditoria (usuario_id, accion, detalles) VALUES (?, ?, ?)',
+                [id_usuario, 'ANEXO_EXPEDIENTE_CERRADO',
+                    `Documento ${id_documento} anexado al expediente CERRADO ${id_expediente} (${expediente[0].nombre_expediente}). Estado: ${estadoExp}. Soporte: ${soporteExp}. Observaciones: ${observaciones || 'Ninguna'}`]
+            );
+        }
 
         await connection.commit();
 

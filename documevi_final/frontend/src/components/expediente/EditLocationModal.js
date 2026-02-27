@@ -138,16 +138,6 @@ const EditLocationModal = ({ isOpen, onClose, documento, onUpdate, idOficina }) 
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
                     <div className="form-group">
-                        <label>Paquete / Caja</label>
-                        <input
-                            type="text"
-                            name="paquete"
-                            value={formData.paquete}
-                            onChange={handleChange}
-                            className="form-control"
-                        />
-                    </div>
-                    <div className="form-group">
                         <label>Tomo / Legajo</label>
                         <input
                             type="text"

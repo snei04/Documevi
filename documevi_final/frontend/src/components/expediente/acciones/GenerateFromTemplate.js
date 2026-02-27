@@ -50,7 +50,10 @@ const GenerateFromTemplate = ({ expediente, onDataChange, plantillas }) => {
         }
     };
 
-    if (expediente.estado !== 'En trámite' || !plantillas || plantillas.length === 0) return null;
+    // Permitir generar documentos si está en trámite o si es expediente físico (incluso cerrado)
+    const esCerrado = expediente.estado === 'Cerrado en Gestión' || expediente.estado === 'Cerrado en Central';
+    const esFisico = expediente.tipo_soporte === 'Físico';
+    if ((expediente.estado !== 'En trámite' && !(esFisico && esCerrado)) || !plantillas || plantillas.length === 0) return null;
 
     return (
         <div className="content-box">

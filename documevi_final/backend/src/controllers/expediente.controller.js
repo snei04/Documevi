@@ -184,44 +184,41 @@ exports.createExpediente = async (req, res) => {
 };
 
 /**
- * Crea un expediente completo con documento (opcional) en una sola operación atómica.
- * Soporta: crear documento nuevo, relacionar existente, o ninguno.
+ * Crea un expediente con el flujo optimizado de 3 pasos.
+ * POST /api/expedientes/crear-completo
+ * Acepta JSON o multipart/form-data (cuando incluye documento con archivo)
  */
 exports.crearExpedienteCompleto = async (req, res) => {
     try {
-        // El body viene como JSON string en el campo 'data' cuando se usa multipart
+        // Detectar formato: multipart (con documento) o JSON (sin documento)
         let data;
+        const archivo = req.file || null;
+
         if (req.body.data) {
+            // Multipart: los datos vienen como JSON string en req.body.data
             data = JSON.parse(req.body.data);
         } else {
+            // JSON directo
             data = req.body;
         }
 
-        const archivo = req.file || null;
         const userId = req.user.id;
 
-        // Validaciones básicas - Solo serie es obligatoria, el radicado se genera automáticamente
+        // Validaciones básicas
         if (!data.expediente || !data.expediente.id_serie) {
             return res.status(400).json({ msg: 'La serie es obligatoria.' });
         }
 
-        // Validar permisos adicionales según la opción de documento
-        // Coherente con el flujo unificado: 
-        // - expedientes_crear permite crear documentos dentro del wizard
-        // - expedientes_agregar_documentos permite relacionar documentos existentes
-        const userPermissions = req.user.permissions || [];
-        if (data.documento?.opcion === 'relacionar' && !userPermissions.includes('expedientes_agregar_documentos')) {
-            return res.status(403).json({ msg: 'No tienes permiso para relacionar documentos existentes.' });
+        if (!data.expediente.tipo_soporte) {
+            return res.status(400).json({ msg: 'El tipo de soporte es obligatorio.' });
         }
-        // No se valida 'crear' porque el permiso expedientes_crear ya lo cubre en la ruta
 
-        const resultado = await expedienteService.crearExpedienteCompleto(data, archivo, userId);
+        const resultado = await expedienteService.crearExpedienteCompleto(data, userId, archivo);
 
         res.status(201).json(resultado);
     } catch (error) {
         console.error("Error en crearExpedienteCompleto:", error);
 
-        // Manejar códigos de error personalizados
         if (error.statusCode) {
             return res.status(error.statusCode).json({ msg: error.message });
         }
@@ -318,6 +315,25 @@ exports.addDocumentoToExpediente = async (req, res) => {
         return res.status(400).json({ msg: 'El ID del documento es obligatorio.' });
     }
     try {
+        // Verificar estado del expediente
+        const [expediente] = await pool.query(
+            'SELECT id, estado, tipo_soporte, nombre_expediente, id_paquete FROM expedientes WHERE id = ?',
+            [id_expediente]
+        );
+
+        if (expediente.length === 0) {
+            return res.status(404).json({ msg: 'Expediente no encontrado.' });
+        }
+
+        const estadoExp = expediente[0].estado;
+        const soporteExp = expediente[0].tipo_soporte || 'Electrónico';
+        const esCerrado = estadoExp === 'Cerrado en Gestión' || estadoExp === 'Cerrado en Central';
+
+        // Expedientes electrónicos cerrados NO permiten anexar
+        if (esCerrado && soporteExp !== 'Físico') {
+            return res.status(400).json({ msg: 'No se pueden agregar documentos a expedientes electrónicos cerrados.' });
+        }
+
         const [folioRows] = await pool.query('SELECT MAX(orden_foliado) as max_folio FROM expediente_documentos WHERE id_expediente = ?', [id_expediente]);
         const nuevoFolio = (folioRows[0].max_folio || 0) + 1;
 
@@ -325,6 +341,16 @@ exports.addDocumentoToExpediente = async (req, res) => {
             'INSERT INTO expediente_documentos (id_expediente, id_documento, orden_foliado, requiere_firma) VALUES (?, ?, ?, ?)',
             [id_expediente, id_documento, nuevoFolio, requiere_firma || false]
         );
+
+        // Auditoría especial si se anexó a un expediente cerrado (solo físico)
+        if (esCerrado) {
+            await pool.query(
+                'INSERT INTO auditoria (usuario_id, accion, detalles) VALUES (?, ?, ?)',
+                [req.user.id, 'ANEXO_EXPEDIENTE_CERRADO',
+                `Documento ${id_documento} agregado al expediente CERRADO ${id_expediente} (${expediente[0].nombre_expediente}). Estado: ${estadoExp}. Soporte: ${soporteExp}.`]
+            );
+        }
+
         res.status(201).json({ msg: 'Documento añadido con éxito.', orden_foliado: nuevoFolio });
     } catch (error) {
         if (error.code === 'ER_DUP_ENTRY') {
